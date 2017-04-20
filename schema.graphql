@@ -1,0 +1,17 @@
+schema {
+  query: Root
+}
+
+type Root {
+  dictionary: [Word]
+}
+
+type Word {
+  id: String!
+  definition: WordDefinition
+}
+
+type WordDefinition {
+  text: String
+  image: String
+}

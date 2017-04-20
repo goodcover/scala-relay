@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "babel-core": "6.24.1",
+    "babel-plugin-relay": "dev",
+    "relay-compiler": "dev",
+    "rewire": "^2.5.2"
+  }
+}
