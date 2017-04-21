@@ -7,7 +7,7 @@ const path = require('path');
 
 function parseFile(file) {
   const text = fs.readFileSync(file, 'utf8');
-  const moduleName = path.basename(file, '.js');
+  const moduleName = path.basename(file, '.scala');
 
   invariant(
     text.indexOf('graphql') >= 0,
@@ -51,8 +51,15 @@ function parseFile(file) {
 
   while (matches = regex.exec(text)) {
       const template = matches[1];
-      console.log(template);
+
       const ast = GraphQL.parse(template);
+      invariant(
+        ast.definitions.length,
+        'RelayFileIRParser: Expected GraphQL text to contain at least one ' +
+        'definition (fragment, mutation, query, subscription), got `%s`.',
+        template
+      );
+
       astDefinitions.push(...ast.definitions);  
   }
   return {
