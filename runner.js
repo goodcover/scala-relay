@@ -10,6 +10,7 @@ const RelayIRTransforms = require('relay-compiler').IRTransforms;
 const RelayValidator = require('relay-compiler/lib/RelayValidator');
 const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
 const RelayCompilerContext = require('relay-compiler/lib/RelayCompilerContext');
+const FileParser = require('relay-compiler/lib/FileParser');
 
 const rewire = require('rewire');
 const rfp = require("relay-compiler/lib/RelayFlowParser");
@@ -199,7 +200,7 @@ function newWriter() {
 
 
 
-class NewFileParser {
+class SnippetFakeFileParser {
 
   constructor(snippets) {
     this._documents = new Map();
@@ -239,7 +240,7 @@ class NewFileParser {
 
 function getNewParser(templates) {
   return (baseDir) => {
-    return new NewFileParser(templates); 
+    return new SnippetFakeFileParser(templates); 
   }
 }
 
@@ -251,20 +252,25 @@ function getFileFilter(baseDir) {
 
 
 
-const src = path.resolve(process.cwd())
+// const src = path.resolve(process.cwd())
 // foo(src, newWriter(), getNewParser([q]), getFileFilter);
 
 var data = ""
 
-process.stdin.setEncoding('utf8');
+// process.stdin.setEncoding('utf8');
 
-process.stdin.on('readable', () => {
-  var chunk = process.stdin.read();
-  if (chunk !== null) {
-    data = data + chunk
-  }
-});
+// process.stdin.on('readable', () => {
+//   var chunk = process.stdin.read();
+//   if (chunk !== null) {
+//     data = data + chunk
+//   }
+// });
 
-process.stdin.on('end', () => {
-  foo(src, newWriter(), getNewParser([data]), getFileFilter);
-});
+// process.stdin.on('end', () => {
+//   // foo(src, newWriter(), getNewParser([data]), getFileFilter);
+// });
+
+const src = path.resolve(process.cwd(), "src")
+const fr = require('./file-runner.js');
+
+foo(src, getRelayFileWriter(src), fr.getParser, fr.getFileFilter)
