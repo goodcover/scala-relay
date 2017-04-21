@@ -28,8 +28,7 @@ const SCRIPT_NAME = 'relay-compiler';
 const WATCH_EXPRESSION = [
   'allof',
   ['type', 'f'],
-  ['suffix', 'js'],
-  // ['suffix', 'scala'],
+  ['suffix', 'scala'],
   ['not', ['match', '**/__mocks__/**', 'wholename']],
   ['not', ['match', '**/__tests__/**', 'wholename']],
   ['not', ['match', '**/__generated__/**', 'wholename']],

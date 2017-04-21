@@ -1,5 +1,4 @@
-// const BabelPluginRelay = require('babel-plugin-relay');
-// const babel = require('babel-core');
+#!/usr/bin/env node
 
 const ASTConvert = require('relay-compiler/lib/ASTConvert');
 
@@ -60,12 +59,12 @@ const argv = yargs
       type: 'string',
     },
     'src': {
-      describe: 'Root directory of application code',
+      describe: 'Root directory of scala application code',
       demandOption: true,
       type: 'string',
     },
     'out': {
-      describe: 'Root directory of application code',
+      describe: 'Output of the runtime relay fragments',
       demandOption: true,
       type: 'string',
     }
