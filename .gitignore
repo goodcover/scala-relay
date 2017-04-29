@@ -3,3 +3,5 @@ __generated__
 *.log
 out/
 target/
+.ensime
+.ensime_cache/
