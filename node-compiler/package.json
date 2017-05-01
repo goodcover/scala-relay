@@ -1,7 +1,7 @@
 {
   "name": "scala-relay-compiler",
   "description": "A compiler tool for building GraphQL-driven applications.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "yargs": "^7.1.0",
     "babel-core": "6.24.1",

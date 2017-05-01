@@ -14,6 +14,8 @@ useYarn := true
 
 schemaPath := (resourceDirectory in Compile).value / "testschema.graphql"
 
+emitSourceMaps := false
+
 // A dependency on macro paradise 3.x is required to both write and expand
 // new-style macros.  This is similar to how it works for old-style macro
 // annotations and a dependency on macro paradise 2.x.
