@@ -15,7 +15,7 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
 
         //
         val sjs = q"_root_.scala.scalajs.js"
-        val str = s"$relayOut/${name.toString}.js"
+        val str = s"$relayOut/${name.toString}.graphql.js"
 
         val newObj = cls.copy(mods = Seq(
           Annot(Ctor.Name(s"$sjs.native")),

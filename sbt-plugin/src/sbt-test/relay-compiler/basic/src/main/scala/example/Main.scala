@@ -17,10 +17,20 @@ import scala.scalajs.js.annotation.JSImport
   """)
 object foo extends js.Object
 
+
+@gql("""
+    mutation ActorSubscribe($input: ActorSubscribeInput!) {
+      actorSubscribe(input: $input) {
+        clientMutationId
+      }
+    }
+  """)
+object ActorSubscribe extends js.Object
+
 object Main extends JSApp {
   def main(): Unit = {
 
-    foo
+    ActorSubscribe
 
     val someFn = () => println("someFn")
   }
