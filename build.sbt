@@ -7,9 +7,20 @@ lazy val `relay-compiler` = project
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
     addSbtPlugin(
-      "ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler)
+      "ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
+    ScriptedPlugin.scriptedSettings,
+    scriptedLaunchOpts += "-Dplugin.version=" + version.value,
+    scriptedBufferLog := false
   )
   .settings(commonSettings)
+
+lazy val `relay-macro` = project
+  .in(file("relay-macro"))
+  .settings(
+    metaMacroSettings,
+    commonSettings,
+    scalaVersion := Version.Scala211
+  )
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   // A dependency on macro paradise 3.x is required to both write and expand
@@ -18,14 +29,14 @@ lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   addCompilerPlugin(
     "org.scalameta" % "paradise" % "3.0.0-M8" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
-  // temporary workaround for https://github.com/scalameta/paradise/issues/10
+  libraryDependencies += Library.scalameta,
+    // temporary workaround for https://github.com/scalameta/paradise/issues/10
   scalacOptions in (Compile, console) := Seq(), // macroparadise plugin doesn't work in repl yet.
   // temporary workaround for https://github.com/scalameta/paradise/issues/55
   sources in (Compile, doc) := Nil // macroparadise doesn't work with scaladoc yet.
 )
 
-lazy val commonSettings =
-  ScriptedPlugin.scriptedSettings ++ Seq(
+lazy val commonSettings = Seq(
     scalacOptions ++= Seq(
       "-feature",
       "-deprecation",
@@ -56,7 +67,5 @@ lazy val commonSettings =
         url("https://github.com/dispalt/XXX"),
         "scm:git:git@github.com:dispalt/XXX.git"
       )
-    ),
-    scriptedLaunchOpts += "-Dplugin.version=" + version.value,
-    scriptedBufferLog := false
+    )
   )

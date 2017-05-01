@@ -30,25 +30,50 @@ object RelayPlugin extends AutoPlugin {
   import autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    outputPath in Compile := (crossTarget in npmUpdate in Compile).value / "jsout",
+    /**
+      * Output path of the relay compiler.  Necessary this is an empty directory as it will
+      * delete files it thinks went away.
+      *
+      */
+    outputPath in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
     /**
       * Piggy back on sjs bundler to add our compiler to it.
       */
     npmDevDependencies in Compile ++= Seq(
       "scala-relay-compiler" -> "0.1.0"
     ),
+    initialize := {
+      val () = sys.props("relay.out") =
+        (outputPath in Compile).value.getAbsolutePath
+      val () = sys.props("relay.schema") = schemaPath.value.getAbsolutePath
+    },
     /**
-      *
+      * Part of the magic is the interaction this plugin has with the macro.
+      */
+    scalacOptions ++= Seq(
+      s"-Drelay.out=${(outputPath in Compile).value.getAbsolutePath}",
+      s"-Drelay.schema=${schemaPath.value.getAbsolutePath}"
+    ),
+    /**
+      * Runtime dependency on the macro
+      */
+    libraryDependencies ++= Seq(
+      "com.dispalt.relay" %% "relay-macro" % "0.1.0-SNAPSHOT"
+    ),
+    /**
+      * Actually compile relay, don't overwrite this.
       */
     relayCompile := {
-      println("RELAYCOMPILE")
       val workingDir = (crossTarget in npmUpdate in Compile).value
-      println(workingDir.getAbsolutePath)
       val logger = streams.value.log
       val sp = schemaPath.value
       val source = sourceDirectory.value
       val outpath = (outputPath in Compile).value
       runCompiler(workingDir, sp, source, outpath, logger)
+    },
+    webpack in fastOptJS in Compile := {
+      relayCompile.value
+      (webpack in fastOptJS in Compile).value
     }
   )
 

@@ -16,7 +16,7 @@ function parseFile(file) {
     file
   )
 
-  var regex = /graphql`([\s\S]*?)`/g;
+  var regex = /@gql\("""([\s\S]*?)"""\)/g;
 
   const astDefinitions = [];
 //   FindGraphQLTags.memoizedFind(text, moduleName).forEach(({tag, template}) => {
