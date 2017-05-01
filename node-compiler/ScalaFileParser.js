@@ -10,7 +10,7 @@ function parseFile(file) {
   const moduleName = path.basename(file, '.scala');
 
   invariant(
-    text.indexOf('graphql') >= 0,
+    text.indexOf('@gql') >= 0,
     'RelayFileIRParser: Files should be filtered before passed to the ' +
     'parser, got unfiltered file `%s`.',
     file
@@ -78,7 +78,7 @@ function getParser(baseDir) {
 function getFileFilter(baseDir) {
   return (filename) => {
     const text = fs.readFileSync(path.join(baseDir, filename), 'utf8');
-    return text.indexOf('graphql') >= 0;
+    return text.indexOf('@gql') >= 0;
   };
 }
 
