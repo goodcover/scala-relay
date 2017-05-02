@@ -45,6 +45,7 @@ lazy val `relay-macro` = project
   .settings(
     metaMacroSettings,
     commonSettings,
+    publishMavenStyle := true,
     scalaVersion := Version.Scala211,
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
     libraryDependencies ++= Seq(
@@ -70,7 +71,7 @@ def bintraySettings: Seq[Setting[_]] = Seq(
   bintrayOrganization := Some("dispalt"),
   bintrayRepository := "sbt-plugins",
   bintrayPackage := "sbt-relay-compiler",
-  bintrayReleaseOnPublish := false
+  bintrayReleaseOnPublish := true
 )
 
 lazy val releaseSettings = Seq(
