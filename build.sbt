@@ -20,7 +20,7 @@ def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
-  .enablePlugins(SbtPluginPlugins)
+  .enablePlugins(SbtPluginPlugins, CrossPerProjectPlugin)
   .settings(commonSettings)
   .settings(
     scalaVersion := Version.Scala210,
@@ -67,7 +67,7 @@ lazy val `relay-macro` = project
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(
     publishMavenStyle := true,
-    scalaVersion := Version.Scala211,
+    scalaVersion := Version.Scala212,
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
     libraryDependencies ++= Seq(
       Library.sangria % Provided
@@ -109,9 +109,9 @@ lazy val releaseSettings = Seq(
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("sonatypeReleaseAll"),
     setNextVersion,
     commitNextVersion,
-    releaseStepCommandAndRemaining("+sonatypeReleaseAll"),
     pushChanges
   )
 )

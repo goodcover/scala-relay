@@ -6,7 +6,7 @@ enablePlugins(RelayPlugin)
 
 enablePlugins(ScalaJSBundlerPlugin)
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.12.2"
 
 useYarn := true
 
