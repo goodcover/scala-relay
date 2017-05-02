@@ -27,6 +27,7 @@ object foo extends js.Object
   """)
 object ActorSubscribe extends js.Object
 
+
 object Main extends JSApp {
   def main(): Unit = {
 

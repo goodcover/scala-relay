@@ -80,18 +80,11 @@ object RelayPlugin extends AutoPlugin {
       runCompiler(workingDir, sp, source, outpath, logger)
     },
 
-    /**
-      * Help
-      */
-
 
     /**
-      *
+      * Rewire the webpack task to depend on compiling relay
       */
-    webpack in fastOptJS in Compile := Def.taskDyn {
-      relayCompile.value
-      (webpack in fastOptJS in Compile)
-    }.value
+    webpack in fastOptJS in Compile := (webpack in fastOptJS in Compile).dependsOn(relayCompile).value
   )
 
   def runCompiler(workingDir: File,

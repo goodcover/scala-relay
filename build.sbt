@@ -19,7 +19,10 @@ lazy val `relay-macro` = project
   .settings(
     metaMacroSettings,
     commonSettings,
-    scalaVersion := Version.Scala211
+    scalaVersion := Version.Scala211,
+    libraryDependencies ++= Seq(
+      Library.sangria
+    )
   )
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
