@@ -1,2 +1,1 @@
-> relayCompile
-$ pause
+> fastOptJS::webpack

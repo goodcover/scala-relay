@@ -32,6 +32,7 @@ object Main extends JSApp {
   def main(): Unit = {
 
     ActorSubscribe
+    foo
 
     val someFn = () => println("someFn")
   }
