@@ -13,7 +13,7 @@ lazy val root =
       scalaVersion := Version.Scala211
     )
     .enablePlugins(CrossPerProjectPlugin)
-    .aggregate(`sbt-relay-compiler`, `relay-macro`)
+    .aggregate(`sbt-relay-compiler`, `relay-macro-JVM`, `relay-macro-JS` )
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
 def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
@@ -57,7 +57,7 @@ lazy val `sbt-relay-compiler` = project
     )
   )
 
-lazy val `relay-macro` = project
+lazy val `relay-macro` = crossProject
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins)
   .settings(
@@ -65,11 +65,14 @@ lazy val `relay-macro` = project
     scalaVersion := Version.Scala211,
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
     libraryDependencies ++= Seq(
-      Library.sangria
+      Library.sangria % Provided
     )
   )
   .settings(metaMacroSettings)
   .settings(commonSettings)
+
+lazy val `relay-macro-JVM` = `relay-macro`.jvm
+lazy val `relay-macro-JS` = `relay-macro`.js
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   // A dependency on macro paradise 3.x is required to both write and expand
