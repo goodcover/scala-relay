@@ -1,8 +1,23 @@
-lazy val root =
-  project.in(file(".")).aggregate(`relay-compiler`)
+import sbtrelease.ReleasePlugin.autoImport.{ ReleaseStep, _ }
+import sbtrelease.ReleaseStateTransformations._
 
-lazy val `relay-compiler` = project
+lazy val root =
+  project
+    .in(file("."))
+    .settings(
+      PgpKeys.publishSigned := {},
+      publishLocal := {},
+      publishArtifact in Compile := false,
+      publish := {}
+    )
+    .aggregate(`sbt-relay-compiler`, `relay-macro`)
+
+def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
+def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+
+lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
+  .enablePlugins(SbtPluginPlugins)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
@@ -16,6 +31,7 @@ lazy val `relay-compiler` = project
 
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
+  .enablePlugins(RuntimeLibPlugins)
   .settings(
     metaMacroSettings,
     commonSettings,
@@ -34,42 +50,69 @@ lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
     "org.scalameta" % "paradise" % "3.0.0-M8" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   libraryDependencies += Library.scalameta,
-    // temporary workaround for https://github.com/scalameta/paradise/issues/10
+  // temporary workaround for https://github.com/scalameta/paradise/issues/10
   scalacOptions in (Compile, console) := Seq(), // macroparadise plugin doesn't work in repl yet.
   // temporary workaround for https://github.com/scalameta/paradise/issues/55
   sources in (Compile, doc) := Nil // macroparadise doesn't work with scaladoc yet.
 )
 
-lazy val commonSettings = Seq(
-    scalacOptions ++= Seq(
-      "-feature",
-      "-deprecation",
-      "-encoding",
-      "UTF-8",
-      "-unchecked",
-      "-Xlint",
-      "-Yno-adapted-args",
-      "-Ywarn-dead-code",
-      "-Ywarn-numeric-widen",
-      "-Ywarn-value-discard",
-      "-Xfuture"
-    ),
-    organization := "com.dispalt.relay",
-    pomExtra :=
-      <developers>
+def bintraySettings: Seq[Setting[_]] = Seq(
+  bintrayOrganization := Some("dispalt"),
+  bintrayRepository := "sbt-plugins",
+  bintrayPackage := "sbt-relay-compiler",
+  bintrayReleaseOnPublish := false
+)
+
+lazy val releaseSettings = Seq(
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+  releaseCrossBuild := false,
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publishSigned"),
+    setNextVersion,
+    commitNextVersion,
+    releaseStepCommandAndRemaining("+sonatypeReleaseAll"),
+    pushChanges
+  )
+)
+
+lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
+  scalacOptions ++= Seq(
+    "-feature",
+    "-deprecation",
+    "-encoding",
+    "UTF-8",
+    "-unchecked",
+    "-Xlint",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard",
+    "-Xfuture"
+  ),
+  organization := "com.dispalt.relay",
+  sonatypeProfileName := "com.dispalt.relay",
+  pomExtra :=
+    <developers>
         <developer>
           <id>dispalt</id>
           <name>Dan Di Spaltro</name>
           <url>http://dispalt.com</url>
         </developer>
       </developers>,
-    homepage := Some(url(s"https://github.com/scalacenter/scalajs-bundler")),
-    licenses := Seq(
-      "MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
-    scmInfo := Some(
-      ScmInfo(
-        url("https://github.com/dispalt/XXX"),
-        "scm:git:git@github.com:dispalt/XXX.git"
-      )
+  homepage := Some(url(s"https://github.com/scalacenter/scalajs-bundler")),
+  licenses := Seq(
+    "MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/dispalt/XXX"),
+      "scm:git:git@github.com:dispalt/XXX.git"
     )
   )
+)
