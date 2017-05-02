@@ -11,7 +11,7 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
 
   inline def apply(defn: Any): Any = meta {
     defn match {
-      case cls @ Defn.Object(_, name, _) =>
+      case q"..$mods object $name extends $template" =>
         val relayOut = sys.props.get("relay.out").orNull
         /* We probably won't need this */
         val relaySchema = sys.props.get("relay.schema").orNull
@@ -29,11 +29,11 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
         val sjs = q"_root_.scala.scalajs.js"
         val str = s"$relayOut/$opName.graphql.js"
 
-        val newObj = cls.copy(mods = Seq(
+        val newMods = Seq(
           Annot(Ctor.Name(s"$sjs.native")),
           mod"""@_root_.scala.scalajs.js.annotation.JSImport($str, $sjs.annotation.JSImport.Default)"""
-        ))
-        newObj
+        )
+        q"..$newMods object $name extends _root_.com.dispalt.relay.GqlBase"
       case _ =>
         abort("@gql must annotate an object, with a literal.")
     }
