@@ -63,7 +63,7 @@ object RelayPlugin extends AutoPlugin {
       * Runtime dependency on the macro
       */
     libraryDependencies ++= Seq(
-      "com.dispalt.relay" %% "relay-macro" % com.dispalt.relay.core.SRCVersion.current
+      "com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current
     ),
     /**
       * Actually compile relay, don't overwrite this.
