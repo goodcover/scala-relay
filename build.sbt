@@ -12,13 +12,9 @@ lazy val root =
     )
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
-def RuntimeLibPlugins =
-  Sonatype && CrossPerProjectPlugin && PluginsAccessor.exclude(BintrayPlugin)
-def SbtPluginPlugins = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
-
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
-  .enablePlugins(SbtPluginPlugins)
+  .enablePlugins(BintrayPlugin)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
@@ -36,12 +32,15 @@ lazy val `sbt-relay-compiler` = project
         Some(Opts.resolver.sonatypeSnapshots)
       } else publishTo.value
     },
-    publishMavenStyle := isSnapshot.value
+    publishMavenStyle := isSnapshot.value,
+    sourceGenerators in Compile += Def.task {
+      Generators.version(version.value, (sourceManaged in Compile).value)
+    }.taskValue
   )
 
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
-  .enablePlugins(RuntimeLibPlugins)
+  .enablePlugins(Sonatype && CrossPerProjectPlugin)
   .settings(
     metaMacroSettings,
     commonSettings,
@@ -108,7 +107,7 @@ lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
     "-Xfuture"
   ),
   organization := "com.dispalt.relay",
-  sonatypeProfileName := "com.dispalt.relay",
+  sonatypeProfileName := "com.dispalt",
   pomExtra :=
     <developers>
         <developer>
@@ -117,13 +116,13 @@ lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
           <url>http://dispalt.com</url>
         </developer>
       </developers>,
-  homepage := Some(url(s"https://github.com/scalacenter/scalajs-bundler")),
+  homepage := Some(url(s"https://github.com/dispalt/relay-modern-helper")),
   licenses := Seq(
     "MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
     ScmInfo(
-      url("https://github.com/dispalt/XXX"),
-      "scm:git:git@github.com:dispalt/XXX.git"
+      url("https://github.com/dispalt/relay-modern-helper"),
+      "scm:git:git@github.com:dispalt/relay-modern-helper.git"
     )
   )
 )
