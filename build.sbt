@@ -38,6 +38,11 @@ lazy val `sbt-relay-compiler` = project
         Some(Opts.resolver.sonatypeSnapshots)
       } else publishTo.value
     },
+    scriptedDependencies := {
+      val () = scriptedDependencies.value
+      val () = publishLocal.value
+      val () = (publishLocal in `relay-macro`).value
+    },
     publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)

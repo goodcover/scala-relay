@@ -12,7 +12,7 @@ useYarn := true
 
 //outputPath in Compile := (resourceDirectory in Compile).value / "testschema.graphql"
 
-schemaPath := (resourceDirectory in Compile).value / "testschema.graphql"
+relaySchema := (resourceDirectory in Compile).value / "testschema.graphql"
 
 emitSourceMaps := false
 
