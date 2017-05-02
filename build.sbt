@@ -94,6 +94,7 @@ lazy val releaseSettings = Seq(
 )
 
 lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
+  scalaVersion := Version.Scala211,
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
