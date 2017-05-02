@@ -27,6 +27,8 @@ object RelayPlugin extends AutoPlugin {
 
   }
 
+  val webpackHelpCompile: TaskKey[Seq[File]] = taskKey[Seq[File]]("do webpack")
+
   import autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
@@ -40,8 +42,11 @@ object RelayPlugin extends AutoPlugin {
       * Piggy back on sjs bundler to add our compiler to it.
       */
     npmDevDependencies in Compile ++= Seq(
-      "scala-relay-compiler" -> "0.1.0"
+      "scala-relay-compiler" -> "0.1.1"
     ),
+    /**
+      * I don't like this at all but I have no idea how to do this otherwise though...
+      */
     initialize := {
       val () = sys.props("relay.out") =
         (outputPath in Compile).value.getAbsolutePath
@@ -65,16 +70,28 @@ object RelayPlugin extends AutoPlugin {
       */
     relayCompile := {
       val workingDir = (crossTarget in npmUpdate in Compile).value
+
+      /* This actually does the yarn/npm update */
+      (npmUpdate in Compile).value
       val logger = streams.value.log
       val sp = schemaPath.value
       val source = sourceDirectory.value
       val outpath = (outputPath in Compile).value
       runCompiler(workingDir, sp, source, outpath, logger)
     },
-    webpack in fastOptJS in Compile := {
+
+    /**
+      * Help
+      */
+
+
+    /**
+      *
+      */
+    webpack in fastOptJS in Compile := Def.taskDyn {
       relayCompile.value
-      (webpack in fastOptJS in Compile).value
-    }
+      (webpack in fastOptJS in Compile)
+    }.value
   )
 
   def runCompiler(workingDir: File,
