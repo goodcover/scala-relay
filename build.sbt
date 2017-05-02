@@ -4,6 +4,7 @@ import sbtrelease.ReleaseStateTransformations._
 lazy val root =
   project
     .in(file("."))
+    .settings(commonSettings)
     .settings(
       PgpKeys.publishSigned := {},
       publishLocal := {},
@@ -41,9 +42,9 @@ lazy val `sbt-relay-compiler` = project
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(Sonatype && CrossPerProjectPlugin)
+  .settings(metaMacroSettings)
+  .settings(commonSettings)
   .settings(
-    metaMacroSettings,
-    commonSettings,
     publishMavenStyle := true,
     scalaVersion := Version.Scala211,
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
@@ -66,7 +67,7 @@ lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   sources in (Compile, doc) := Nil // macroparadise doesn't work with scaladoc yet.
 )
 
-def bintraySettings: Seq[Setting[_]] = Seq(
+lazy val bintraySettings: Seq[Setting[_]] = Seq(
   bintrayOrganization := Some("dispalt"),
   bintrayRepository := "sbt-plugins",
   bintrayPackage := "sbt-relay-compiler",
