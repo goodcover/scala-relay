@@ -1,4 +1,4 @@
-import sbtrelease.ReleasePlugin.autoImport.{ ReleaseStep, _ }
+import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 
 lazy val root =
@@ -12,8 +12,9 @@ lazy val root =
     )
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
-def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
-def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+def RuntimeLibPlugins =
+  Sonatype && CrossPerProjectPlugin && PluginsAccessor.exclude(BintrayPlugin)
+def SbtPluginPlugins = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
@@ -27,7 +28,16 @@ lazy val `sbt-relay-compiler` = project
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false
   )
-  .settings(commonSettings)
+  .settings(
+    commonSettings,
+    publishTo := {
+      if (isSnapshot.value) {
+        // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
+        Some(Opts.resolver.sonatypeSnapshots)
+      } else publishTo.value
+    },
+    publishMavenStyle := isSnapshot.value
+  )
 
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
