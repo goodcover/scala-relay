@@ -5,6 +5,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Version {
   final val Scala211 = "2.11.11"
+  final val Scala212 = "2.12.2"
 
   final val SjsReact = "1.0.0"
   final val Scalameta = "1.7.0"
