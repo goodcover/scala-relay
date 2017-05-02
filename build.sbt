@@ -18,6 +18,7 @@ lazy val `sbt-relay-compiler` = project
   .enablePlugins(BintrayPlugin)
   .settings(
     sbtPlugin := true,
+    scalaVersion := Version.Scala210,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
     addSbtPlugin(
       "ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),

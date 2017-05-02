@@ -4,6 +4,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Version {
+  final val Scala210 = "2.10.6"
   final val Scala211 = "2.11.11"
   final val Scala212 = "2.12.2"
 
