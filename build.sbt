@@ -15,9 +15,12 @@ lazy val root =
     .enablePlugins(CrossPerProjectPlugin)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
+def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
+def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
-  .enablePlugins(BintrayPlugin)
+  .enablePlugins(SbtPluginPlugins)
   .settings(commonSettings)
   .settings(
     scalaVersion := Version.Scala210,
@@ -38,12 +41,25 @@ lazy val `sbt-relay-compiler` = project
     publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)
-    }.taskValue
+    }.taskValue,
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      releaseStepCommandAndRemaining("+test"),
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepTask(bintrayRelease in thisProjectRef.value),
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
+    )
   )
 
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
-  .enablePlugins(Sonatype && CrossPerProjectPlugin)
+  .enablePlugins(RuntimeLibPlugins)
   .settings(
     publishMavenStyle := true,
     scalaVersion := Version.Scala211,
