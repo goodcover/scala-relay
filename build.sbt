@@ -9,25 +9,26 @@ lazy val root =
       PgpKeys.publishSigned := {},
       publishLocal := {},
       publishArtifact in Compile := false,
-      publish := {}
+      publish := {},
+      scalaVersion := Version.Scala211
     )
+    .enablePlugins(CrossPerProjectPlugin)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(BintrayPlugin)
+  .settings(commonSettings)
   .settings(
-    sbtPlugin := true,
     scalaVersion := Version.Scala210,
+    crossScalaVersions := Seq(Version.Scala210),
+    sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
     addSbtPlugin(
       "ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
     ScriptedPlugin.scriptedSettings,
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
-    scriptedBufferLog := false
-  )
-  .settings(
-    commonSettings,
+    scriptedBufferLog := false,
     publishTo := {
       if (isSnapshot.value) {
         // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
@@ -43,8 +44,6 @@ lazy val `sbt-relay-compiler` = project
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(Sonatype && CrossPerProjectPlugin)
-  .settings(metaMacroSettings)
-  .settings(commonSettings)
   .settings(
     publishMavenStyle := true,
     scalaVersion := Version.Scala211,
@@ -53,6 +52,8 @@ lazy val `relay-macro` = project
       Library.sangria
     )
   )
+  .settings(metaMacroSettings)
+  .settings(commonSettings)
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   // A dependency on macro paradise 3.x is required to both write and expand
@@ -95,7 +96,6 @@ lazy val releaseSettings = Seq(
 )
 
 lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
-  scalaVersion := Version.Scala211,
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
