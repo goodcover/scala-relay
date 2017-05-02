@@ -22,8 +22,9 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
         }
 
         val doc = QueryParser.parse(gqlStr).getOrElse(abort(s"Failed to parse $gqlStr"))
-        val opName = doc.operations.headOption.flatMap(_._1).getOrElse("Can't determine operation name" +
-          "make sure and give the mutation/query a name")
+        val opName = doc.operations.headOption.flatMap(_._1)
+          .orElse(doc.fragments.headOption.map(_._1))
+          .getOrElse(abort("Can't determine operation name make sure and give the mutation/query a name"))
 
         //
         val sjs = q"_root_.scala.scalajs.js"

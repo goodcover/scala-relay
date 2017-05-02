@@ -27,12 +27,20 @@ object foo extends js.Object
   """)
 object ActorSubscribe extends js.Object
 
+@gql("""
+    fragment Task_foo on Task {
+      title
+    }
+  """)
+object frag extends js.Object
+
 
 object Main extends JSApp {
   def main(): Unit = {
 
     ActorSubscribe
     foo
+    frag
 
     val someFn = () => println("someFn")
   }
