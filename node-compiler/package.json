@@ -8,6 +8,7 @@
     "relay-compiler": "1.0.0-rc.2"
   },
   "bin": {
-    "scala-relay-compiler": "bin/scala-relay-compiler.js"
+    "scala-relay-compiler": "bin/scala-relay-compiler.js",
+    "scala-relay-compiler-stdin": "bin/src-stdin.js"
   }
 }
