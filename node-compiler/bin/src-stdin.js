@@ -180,6 +180,7 @@ function run(options) {
   var data = ""
 
   const schema = path.resolve(process.cwd(), options.schema);
+  const out = path.resolve(process.cwd(), options.out);
 
   process.stdin.setEncoding('utf8');
 
@@ -194,7 +195,7 @@ function run(options) {
     var templated = template(data) 
     console.log(templated)
     templated = data;
-    execute(schema, schema, fauxWriter(), getNewParser([templated]), getFileFilter);
+    execute(out, schema, fauxWriter(), getNewParser([templated]), getFileFilter);
   });
 }
 
@@ -210,6 +211,11 @@ const argv = yargs
   .options({
     'schema': {
       describe: 'Path to schema.graphql',
+      demandOption: true,
+      type: 'string',
+    },
+    'out': {
+      describe: 'Path to dummy out',
       demandOption: true,
       type: 'string',
     }
