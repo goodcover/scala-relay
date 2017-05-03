@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "scala-relay-compiler": "0.1.2"
+  }
+}

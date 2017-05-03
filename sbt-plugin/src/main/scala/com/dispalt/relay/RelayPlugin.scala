@@ -31,9 +31,12 @@ object RelayPlugin extends AutoPlugin {
     val relaySangriaVersion: SettingKey[String] =
       settingKey[String]("Set the Sangria version")
 
-  }
+    val relaySangriaCompilerVersion: SettingKey[String] =
+      settingKey[String]("Set the Sangria version")
 
-  val webpackHelpCompile: TaskKey[Seq[File]] = taskKey[Seq[File]]("do webpack")
+    val relay: TaskKey[String] = taskKey[String]("The relay task")
+
+  }
 
   import autoImport._
 
@@ -48,18 +51,24 @@ object RelayPlugin extends AutoPlugin {
       * Piggy back on sjs bundler to add our compiler to it.
       */
     npmDevDependencies in Compile ++= Seq(
-      "scala-relay-compiler" -> "0.1.1"
+      "scala-relay-compiler" -> relaySangriaCompilerVersion.value
     ),
     /**
       * Set the version of the sangria compiler which helps validate GQL
       */
     relaySangriaVersion := "1.2.0",
     /**
+      *
+      */
+    relaySangriaCompilerVersion := "0.1.3",
+    /**
       * I don't like this at all but I have no idea how to do this otherwise though...
       */
     initialize := {
       val () = sys.props("relay.out") =
         (relayOutput in Compile).value.getAbsolutePath
+      val () = sys.props("relay.node_modules") =
+        (target in relay).value.getAbsolutePath
       val () = sys.props("relay.schema") = relaySchema.value.getAbsolutePath
       initialize.value
     },
@@ -92,6 +101,27 @@ object RelayPlugin extends AutoPlugin {
       val outpath = (relayOutput in Compile).value
       runCompiler(workingDir, sp, source, outpath, logger)
     },
+    target in relay := {
+      val dir = target.value / "relay-compiler"
+      IO.createDirectory(dir)
+      IO.createDirectory(dir / "out")
+      dir
+    },
+    relay := {
+      import sys.process._
+      val v = relaySangriaCompilerVersion.value
+      val cwd = (target in relay).value
+//      IO.createDirectory(cwd)
+      val logger = streams.value.log
+      if (!(cwd / "yarn.lock").exists()) {
+        logger.info(
+          s"Rerunning yarn install scala-relay-compiler, missing this file, ${cwd / "yarn.lock"}")
+        Process(s"yarn add scala-relay-compiler@$v", cwd)
+          .!(ProcessLogger(o => logger.info(o), e => logger.error(e)))
+      }
+      ""
+    },
+    compile in Compile := (compile in Compile).dependsOn(relay).value,
     /**
       * Rewire the webpack task to depend on compiling relay
       */

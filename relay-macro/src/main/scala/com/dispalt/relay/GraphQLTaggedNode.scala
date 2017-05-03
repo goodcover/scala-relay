@@ -3,6 +3,15 @@ package com.dispalt.relay
 import scala.language.implicitConversions
 import scala.scalajs.js
 
+trait GenericGraphQLTaggedNode {
+  val raw: js.Any
+}
+
+object GenericGraphQLTaggedNode {
+  implicit def ggql2jsObj(ggqltn: GenericGraphQLTaggedNode): GraphQLTaggedNode = {
+    ggqltn.raw.asInstanceOf[GraphQLTaggedNode]
+  }
+}
 
 @js.native
 trait GraphQLTaggedNode extends js.Object

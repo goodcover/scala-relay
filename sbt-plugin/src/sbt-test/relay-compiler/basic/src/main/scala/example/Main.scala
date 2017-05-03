@@ -3,7 +3,7 @@ package example
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
-import com.dispalt.relay.gql
+import com.dispalt.relay.{gql, graphql}
 import org.scalajs.dom.document
 
 import scala.scalajs.js.annotation.JSImport
@@ -16,7 +16,6 @@ import scala.scalajs.js.annotation.JSImport
     }
   """)
 object foo extends js.Object
-
 
 @gql("""
     mutation ActorSubscribe($input: ActorSubscribeInput!) {
@@ -34,8 +33,16 @@ object ActorSubscribe extends js.Object
   """)
 object frag extends js.Object
 
-
 object Main extends JSApp {
+
+  @graphql("""
+    fragment Task_foo on Task {
+      title
+    }
+  """)
+  val newFrag: js.Object = js.native
+
+
   def main(): Unit = {
 
     ActorSubscribe

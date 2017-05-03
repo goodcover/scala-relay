@@ -12,6 +12,7 @@ object Version {
   final val Scalameta = "1.7.0"
   final val Scalajs = "0.6.15"
   final val ScalajsBundler = "0.6.0"
+  final val ScalaTest = "3.0.0"
   final val Sangria = "1.2.0"
 }
 
@@ -19,4 +20,5 @@ object Library {
   final val `scalajs-react` = libraryDependencies += "com.github.japgolly.scalajs-react" %%% "core" % Version.SjsReact
   final val scalameta = "org.scalameta" %% "scalameta" % Version.Scalameta
   final val sangria = "org.sangria-graphql" %% "sangria" % Version.Sangria
+  final val scalatest = "org.scalatest" %% "scalatest" % Version.ScalaTest % Test
 }
