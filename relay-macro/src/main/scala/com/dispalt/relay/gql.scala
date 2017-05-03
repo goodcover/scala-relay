@@ -22,6 +22,8 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
         }
 
         val doc = QueryParser.parse(gqlStr).getOrElse(abort(s"Failed to parse $gqlStr"))
+
+        // TODO: Differ between GraphQLTaggedNodes, using the operation type
         val opName = doc.operations.headOption.flatMap(_._1)
           .orElse(doc.fragments.headOption.map(_._1))
           .getOrElse(abort("Can't determine operation name make sure and give the mutation/query a name"))
@@ -34,7 +36,7 @@ class gql(arg: String) extends scala.annotation.StaticAnnotation {
           Annot(Ctor.Name(s"$sjs.native")),
           mod"""@_root_.scala.scalajs.js.annotation.JSImport($str, $sjs.annotation.JSImport.Default)"""
         )
-        q"..$newMods object $name extends _root_.com.dispalt.relay.GqlBase"
+        q"..$newMods object $name extends _root_.com.dispalt.relay.GraphQLTaggedNode"
       case _ =>
         abort("@gql must annotate an object, with a literal.")
     }
