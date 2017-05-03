@@ -2,9 +2,7 @@ name := "basic"
 
 libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.1"
 
-enablePlugins(RelayFilePlugin)
-
-enablePlugins(ScalaJSBundlerPlugin)
+enablePlugins(RelayFilePlugin, ScalaJSBundlerPlugin, RelayPlugin)
 
 scalaVersion := "2.12.2"
 

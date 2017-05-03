@@ -12,39 +12,26 @@ import sbt.inc.Analysis
 
 import scalajsbundler.util.Commands
 
-object RelayPlugin extends AutoPlugin {
+object RelayBasePlugin extends AutoPlugin {
 
-  override def requires = ScalaJSPlugin && ScalaJSBundlerPlugin
+  override def requires = ScalaJSPlugin
 
   override def trigger = noTrigger
 
   object autoImport {
-
     val relaySchema: SettingKey[File] =
       settingKey[File]("Path to schema file")
-
-    val relayOutput: SettingKey[File] =
-      settingKey[File]("Output of the schema stuff")
 
     val relaySangriaVersion: SettingKey[String] =
       settingKey[String]("Set the Sangria version")
 
     val relaySangriaCompilerVersion: SettingKey[String] =
       settingKey[String]("Set the Sangria version")
-
-    val relay: TaskKey[String] = taskKey[String]("The relay task")
-
   }
 
   import autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    /**
-      * Output path of the relay compiler.  Necessary this is an empty directory as it will
-      * delete files it thinks went away.
-      *
-      */
-    relayOutput in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
     /**
       * Set the version of the sangria compiler which helps validate GQL
       */
@@ -54,31 +41,42 @@ object RelayPlugin extends AutoPlugin {
       */
     relaySangriaCompilerVersion := "0.1.3",
     /**
-      * I don't like this at all but I have no idea how to do this otherwise though...
-      */
-    initialize := {
-      val () = sys.props("relay.out") =
-        (relayOutput in Compile).value.getAbsolutePath
-      val () = sys.props("relay.node_modules") =
-        (target in relay).value.getAbsolutePath
-      val () = sys.props("relay.schema") = relaySchema.value.getAbsolutePath
-      initialize.value
-    },
-    /**
-      *
-      * Part of the magic is the interaction this plugin has with the macro.
-      */
-    scalacOptions ++= Seq(
-      s"-Drelay.out=${(relayOutput in Compile).value.getAbsolutePath}",
-      s"-Drelay.schema=${relaySchema.value.getAbsolutePath}"
-    ),
-    /**
       * Runtime dependency on the macro
       */
     libraryDependencies ++= Seq(
       "com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
       "org.sangria-graphql" %% "sangria" % relaySangriaVersion.value % Provided
     ),
+    initialize := {
+      val () = sys.props("relay.schema") = relaySchema.value.getAbsolutePath
+    }
+  )
+}
+
+object RelayPlugin extends AutoPlugin {
+
+  override def requires = RelayBasePlugin && ScalaJSPlugin && ScalaJSBundlerPlugin
+
+  override def trigger = noTrigger
+
+  object autoImport {
+
+    val relay: TaskKey[String] = taskKey[String]("The relay task")
+
+  }
+
+  import autoImport._
+  import RelayBasePlugin.autoImport._
+
+  override lazy val projectSettings: Seq[Setting[_]] = Seq(
+    /**
+      * I don't like this at all but I have no idea how to do this otherwise though...
+      */
+    initialize := {
+      val () = sys.props("relay.node_modules") =
+        (target in relay).value.getAbsolutePath
+      initialize.value
+    },
     target in relay := {
       val dir = target.value / "relay-compiler"
       IO.createDirectory(dir)
@@ -105,7 +103,8 @@ object RelayPlugin extends AutoPlugin {
 }
 
 object RelayFilePlugin extends AutoPlugin {
-  override def requires = ScalaJSPlugin && ScalaJSBundlerPlugin && RelayPlugin
+
+  override def requires = ScalaJSPlugin && ScalaJSBundlerPlugin && RelayBasePlugin
 
   override def trigger = noTrigger
 
@@ -113,9 +112,13 @@ object RelayFilePlugin extends AutoPlugin {
 
     val relayCompile: TaskKey[Unit] = taskKey[Unit]("Run the relay compiler")
 
+    val relayOutput: SettingKey[File] =
+      settingKey[File]("Output of the schema stuff")
+
   }
 
   import RelayPlugin.autoImport._
+  import RelayBasePlugin.autoImport._
   import autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
@@ -125,6 +128,20 @@ object RelayFilePlugin extends AutoPlugin {
     npmDevDependencies in Compile ++= Seq(
       "scala-relay-compiler" -> relaySangriaCompilerVersion.value
     ),
+    /**
+      * Output path of the relay compiler.  Necessary this is an empty directory as it will
+      * delete files it thinks went away.
+      *
+      */
+    relayOutput in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
+    /**
+      * I don't like this at all but I have no idea how to do this otherwise though...
+      */
+    initialize := {
+      val () = sys.props("relay.out") =
+        (relayOutput in Compile).value.getAbsolutePath
+      initialize.value
+    },
     /**
       * Actually compile relay, don't overwrite this.
       */
