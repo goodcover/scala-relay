@@ -51,7 +51,7 @@ function run(options) {
 const argv = yargs
   .usage(
     'Create Relay generated files\n\n' +
-    '$0 --schema <path> --src <path> [--watch]')
+    '$0 --schema <path> --src <path> --out <path>')
   .options({
     'schema': {
       describe: 'Path to schema.graphql',
