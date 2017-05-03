@@ -26,8 +26,6 @@ object RelayPlugin extends AutoPlugin {
     val relayOutput: SettingKey[File] =
       settingKey[File]("Output of the schema stuff")
 
-    val relayCompile: TaskKey[Unit] = taskKey[Unit]("Run the relay compiler")
-
     val relaySangriaVersion: SettingKey[String] =
       settingKey[String]("Set the Sangria version")
 
@@ -47,12 +45,6 @@ object RelayPlugin extends AutoPlugin {
       *
       */
     relayOutput in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
-    /**
-      * Piggy back on sjs bundler to add our compiler to it.
-      */
-    npmDevDependencies in Compile ++= Seq(
-      "scala-relay-compiler" -> relaySangriaCompilerVersion.value
-    ),
     /**
       * Set the version of the sangria compiler which helps validate GQL
       */
@@ -87,6 +79,52 @@ object RelayPlugin extends AutoPlugin {
       "com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
       "org.sangria-graphql" %% "sangria" % relaySangriaVersion.value % Provided
     ),
+    target in relay := {
+      val dir = target.value / "relay-compiler"
+      IO.createDirectory(dir)
+      IO.createDirectory(dir / "out")
+      dir
+    },
+    relay := {
+      import sys.process._
+      val v = relaySangriaCompilerVersion.value
+      val cwd = (target in relay).value
+      val logger = streams.value.log
+
+      if (!(cwd / "yarn.lock").exists()) {
+        logger.info(
+          s"Rerunning yarn install scala-relay-compiler, missing this file, ${cwd / "yarn.lock"}")
+        Process(s"yarn add scala-relay-compiler@$v", cwd)
+          .!!(ProcessLogger(o => logger.info(o), e => logger.error(e)))
+      } else {
+        ""
+      }
+    },
+    compile in Compile := (compile in Compile).dependsOn(relay).value
+  )
+}
+
+object RelayFilePlugin extends AutoPlugin {
+  override def requires = ScalaJSPlugin && ScalaJSBundlerPlugin && RelayPlugin
+
+  override def trigger = noTrigger
+
+  object autoImport {
+
+    val relayCompile: TaskKey[Unit] = taskKey[Unit]("Run the relay compiler")
+
+  }
+
+  import RelayPlugin.autoImport._
+  import autoImport._
+
+  override lazy val projectSettings: Seq[Setting[_]] = Seq(
+    /**
+      * Piggy back on sjs bundler to add our compiler to it.
+      */
+    npmDevDependencies in Compile ++= Seq(
+      "scala-relay-compiler" -> relaySangriaCompilerVersion.value
+    ),
     /**
       * Actually compile relay, don't overwrite this.
       */
@@ -101,27 +139,6 @@ object RelayPlugin extends AutoPlugin {
       val outpath = (relayOutput in Compile).value
       runCompiler(workingDir, sp, source, outpath, logger)
     },
-    target in relay := {
-      val dir = target.value / "relay-compiler"
-      IO.createDirectory(dir)
-      IO.createDirectory(dir / "out")
-      dir
-    },
-    relay := {
-      import sys.process._
-      val v = relaySangriaCompilerVersion.value
-      val cwd = (target in relay).value
-//      IO.createDirectory(cwd)
-      val logger = streams.value.log
-      if (!(cwd / "yarn.lock").exists()) {
-        logger.info(
-          s"Rerunning yarn install scala-relay-compiler, missing this file, ${cwd / "yarn.lock"}")
-        Process(s"yarn add scala-relay-compiler@$v", cwd)
-          .!(ProcessLogger(o => logger.info(o), e => logger.error(e)))
-      }
-      ""
-    },
-    compile in Compile := (compile in Compile).dependsOn(relay).value,
     /**
       * Rewire the webpack task to depend on compiling relay
       */
