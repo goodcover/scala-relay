@@ -3,7 +3,7 @@ package example
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
-import com.dispalt.relay.{gql, graphql}
+import dispalt.relay.{gql}
 import org.scalajs.dom.document
 
 import scala.scalajs.js.annotation.JSImport
@@ -35,16 +35,11 @@ object frag extends js.Object
 
 object Main extends JSApp {
 
-  @graphql("""
-    fragment Task_foo on Task {
-      title
-    }
-  """)
-  val newFrag: js.Object = js.native
-
+  final val test = "./relay-compiler-out/ActorSubscribe.graphql.js"
 
   def main(): Unit = {
 
+    frag2
     ActorSubscribe
     foo
     frag
@@ -52,3 +47,7 @@ object Main extends JSApp {
     val someFn = () => println("someFn")
   }
 }
+
+@js.native
+@JSImport(Main.test, JSImport.Default)
+object frag2 extends js.Object

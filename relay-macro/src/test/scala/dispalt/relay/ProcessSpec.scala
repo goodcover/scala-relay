@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package dispalt.relay
 
 import org.scalatest._
 import sys.process._

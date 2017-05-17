@@ -55,7 +55,8 @@ object RelayBasePlugin extends AutoPlugin {
 
 object RelayPlugin extends AutoPlugin {
 
-  override def requires = RelayBasePlugin && ScalaJSPlugin && ScalaJSBundlerPlugin
+  override def requires =
+    RelayBasePlugin && ScalaJSPlugin && ScalaJSBundlerPlugin
 
   override def trigger = noTrigger
 
@@ -104,7 +105,8 @@ object RelayPlugin extends AutoPlugin {
 
 object RelayFilePlugin extends AutoPlugin {
 
-  override def requires = ScalaJSPlugin && ScalaJSBundlerPlugin && RelayBasePlugin
+  override def requires =
+    ScalaJSPlugin && ScalaJSBundlerPlugin && RelayBasePlugin
 
   override def trigger = noTrigger
 
@@ -132,16 +134,31 @@ object RelayFilePlugin extends AutoPlugin {
       * Output path of the relay compiler.  Necessary this is an empty directory as it will
       * delete files it thinks went away.
       *
+      * **YOU CANNNOT CHANGE THIS SETTING, UNTIL I FIGURE OUT HOW TO PASS SETTINGS TO META GQL**
+      *
       */
     relayOutput in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
     /**
       * I don't like this at all but I have no idea how to do this otherwise though...
+      *
+      * Maybe when this is done, it will work https://github.com/scalameta/scalameta/issues/840
       */
-    initialize := {
-      val () = sys.props("relay.out") =
-        (relayOutput in Compile).value.getAbsolutePath
-      initialize.value
+    compile in Compile := {
+      (compile in Compile)
+        .dependsOn(Def.task[Unit] {
+          System.setProperty("relay.out",
+                             (relayOutput in Compile).value.getAbsolutePath)
+          System.setProperty("relay.schema", relaySchema.value.getAbsolutePath)
+        })
+        .value
     },
+    /**
+      * This is used to pass some settings down to a macro, through a old style macro.
+      */
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:relay.schema=${relaySchema.value.absolutePath}",
+      s"-Xmacro-settings:relay.out=${(relayOutput in Compile).value.absolutePath}"
+    ),
     /**
       * Actually compile relay, don't overwrite this.
       */

@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package dispalt.relay
 
 import scala.language.implicitConversions
 import scala.scalajs.js
