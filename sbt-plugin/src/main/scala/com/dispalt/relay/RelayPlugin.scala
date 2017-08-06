@@ -73,6 +73,8 @@ object RelayFilePlugin extends AutoPlugin {
   import RelayBasePlugin.autoImport._
   import autoImport._
 
+  val relayFolder = "relay-compiler-out"
+
   override lazy val projectSettings: Seq[Setting[_]] = Seq(
     /**
       * Piggy back on sjs bundler to add our compiler to it.
@@ -87,7 +89,7 @@ object RelayFilePlugin extends AutoPlugin {
       * **YOU CANNNOT CHANGE THIS SETTING, UNTIL I FIGURE OUT HOW TO PASS SETTINGS TO META GQL**
       *
       */
-    relayOutput in Compile := (crossTarget in npmUpdate in Compile).value / "relay-compiler-out",
+    relayOutput in Compile := (resourceDirectory in Compile).value / relayFolder,
     /**
       * I don't like this at all but I have no idea how to do this otherwise though...
       *
@@ -122,6 +124,7 @@ object RelayFilePlugin extends AutoPlugin {
       val source = sourceDirectory.value
       val outpath = (relayOutput in Compile).value
       runCompiler(workingDir, sp, source, outpath, logger)
+      IO.copyDirectory(outpath, (crossTarget in npmUpdate in Compile).value / relayFolder)
     },
     /**
       * Rewire the webpack task to depend on compiling relay
@@ -135,7 +138,7 @@ object RelayFilePlugin extends AutoPlugin {
                   schemaPath: File,
                   sourceDirectory: File,
                   outputPath: File,
-                  logger: Logger) = {
+                  logger: Logger): Unit = {
 
     Commands.run(
       Seq(

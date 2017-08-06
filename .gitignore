@@ -5,3 +5,4 @@ out/
 target/
 .ensime
 .ensime_cache/
+.idea/

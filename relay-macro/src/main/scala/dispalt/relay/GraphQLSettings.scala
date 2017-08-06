@@ -4,21 +4,24 @@ package dispalt.relay
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
+case class GraphQLSettings(schema: String, out: String)
+
 /**
   * The idea was to use an old macro to spit out a string literal (the settings) and
   * then use another new inline macro to use that to then generate
   */
 object GraphQLSettings {
 
-  private final val relaySchemaPrefix = "relay.schema="
-  private final val relayOutPrefix = "relay.out="
+  final val relaySchemaPrefix = "relay.schema="
+  final val relayOutPrefix = "relay.out="
 
-  def apply(prefix: String, name: String): String = macro macroImpl
 
-  def macroImpl(c: blackbox.Context)(prefix: c.Expr[String], name: c.Expr[String]): c.Tree = {
+  implicit def materialize: GraphQLSettings = macro macroImpl
+
+  def macroImpl(c: blackbox.Context): c.Tree = {
     import c.universe._
 
-    val q"${Literal(Constant(pref: String))}" = prefix.tree
+//    val q"${Literal(Constant(pref: String))}" = prefix.tree
 
     def getSetting(prefix: String): String = {
       c.settings
@@ -31,8 +34,11 @@ object GraphQLSettings {
         )
     }
 
-    val out = getSetting(pref)
+    val out = getSetting(relayOutPrefix)
+    val schema = getSetting(relaySchemaPrefix)
 
-    Literal(Constant(out))
+    q"""
+       dispalt.relay.GraphQLSettings($schema, $out)
+     """
   }
 }
