@@ -9,7 +9,7 @@ import org.scalajs.dom.document
 import scala.scalajs.js.annotation.JSImport
 
 @gql("""
-    query ExampleQuery($pageID: ID!) {
+    query ExampleQuery {
       defaultSettings {
         notificationSounds
       }

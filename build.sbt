@@ -82,7 +82,7 @@ lazy val metaMacroSettings: Seq[Def.Setting[_]] = Seq(
   // new-style macros.  This is similar to how it works for old-style macro
   // annotations and a dependency on macro paradise 2.x.
   addCompilerPlugin(
-    "org.scalameta" % "paradise" % "3.0.0-M8" cross CrossVersion.full),
+    "org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   libraryDependencies += Library.scalameta,
   // temporary workaround for https://github.com/scalameta/paradise/issues/10

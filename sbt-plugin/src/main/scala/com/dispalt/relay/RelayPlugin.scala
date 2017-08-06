@@ -39,7 +39,7 @@ object RelayBasePlugin extends AutoPlugin {
     /**
       *
       */
-    relaySangriaCompilerVersion := "0.1.3",
+    relaySangriaCompilerVersion := "0.2.0",
     /**
       * Runtime dependency on the macro
       */
@@ -53,55 +53,6 @@ object RelayBasePlugin extends AutoPlugin {
   )
 }
 
-object RelayPlugin extends AutoPlugin {
-
-  override def requires =
-    RelayBasePlugin && ScalaJSPlugin && ScalaJSBundlerPlugin
-
-  override def trigger = noTrigger
-
-  object autoImport {
-
-    val relay: TaskKey[String] = taskKey[String]("The relay task")
-
-  }
-
-  import autoImport._
-  import RelayBasePlugin.autoImport._
-
-  override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    /**
-      * I don't like this at all but I have no idea how to do this otherwise though...
-      */
-    initialize := {
-      val () = sys.props("relay.node_modules") =
-        (target in relay).value.getAbsolutePath
-      initialize.value
-    },
-    target in relay := {
-      val dir = target.value / "relay-compiler"
-      IO.createDirectory(dir)
-      IO.createDirectory(dir / "out")
-      dir
-    },
-    relay := {
-      import sys.process._
-      val v = relaySangriaCompilerVersion.value
-      val cwd = (target in relay).value
-      val logger = streams.value.log
-
-      if (!(cwd / "yarn.lock").exists()) {
-        logger.info(
-          s"Rerunning yarn install scala-relay-compiler, missing this file, ${cwd / "yarn.lock"}")
-        Process(s"yarn add scala-relay-compiler@$v", cwd)
-          .!!(ProcessLogger(o => logger.info(o), e => logger.error(e)))
-      } else {
-        ""
-      }
-    },
-    compile in Compile := (compile in Compile).dependsOn(relay).value
-  )
-}
 
 object RelayFilePlugin extends AutoPlugin {
 
@@ -119,7 +70,6 @@ object RelayFilePlugin extends AutoPlugin {
 
   }
 
-  import RelayPlugin.autoImport._
   import RelayBasePlugin.autoImport._
   import autoImport._
 

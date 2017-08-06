@@ -6,13 +6,13 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 object Version {
   final val Scala210 = "2.10.6"
   final val Scala211 = "2.11.11"
-  final val Scala212 = "2.12.2"
+  final val Scala212 = "2.12.3"
 
-  final val SjsReact = "1.0.0"
-  final val Scalameta = "1.7.0"
-  final val Scalajs = "0.6.15"
-  final val ScalajsBundler = "0.6.0"
-  final val ScalaTest = "3.0.0"
+  final val SjsReact = "1.1.0"
+  final val Scalameta = "1.8.0"
+  final val Scalajs = "0.6.19"
+  final val ScalajsBundler = "0.7.0"
+  final val ScalaTest = "3.0.2"
   final val Sangria = "1.2.0"
 }
 
