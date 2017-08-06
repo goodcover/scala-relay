@@ -5,7 +5,9 @@ const invariant = require('invariant');
 
 const ASTConvert = require('relay-compiler/lib/ASTConvert');
 
+const formatGeneratedModule = require('relay-compiler/lib/formatGeneratedModule');
 const RelayCodegenRunner = require('relay-compiler').Runner;
+const RelayConsoleReporter = require('relay-compiler').ConsoleReporter;
 const RelayFileIRParser = require('relay-compiler').FileIRParser;
 const RelayFileWriter = require('relay-compiler').FileWriter;
 const RelayIRTransforms = require('relay-compiler').IRTransforms;
@@ -20,7 +22,7 @@ const {
   fragmentTransforms,
   printTransforms,
   queryTransforms,
-  schemaTransforms,
+  schemaExtensions,
 } = RelayIRTransforms;
 
 const SCRIPT_NAME = 'relay-compiler';
@@ -40,7 +42,6 @@ function getSchema(schemaPath) {
     source = `
   directive @include(if: Boolean) on FRAGMENT | FIELD
   directive @skip(if: Boolean) on FRAGMENT | FIELD
-  directive @relay(pattern: Boolean, plural: Boolean) on FRAGMENT | FIELD
   ${source}
   `;
     return buildASTSchema(parse(source));
@@ -60,7 +61,7 @@ function getRelayFileWriter(baseDir, outputDir) {
   return (onlyValidate, schema, documents, baseDocuments) => new RelayFileWriter({
     config: {
       outputDir,
-      buildCommand: SCRIPT_NAME,
+      formatModule: formatGeneratedModule,
       compilerTransforms: {
         codegenTransforms,
         fragmentTransforms,
@@ -68,7 +69,7 @@ function getRelayFileWriter(baseDir, outputDir) {
         queryTransforms,
       },
       baseDir,
-      schemaTransforms,
+      schemaExtensions,
     },
     onlyValidate,
     schema,
@@ -91,13 +92,16 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter) {
     default: {
       getWriter: writer,
       parser: 'default',
+      isGeneratedFile: (filePath) => true
     },
   };
+  const reporter = new RelayConsoleReporter({verbose: true});
+
   const codegenRunner = new RelayCodegenRunner({
+    reporter,
     parserConfigs,
     writerConfigs,
-    onlyValidate: false,
-    skipPersist: false,
+    onlyValidate: false
   });
 
   codegenRunner.compileAll().then(

@@ -8,9 +8,8 @@ const path = require('path');
 /*
   Parse the file scala style but just use regex =(
 */
-function parseFile(file) {
-  const text = fs.readFileSync(file, 'utf8');
-  const moduleName = path.basename(file, '.scala');
+function parseFile(baseDir, file) {
+  const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
 
   invariant(
     text.indexOf('@gql') >= 0,
@@ -51,8 +50,8 @@ function getParser(baseDir) {
 }
 
 function getFileFilter(baseDir) {
-  return (filename) => {
-    const text = fs.readFileSync(path.join(baseDir, filename), 'utf8');
+  return (file) => {
+    const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
     return text.indexOf('@gql') >= 0;
   };
 }
