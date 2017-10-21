@@ -1,22 +1,27 @@
+require('babel-polyfill');
+
+const {
+  CodegenRunner,
+  ConsoleReporter,
+  WatchmanClient,
+} = require('relay-compiler/lib/GraphQLCompilerPublic');
+
+const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
+const RelayFileWriter = require('relay-compiler/lib/RelayFileWriter');
+const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
+
+const formatGeneratedModule = require('relay-compiler/lib/formatGeneratedModule');
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs');
-const invariant = require('invariant');
 
-const ASTConvert = require('relay-compiler/lib/ASTConvert');
+const {
+  buildASTSchema,
+  buildClientSchema,
+  parse,
+  printSchema,
+} = require('graphql');
 
-const formatGeneratedModule = require('relay-compiler/lib/formatGeneratedModule');
-const RelayCodegenRunner = require('relay-compiler').Runner;
-const RelayConsoleReporter = require('relay-compiler').ConsoleReporter;
-const RelayFileIRParser = require('relay-compiler').FileIRParser;
-const RelayFileWriter = require('relay-compiler').FileWriter;
-const RelayIRTransforms = require('relay-compiler').IRTransforms;
-const RelayValidator = require('relay-compiler/lib/RelayValidator');
-const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
-const RelayCompilerContext = require('relay-compiler/lib/RelayCompilerContext');
-const FileParser = require('relay-compiler/lib/FileParser');
-
-const { buildASTSchema, parse } = require('graphql');
 const {
   codegenTransforms,
   fragmentTransforms,
@@ -60,16 +65,17 @@ function getRelayFileWriter(baseDir, outputDir) {
   // };
   return (onlyValidate, schema, documents, baseDocuments) => new RelayFileWriter({
     config: {
-      outputDir,
-      formatModule: formatGeneratedModule,
+      baseDir,
       compilerTransforms: {
         codegenTransforms,
         fragmentTransforms,
         printTransforms,
         queryTransforms,
       },
-      baseDir,
+      outputDir,
+      formatModule: formatGeneratedModule,
       schemaExtensions,
+      useHaste: false,
     },
     onlyValidate,
     schema,
@@ -78,14 +84,17 @@ function getRelayFileWriter(baseDir, outputDir) {
   });
 }
 
-function compileAll(srcDir, schemaPath, writer, parser, fileFilter) {
+
+
+function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepathsFromGlob) {
   const parserConfigs = {
     default: {
       baseDir: srcDir,
       getFileFilter: fileFilter,
       getParser: parser,
       getSchema: () => getSchema(schemaPath),
-      watchmanExpression: WATCH_EXPRESSION,
+      watchmanExpression: null,
+      filepaths: getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]})
     },
   };
   const writerConfigs = {
@@ -95,9 +104,9 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter) {
       isGeneratedFile: (filePath) => true
     },
   };
-  const reporter = new RelayConsoleReporter({verbose: true});
+  const reporter = new ConsoleReporter({verbose: true});
 
-  const codegenRunner = new RelayCodegenRunner({
+  const codegenRunner = new CodegenRunner({
     reporter,
     parserConfigs,
     writerConfigs,

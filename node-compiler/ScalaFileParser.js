@@ -1,9 +1,11 @@
-const FileParser = require('relay-compiler/lib/FileParser');
+const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
 const GraphQL = require('graphql');
 
 const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
+
+const {ASTCache} = require('relay-compiler/lib/GraphQLCompilerPublic');
 
 /*
   Parse the file scala style but just use regex =(
@@ -18,7 +20,7 @@ function parseFile(baseDir, file) {
     file
   )
 
-  var regex = /@gql\("""([\s\S]*?)"""\)/g;
+  var regex = /@gql\([\s\S]*?""?"?([\s\S]*?)""?"?[\s\S]*\)/g;
 
   const astDefinitions = [];
 
@@ -43,7 +45,7 @@ function parseFile(baseDir, file) {
 }
 
 function getParser(baseDir) {
-  return new FileParser({
+  return new ASTCache({
     baseDir,
     parse: parseFile,
   });
@@ -56,7 +58,24 @@ function getFileFilter(baseDir) {
   };
 }
 
+function getFilepathsFromGlob(
+  baseDir,
+  options
+) {
+  const {extensions, include, exclude} = options;
+  const patterns = include.map(inc => `${inc}/*.+(${extensions.join('|')})`);
+
+  const glob = require('fast-glob');
+  return glob.sync(patterns, {
+    cwd: baseDir,
+    bashNative: [],
+    onlyFiles: true,
+    ignore: exclude,
+  });
+}
+
 module.exports = {
   getParser,
   getFileFilter,
+  getFilepathsFromGlob
 };

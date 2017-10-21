@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
-const ASTConvert = require('relay-compiler/lib/ASTConvert');
+require('babel-polyfill');
 
-const RelayCodegenRunner = require('relay-compiler').Runner;
-const RelayFileIRParser = require('relay-compiler').FileIRParser;
-const RelayFileWriter = require('relay-compiler').FileWriter;
-const RelayIRTransforms = require('relay-compiler').IRTransforms;
-const RelayValidator = require('relay-compiler/lib/RelayValidator');
-const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
-const RelayCompilerContext = require('relay-compiler/lib/RelayCompilerContext');
-const FileParser = require('relay-compiler/lib/FileParser');
+const {
+  CodegenRunner,
+  ConsoleReporter,
+  WatchmanClient,
+} = require('relay-compiler/lib/GraphQLCompilerPublic');
 
-const rfp = require("relay-compiler/lib/RelayFlowParser");
+const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
+const RelayFileWriter = require('relay-compiler/lib/RelayFileWriter');
+const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
+
 const GraphQL = require('graphql');
 
 const fs = require('fs');
@@ -21,7 +21,12 @@ const invariant = require('invariant');
 
 const { Map: ImmutableMap } = require('immutable');
 
-const { buildASTSchema, parse } = require('graphql');
+const {
+  buildASTSchema,
+  buildClientSchema,
+  parse,
+  printSchema,
+} = require('graphql');
 const {
   codegenTransforms,
   fragmentTransforms,
@@ -45,7 +50,8 @@ function run(options) {
     schema,
     Utils.getRelayFileWriter(src, out), 
     ScalaFileParser.getParser, 
-    ScalaFileParser.getFileFilter);
+    ScalaFileParser.getFileFilter,
+    ScalaFileParser.getFilepathsFromGlob);
 }
 
 const argv = yargs
