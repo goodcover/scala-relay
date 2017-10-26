@@ -1,5 +1,5 @@
 To run
 
 ```scala
-$ ./bin/scala-relay-compiler.js --src src/ --schema example/schema.graphql --out out/
+$ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graphql --out example/out/
 ```

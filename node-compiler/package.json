@@ -11,5 +11,14 @@
   "bin": {
     "scala-relay-compiler": "bin/scala-relay-compiler.js",
     "scala-relay-compiler-stdin": "bin/src-stdin.js"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-flow": "^6.23.0",
+    "flow-bin": "^0.57.3"
+  },
+  "scripts": {
+    "build": "babel src/ -d lib/",
+    "prepublish": "yarn run build"
   }
 }

@@ -9,7 +9,6 @@ const {
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
 
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
-const RelayFileWriter = require('relay-compiler/lib/RelayFileWriter');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
 
 const GraphQL = require('graphql');
@@ -36,9 +35,8 @@ const {
 } = RelayIRTransforms;
 
 
-const ScalaFileParser = require('../ScalaFileParser');
-const ConsoleUtils = require('../ConsoleUtils');
-const Utils = require('../Utils');
+const ScalaFileParser = require('../lib/ScalaFileParser');
+const Utils = require('../lib/Utils');
 
 
 function run(options) {
@@ -48,7 +46,7 @@ function run(options) {
 
   Utils.compileAll(src, 
     schema,
-    Utils.getRelayFileWriter(src, out), 
+    Utils.getScalaFileWriter(src, out), 
     ScalaFileParser.getParser, 
     ScalaFileParser.getFileFilter,
     ScalaFileParser.getFilepathsFromGlob);

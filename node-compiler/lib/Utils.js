@@ -3,11 +3,11 @@ require('babel-polyfill');
 const {
   CodegenRunner,
   ConsoleReporter,
-  WatchmanClient,
+  WatchmanClient
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
 
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
-const RelayFileWriter = require('relay-compiler/lib/RelayFileWriter');
+const ScalaFileWriter = require('./codegen/ScalaFileWriter');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
 
 const formatGeneratedModule = require('relay-compiler/lib/formatGeneratedModule');
@@ -19,7 +19,7 @@ const {
   buildASTSchema,
   buildClientSchema,
   parse,
-  printSchema,
+  printSchema
 } = require('graphql');
 
 const {
@@ -27,19 +27,12 @@ const {
   fragmentTransforms,
   printTransforms,
   queryTransforms,
-  schemaExtensions,
+  schemaExtensions
 } = RelayIRTransforms;
 
 const SCRIPT_NAME = 'relay-compiler';
 
-const WATCH_EXPRESSION = [
-  'allof',
-  ['type', 'f'],
-  ['suffix', 'scala'],
-  ['not', ['match', '**/__mocks__/**', 'wholename']],
-  ['not', ['match', '**/__tests__/**', 'wholename']],
-  ['not', ['match', '**/__generated__/**', 'wholename']],
-];
+const WATCH_EXPRESSION = ['allof', ['type', 'f'], ['suffix', 'scala'], ['not', ['match', '**/__mocks__/**', 'wholename']], ['not', ['match', '**/__tests__/**', 'wholename']], ['not', ['match', '**/__generated__/**', 'wholename']]];
 
 function getSchema(schemaPath) {
   try {
@@ -59,32 +52,30 @@ ${error.stack}
   }
 }
 
-function getRelayFileWriter(baseDir, outputDir) {
+function getScalaFileWriter(baseDir, outputDir) {
   // return (onlyValidate, schema, documents, baseDocuments) => {
   //   console.log(onlyValidate, schema, documents, baseDocuments);
   // };
-  return (onlyValidate, schema, documents, baseDocuments) => new RelayFileWriter({
+  return (onlyValidate, schema, documents, baseDocuments) => new ScalaFileWriter({
     config: {
       baseDir,
       compilerTransforms: {
         codegenTransforms,
         fragmentTransforms,
         printTransforms,
-        queryTransforms,
+        queryTransforms
       },
       outputDir,
       formatModule: formatGeneratedModule,
       schemaExtensions,
-      useHaste: false,
+      useHaste: false
     },
     onlyValidate,
     schema,
     baseDocuments,
-    documents,
+    documents
   });
 }
-
-
 
 function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepathsFromGlob) {
   const parserConfigs = {
@@ -94,17 +85,17 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepaths
       getParser: parser,
       getSchema: () => getSchema(schemaPath),
       watchmanExpression: null,
-      filepaths: getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]})
-    },
+      filepaths: getFilepathsFromGlob(srcDir, { include: ["**"], extensions: ["scala"] })
+    }
   };
   const writerConfigs = {
     default: {
       getWriter: writer,
       parser: 'default',
-      isGeneratedFile: (filePath) => true
-    },
+      isGeneratedFile: filePath => true
+    }
   };
-  const reporter = new ConsoleReporter({verbose: true});
+  const reporter = new ConsoleReporter({ verbose: true });
 
   const codegenRunner = new CodegenRunner({
     reporter,
@@ -113,20 +104,16 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepaths
     onlyValidate: false
   });
 
-  codegenRunner.compileAll().then(
-    () => process.exit(0),
-    error => {
-      console.error(String(error.stack || error));
-      process.exit(1);
-    });
+  codegenRunner.compileAll().then(() => process.exit(0), error => {
+    console.error(String(error.stack || error));
+    process.exit(1);
+  });
 }
-
-
 
 module.exports = {
   getSchema,
-  getRelayFileWriter,
+  getScalaFileWriter,
   WATCH_EXPRESSION,
   SCRIPT_NAME,
   compileAll
-}
+};
