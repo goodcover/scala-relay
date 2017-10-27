@@ -54,8 +54,18 @@ export class ScalaGen {
     this._curClass = [];
   }
 
-  newClass(s: string) {
-    this._curClass.unshift(s);
+  newClass(s: string, n: ?number) {
+    let newCls = s
+    if (n) {
+      newCls = `${newCls}_${n}`
+    }
+    const result = this._curClass.find(cls => cls == newCls)
+    if (result) {
+      const num = n ? n + 1 : 1;
+      this.newClass(s, num)
+    } else {
+      this._curClass.unshift(s);
+    }
   }
 
   popClass(): string {
@@ -99,10 +109,14 @@ export class ScalaGen {
     this.print(`${this.jsPrefix()}.Dictionary[${this.jsPrefix()}.Any]`)
   }
 
-  valDef(name: string, tpe: string) {
+  valDefName(name: string) {
     this.print("val");
     this.print(name);
     this.print(":");
+  }
+
+  valDef(name: string, tpe: string) {
+    this.valDefName(name);
     this.print(tpe);
     this.ret();
   }
@@ -125,49 +139,64 @@ export class ScalaGen {
 
   transformNonNullableScalarType(
     type: GraphQLType,
-  ): string {
+    backupType: ?string,
+  ): void {
     if (type instanceof GraphQLList) {
-      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+      // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+      this.print("js.Array[")
+      this.transformScalarType(type.ofType, backupType);
+      this.print("]");
+      return;
     } else if (
       type instanceof GraphQLObjectType ||
       type instanceof GraphQLUnionType ||
       type instanceof GraphQLInterfaceType
     ) {
-      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+      // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+      if (!backupType) {
+        throw new Error(`Could not convert from GraphQL type ${type.toString()}, missing backup type`);
+      }
+      this.print(backupType);
     } else if (type instanceof GraphQLScalarType) {
-      return this.transformGraphQLScalarType(type);
+      return this.transformGraphQLScalarType(type, backupType);
     } else if (type instanceof GraphQLEnumType) {
       // TODO: String for now.
-      return "String";
+      return this.print("String");
     } else {
       throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
     }
   }
 
-  transformNonNullableScalarType(type: GraphQLScalarType): string {
+  transformGraphQLScalarType(type: GraphQLScalarType, backupType: ?string): void {
     switch (type.name) {
       case 'ID':
       case 'String':
       case 'Url':
-        return "String";
+        return this.print("String");
+        
       case 'Float':
       case 'Int':
-        return "Double";
+        return this.print("Double");
       case 'Boolean':
-        return "Boolean";
+        return this.print("Boolean");
       default:
-        return `${this.jsPrefix()}.Any`;
+        if (backupType) {
+          this.print(backupType);
+        } else {
+          this.print(`${this.jsPrefix()}.Any`);
+        }
     }
   }
 
   transformScalarType(
     type: GraphQLType,
+    backupType: ?string,
   ) {
     if (type instanceof GraphQLNonNull) {
-      return this.transformNonNullableScalarType(type.ofType);
+      return this.transformNonNullableScalarType(type.ofType, backupType);
     } else {
       // $FlowFixMe
-      return this.transformNonNullableScalarType(type);
+      return this.transformNonNullableScalarType(type, backupType);
     }
   }
   
@@ -175,43 +204,54 @@ export class ScalaGen {
     switch (a.kind) {
       case "ScalarField":
         const csf: ConcreteScalarField = a;
-        let tpe: string = "";
+        this.valDefName(csf.name);
         if (csf.type) {
           let required = false;
           // $FlowFixMe
-          tpe = this.transformScalarType((csf.type: GraphQLType));
+          this.transformScalarType((csf.type: GraphQLType));
         } else {
-          tpe = `${this.jsPrefix()}.Any`;
+          `${this.jsPrefix()}.Any`;
         }
-        this.valDef(csf.name, tpe);
+        this.ret();
         break;
+
       case "LinkedField":
         const clf: ConcreteLinkedField = a;
         const onlyClasses = clf.selections.every((s) => s.kind === "FragmentSpread");
         const onlyMembers = clf.selections.every((s) => s.kind === "ScalarField");
-        if (onlyClasses) {
-          // $FlowFixMe
-          const clss: Array<string> = clf.selections.map((s) => (s.name: string));
-          const tpe = clss.join(" with ");
-          this.valDef(clf.name, tpe);
-        } else {
-          const newCls = parent.name + this.titleCase(clf.name);
-          
-          // Get all the mixed in Fragments to Inherit from.
-          const parentTpe: Array<string> = clf
-            .selections
-            .filter((s) => s.kind === "FragmentSpread")
-             // $FlowFixMe
-            .map((s) => (s.name: string));
+        
+        {
+          let tpe: string;
 
-          const tpe = parentTpe.join(" with ");
-          this.newClass(newCls);
-          // create a new class here.
-          this.traitDefOpen(tpe);
-          clf.selections.filter((s) => s.kind !== "FragmentSpread").map((s) => this.runSelection(parent, s));
-          this.closeB();
-          this.popClass();
-          this.valDef(clf.name, newCls);
+          if (onlyClasses) {
+            // $FlowFixMe
+            const clss: Array<string> = clf.selections.map((s) => (s.name: string));
+            tpe = clss.join(" with ");
+            
+          } else {
+            // We're going to have to make a new class, this is the name.
+            tpe = parent.name + this.titleCase(clf.name);
+            this.newClass(tpe);
+
+            // Get all the mixed in Fragments to Inherit from.
+            const parentTpe: Array<string> = clf
+              .selections
+              .filter((s) => s.kind === "FragmentSpread")
+              // $FlowFixMe
+              .map((s) => (s.name: string));
+
+            const newParentTpe = parentTpe.join(" with ");
+            // create a new class here.
+            this.traitDefOpen(newParentTpe);
+            clf.selections.filter((s) => s.kind !== "FragmentSpread").map((s) => this.runSelection(parent, s));
+            this.closeB();
+            // Completed that class
+            this.popClass();
+          }
+
+          this.valDefName(clf.name);
+          this.transformScalarType(clf.type, tpe);
+          this.ret();
         }
         break;
 
