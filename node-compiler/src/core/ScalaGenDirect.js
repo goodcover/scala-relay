@@ -67,7 +67,7 @@ function generate(
   const code = babelGenerator(ast).code;
   const scala = new ScalaGen(node);
   
-  // console.log(JSON.stringify(node, null, 2));
+  console.log(JSON.stringify(node, null, 2));
   // console.log(code);
   scala.start();
   const result = scala.out();

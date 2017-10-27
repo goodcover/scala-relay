@@ -26,6 +26,19 @@ import type {
 } from 'react-relay';
 
 const {
+  GraphQLEnumType,
+  GraphQLInputType,
+  GraphQLInputObjectType,
+  GraphQLInterfaceType,
+  GraphQLList,
+  GraphQLNonNull,
+  GraphQLObjectType,
+  GraphQLScalarType,
+  GraphQLType,
+  GraphQLUnionType,
+} = require('graphql');
+
+const {
   SchemaUtils,
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
 
@@ -109,6 +122,54 @@ export class ScalaGen {
   titleCase(s: string): string {
     return s.charAt(0).toUpperCase() + s.substr(1);
   }
+
+  transformNonNullableScalarType(
+    type: GraphQLType,
+  ): string {
+    if (type instanceof GraphQLList) {
+      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+    } else if (
+      type instanceof GraphQLObjectType ||
+      type instanceof GraphQLUnionType ||
+      type instanceof GraphQLInterfaceType
+    ) {
+      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+    } else if (type instanceof GraphQLScalarType) {
+      return this.transformGraphQLScalarType(type);
+    } else if (type instanceof GraphQLEnumType) {
+      // TODO: String for now.
+      return "String";
+    } else {
+      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+    }
+  }
+
+  transformNonNullableScalarType(type: GraphQLScalarType): string {
+    switch (type.name) {
+      case 'ID':
+      case 'String':
+      case 'Url':
+        return "String";
+      case 'Float':
+      case 'Int':
+        return "Double";
+      case 'Boolean':
+        return "Boolean";
+      default:
+        return `${this.jsPrefix()}.Any`;
+    }
+  }
+
+  transformScalarType(
+    type: GraphQLType,
+  ) {
+    if (type instanceof GraphQLNonNull) {
+      return this.transformNonNullableScalarType(type.ofType);
+    } else {
+      // $FlowFixMe
+      return this.transformNonNullableScalarType(type);
+    }
+  }
   
   runSelection(parent: ConcreteFragment | ConcreteRoot, a: ConcreteSelection) {
     switch (a.kind) {
@@ -118,11 +179,7 @@ export class ScalaGen {
         if (csf.type) {
           let required = false;
           // $FlowFixMe
-          tpe = (csf.type.toString(): string);
-          if (tpe.substr(-1) === "!") {
-            tpe = tpe.slice(0, -1);
-            required = true;
-          }
+          tpe = this.transformScalarType((csf.type: GraphQLType));
         } else {
           tpe = `${this.jsPrefix()}.Any`;
         }
