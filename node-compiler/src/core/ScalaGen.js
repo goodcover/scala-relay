@@ -54,7 +54,7 @@ export class ScalaGen {
     this._curClass = [];
   }
 
-  newClass(s: string, n: ?number) {
+  newClass(s: string, n: ?number): string {
     let newCls = s
     if (n) {
       newCls = `${newCls}_${n}`
@@ -62,9 +62,10 @@ export class ScalaGen {
     const result = this._curClass.find(cls => cls == newCls)
     if (result) {
       const num = n ? n + 1 : 1;
-      this.newClass(s, num)
+      return this.newClass(s, num);
     } else {
-      this._curClass.unshift(s);
+      this._curClass.unshift(newCls);
+      return newCls;
     }
   }
 
@@ -232,8 +233,7 @@ export class ScalaGen {
             
           } else {
             // We're going to have to make a new class, this is the name.
-            tpe = parent.name + this.titleCase(clf.name);
-            this.newClass(tpe);
+            tpe = this.newClass(parent.name + this.titleCase(clf.name));
 
             // Get all the mixed in Fragments to Inherit from.
             const parentTpe: Array<string> = clf
