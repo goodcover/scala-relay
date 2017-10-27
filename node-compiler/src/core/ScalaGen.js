@@ -170,10 +170,16 @@ export class ScalaGen {
         const p: ConcreteFragment = a;
         this.newClass(p.name);
         this.traitDefOpen();
-        a.selections.map((s) => this.runSelection(a, s));
+        p.selections.map((s) => this.runSelection(a, s));
         this.closeB();
 
         break;
+      case 'Root':
+        const r: ConcreteRoot = a;
+        this.newClass(r.name);
+        this.traitDefOpen();
+        r.selections.map((s) => this.runSelection(a, s));
+        this.closeB();
       // case "ExportNamedDeclaration":
       //   const end: ExportNamedDeclaration = a;
 
