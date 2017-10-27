@@ -176,6 +176,8 @@ export class ScalaGen {
         
       case 'Float':
       case 'Int':
+      case 'BigDecimal':
+      case 'BigInt':
         return this.print("Double");
       case 'Boolean':
         return this.print("Boolean");
