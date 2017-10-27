@@ -10,9 +10,10 @@ const {
 
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
 const ScalaFileWriter = require('./codegen/ScalaFileWriter');
+const {FileWriter} = require('relay-compiler');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
 
-const formatGeneratedModule = require('relay-compiler/lib/formatGeneratedModule');
+const formatGeneratedModule  = require('./codegen/formatScalaModule');
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs');
@@ -62,13 +63,12 @@ ${error.stack}
 }
 
 function getScalaFileWriter(baseDir: string, outputDir: string) {
-  // return (onlyValidate, schema, documents, baseDocuments) => {
-  //   console.log(onlyValidate, schema, documents, baseDocuments);
-  // };
-  return (onlyValidate, schema, documents, baseDocuments) => 
-  new ScalaFileWriter({
+  // $FlowFixMe
+  return (onlyValidate, schema, documents, baseDocuments) =>
+  // $FlowFixMe
+  new ScalaFileWriter({ 
     config: {
-      baseDir,
+      formatModule: formatGeneratedModule,
       compilerTransforms: {
         codegenTransforms,
         fragmentTransforms,
@@ -76,9 +76,8 @@ function getScalaFileWriter(baseDir: string, outputDir: string) {
         queryTransforms,
       },
       outputDir,
-      formatModule: formatGeneratedModule,
+      baseDir,
       schemaExtensions,
-      useHaste: false,
     },
     onlyValidate,
     schema,
@@ -89,7 +88,10 @@ function getScalaFileWriter(baseDir: string, outputDir: string) {
 
 
 
-function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob) {
+// $FlowFixMe
+function compileAll(srcDir: string, schemaPath: string, writer /* $FlowFixMe */, parser, fileFilter, getFilepathsFromGlob) {
+  const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]});
+
   const parserConfigs = {
     default: {
       baseDir: srcDir,
@@ -97,7 +99,7 @@ function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilt
       getParser: parser,
       getSchema: () => getSchema(schemaPath),
       watchmanExpression: null,
-      filepaths: getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]})
+      filepaths: files,
     },
   };
   const writerConfigs = {
@@ -109,6 +111,7 @@ function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilt
   };
   const reporter = new ConsoleReporter({verbose: true});
 
+  // $FlowFixMe
   const codegenRunner = new CodegenRunner({
     reporter,
     parserConfigs,
@@ -116,6 +119,7 @@ function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilt
     onlyValidate: false
   });
 
+  // $FlowFixMe
   codegenRunner.compileAll().then(
     () => process.exit(0),
     error => {

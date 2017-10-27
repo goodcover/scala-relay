@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @providesModule RelayFileWriter
+ * @providesModule ScalaFileWriter
  * 
  * @format
  */
@@ -12,13 +12,13 @@
 'use strict';
 
 const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
-const RelayFlowGenerator = require('relay-compiler/lib//RelayFlowGenerator');
+const RelayFlowGenerator = require('../core/ScalaGenDirect');
 const RelayParser = require('relay-compiler/lib/RelayParser');
 const RelayValidator = require('relay-compiler/lib/RelayValidator');
 
 const invariant = require('invariant');
 const path = require('path');
-const writeRelayGeneratedFile = require('relay-compiler/lib/writeRelayGeneratedFile');
+const writeRelayScalaFile = require('./writeRelayScalaFile');
 
 const { generate } = require('relay-compiler/lib/RelayCodeGenerator');
 const {
@@ -83,6 +83,8 @@ class ScalaFileWriter {
       });
     }
 
+    const packageName = this._config.packageName;
+
     const definitions = ASTConvert.convertASTDocumentsWithBase(extendedSchema, this._baseDocuments.valueSeq().toArray(), this._documents.valueSeq().toArray(),
     // Verify using local and global rules, can run global verifications here
     // because all files are processed together
@@ -120,7 +122,8 @@ class ScalaFileWriter {
     });
 
     try {
-      await Promise.all(transformedFlowContext.documents().map(async node => {
+      const nodes = transformedFlowContext.documents();
+      await Promise.all(nodes.map(async node => {
         if (baseDefinitionNames.has(node.name)) {
           // don't add definitions that were part of base context
           return;
@@ -135,11 +138,11 @@ class ScalaFileWriter {
           inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
           relayRuntimeModule,
           useHaste: this._config.useHaste
-        });
+        }, nodes);
 
         const compiledNode = compiledDocumentMap.get(node.name);
         invariant(compiledNode, 'RelayCompiler: did not compile definition: %s', node.name);
-        await writeRelayGeneratedFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes, this._config.persistQuery, this._config.platform, relayRuntimeModule);
+        await writeRelayScalaFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes, this._config.persistQuery, this._config.platform, relayRuntimeModule, packageName);
       }));
 
       if (this._config.generateExtraFiles) {

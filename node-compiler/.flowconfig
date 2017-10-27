@@ -1,9 +1,26 @@
 [ignore]
+.*/__tests__/.*
+.*/**/*.native.js
+<PROJECT_ROOT>/lib/.*
 
 [include]
 
 [libs]
+node_modules/fbjs/flow/lib
+./flow-typed
 
 [lints]
 
 [options]
+module.name_mapper='^ReactDOM$' -> 'react-dom'
+
+munge_underscores=true
+
+suppress_type=$FlowIssue
+suppress_type=$FlowFixMe
+suppress_type=$FlowFixMeProps
+suppress_type=$FlowFixMeState
+suppress_type=$FixMe
+
+[version]
+^0.57.0

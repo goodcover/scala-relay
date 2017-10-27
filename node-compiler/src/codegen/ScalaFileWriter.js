@@ -12,13 +12,13 @@
 'use strict';
 
 const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
-const RelayFlowGenerator = require('relay-compiler/lib//RelayFlowGenerator');
+const RelayFlowGenerator = require('../core/ScalaGenDirect');
 const RelayParser = require('relay-compiler/lib/RelayParser');
 const RelayValidator = require('relay-compiler/lib/RelayValidator');
 
 const invariant = require('invariant');
 const path = require('path');
-const writeRelayGeneratedFile = require('relay-compiler/lib/writeRelayGeneratedFile');
+const writeRelayScalaFile = require('./writeRelayScalaFile');
 
 const {generate} = require('relay-compiler/lib/RelayCodeGenerator');
 const {
@@ -35,7 +35,7 @@ import type {
   CompilerTransforms,
   FileWriterInterface,
 } from 'relay-compiler/lib/GraphQLCompilerPublic';
-import type {FormatModule} from 'relay-compiler/lib/writeRelayGeneratedFile';
+import type {FormatModule} from './writeRelayScalaFile';
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
 import type {GeneratedNode} from 'relay-compiler/lib/RelayConcreteNode';
 import type {DocumentNode, GraphQLSchema} from 'graphql';
@@ -64,6 +64,7 @@ export type WriterConfig = {
   // Haste style module that exports flow types for GraphQL enums.
   // TODO(T22422153) support non-haste environments
   enumsHasteModule?: string,
+  packageName?: string,
 };
 
 class ScalaFileWriter implements FileWriterInterface {
@@ -139,6 +140,8 @@ class ScalaFileWriter implements FileWriterInterface {
       });
     }
 
+    const packageName = this._config.packageName;
+
     const definitions = ASTConvert.convertASTDocumentsWithBase(
       extendedSchema,
       this._baseDocuments.valueSeq().toArray(),
@@ -197,8 +200,9 @@ class ScalaFileWriter implements FileWriterInterface {
     });
 
     try {
+      const nodes = transformedFlowContext.documents();
       await Promise.all(
-        transformedFlowContext.documents().map(async node => {
+        nodes.map(async node => {
           if (baseDefinitionNames.has(node.name)) {
             // don't add definitions that were part of base context
             return;
@@ -214,7 +218,7 @@ class ScalaFileWriter implements FileWriterInterface {
             inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
             relayRuntimeModule,
             useHaste: this._config.useHaste,
-          });
+          }, nodes);
 
           const compiledNode = compiledDocumentMap.get(node.name);
           invariant(
@@ -222,7 +226,7 @@ class ScalaFileWriter implements FileWriterInterface {
             'RelayCompiler: did not compile definition: %s',
             node.name,
           );
-          await writeRelayGeneratedFile(
+          await writeRelayScalaFile(
             getGeneratedDirectory(compiledNode.name),
             compiledNode,
             this._config.formatModule,
@@ -230,6 +234,7 @@ class ScalaFileWriter implements FileWriterInterface {
             this._config.persistQuery,
             this._config.platform,
             relayRuntimeModule,
+            packageName,
           );
         }),
       );

@@ -12,7 +12,8 @@ const {ASTCache} = require('relay-compiler/lib/GraphQLCompilerPublic');
 */
 function parseFile(baseDir, file) {
   const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
-
+  var matches;
+  
   invariant(
     text.indexOf('@gql') >= 0,
     'RelayFileIRParser: Files should be filtered before passed to the ' +
@@ -20,11 +21,10 @@ function parseFile(baseDir, file) {
     file
   )
 
-  var regex = /@gql\([\s\S]*?""?"?([\s\S]*?)""?"?[\s\S]*\)/g;
+  var regex = /@gql\("""([\s\S]*?)"""\)/g;
 
   const astDefinitions = [];
-
-
+  
   while (matches = regex.exec(text)) {
       const template = matches[1];
 
@@ -38,6 +38,7 @@ function parseFile(baseDir, file) {
 
       astDefinitions.push(...ast.definitions);  
   }
+
   return {
     kind: 'Document',
     definitions: astDefinitions,

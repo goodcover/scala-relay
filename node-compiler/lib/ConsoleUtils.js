@@ -1,3 +1,5 @@
+'use strict';
+
 class SnippetFakeFileParser {
 
   constructor(snippets) {

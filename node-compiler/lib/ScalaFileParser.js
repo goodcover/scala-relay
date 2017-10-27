@@ -1,3 +1,5 @@
+'use strict';
+
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
 const GraphQL = require('graphql');
 
@@ -12,10 +14,11 @@ const { ASTCache } = require('relay-compiler/lib/GraphQLCompilerPublic');
 */
 function parseFile(baseDir, file) {
   const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
+  var matches;
 
   invariant(text.indexOf('@gql') >= 0, 'RelayFileIRParser: Files should be filtered before passed to the ' + 'parser, got unfiltered file `%s`.', file);
 
-  var regex = /@gql\([\s\S]*?""?"?([\s\S]*?)""?"?[\s\S]*\)/g;
+  var regex = /@gql\("""([\s\S]*?)"""\)/g;
 
   const astDefinitions = [];
 
@@ -27,6 +30,7 @@ function parseFile(baseDir, file) {
 
     astDefinitions.push(...ast.definitions);
   }
+
   return {
     kind: 'Document',
     definitions: astDefinitions
