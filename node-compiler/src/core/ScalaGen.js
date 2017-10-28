@@ -92,7 +92,7 @@ export class ScalaGen {
   }
 
   openB(){ this.print("{\n"); }
-  closeB(){ this.print("\n}"); }
+  closeB(){ this.print("\n};\n"); }
 
   start(): void {
     this.run(this.root);
@@ -123,7 +123,8 @@ export class ScalaGen {
   }
 
   traitDefOpen(ex: ?string) {
-    this.print("trait");
+    this.print("@ScalaJSDefined");
+    this.print("\ntrait");
     this.printClass();
     this.print("extends");
     this.print(`${this.jsPrefix()}.Object`);
@@ -132,6 +133,10 @@ export class ScalaGen {
       this.print(ex);
     }
     this.openB();
+  }
+
+  concatParents(p: string, p2: string): string {
+    return p + p2;
   }
 
   titleCase(s: string): string {
@@ -179,6 +184,7 @@ export class ScalaGen {
       case 'Int':
       case 'BigDecimal':
       case 'BigInt':
+      case 'Long':
         return this.print("Double");
       case 'Boolean':
         return this.print("Boolean");
@@ -202,8 +208,50 @@ export class ScalaGen {
       return this.transformNonNullableScalarType(type, backupType);
     }
   }
+
+  handleSelections(parent: Array<string>, a: ConcreteLinkedField | ConcreteFragment) {
+    const onlyClasses = a.selections.every((s) => s.kind === "FragmentSpread");
+    const onlyMembers = a.selections.every((s) => s.kind !== "FragmentSpread");
+    
+    let valName: string = a.name;
+    let tpe: string;
+
+    if (onlyClasses) {
+      // $FlowFixMe
+      const clss: Array<string> = a.selections.map((s) => (s.name: string));
+      tpe = clss.join(" with ");
+    } else {
+      // We're going to have to make a new class, this is the name.
+      tpe = this.newClass(parent.join('') + this.titleCase(a.name));
+
+      // Get all the mixed in Fragments to Inherit from.
+      const parentTpe: Array<string> = a
+        .selections
+        .filter((s) => s.kind === "FragmentSpread")
+        // $FlowFixMe
+        .map((s) => (s.name: string));
+
+      const newParentTpe = parentTpe.join(" with ");
+      // create a new class here.
+      this.traitDefOpen(newParentTpe);
+      a.selections
+        .filter(s => s.kind !== "FragmentSpread")
+        .map(s => this.runSelection(parent.concat([this.titleCase(a.name)]), s));
+
+      this.closeB();
+      this.ret();
+      // Completed that class
+      this.popClass();
+    }
+
+    this.valDefName(valName);
+    // $FlowFixMe
+    this.transformScalarType(a.type, tpe);
+    this.ret();
   
-  runSelection(parent: ConcreteFragment | ConcreteRoot, a: ConcreteSelection) {
+  }
+  
+  runSelection(parent: Array<string>, a: ConcreteSelection) {
     switch (a.kind) {
       case "ScalarField":
         const csf: ConcreteScalarField = a;
@@ -220,45 +268,12 @@ export class ScalaGen {
 
       case "LinkedField":
         const clf: ConcreteLinkedField = a;
-        const onlyClasses = clf.selections.every((s) => s.kind === "FragmentSpread");
-        const onlyMembers = clf.selections.every((s) => s.kind === "ScalarField");
-        
-        {
-          let tpe: string;
-
-          if (onlyClasses) {
-            // $FlowFixMe
-            const clss: Array<string> = clf.selections.map((s) => (s.name: string));
-            tpe = clss.join(" with ");
-            
-          } else {
-            // We're going to have to make a new class, this is the name.
-            tpe = this.newClass(parent.name + this.titleCase(clf.name));
-
-            // Get all the mixed in Fragments to Inherit from.
-            const parentTpe: Array<string> = clf
-              .selections
-              .filter((s) => s.kind === "FragmentSpread")
-              // $FlowFixMe
-              .map((s) => (s.name: string));
-
-            const newParentTpe = parentTpe.join(" with ");
-            // create a new class here.
-            this.traitDefOpen(newParentTpe);
-            clf.selections.filter((s) => s.kind !== "FragmentSpread").map((s) => this.runSelection(parent, s));
-            this.closeB();
-            // Completed that class
-            this.popClass();
-          }
-
-          this.valDefName(clf.name);
-          this.transformScalarType(clf.type, tpe);
-          this.ret();
-        }
+        // parent.push(this.titleCase(a.name));
+        this.handleSelections(parent, clf);
         break;
 
       case "FragmentSpread":
-        console.error("Shouldn't encounter a FragmentSpread directly. ", a);
+        console.error("Shouldn't encounter a FragmentSpread directly. ", a, parent);
         break;
     }
   }
@@ -268,16 +283,26 @@ export class ScalaGen {
       case 'Fragment':
         const p: ConcreteFragment = a;
         this.newClass(p.name);
-        this.traitDefOpen();
-        p.selections.map((s) => this.runSelection(a, s));
+      
+        const clss = p
+          .selections.filter((s) => s.kind === "FragmentSpread")
+          // $FlowFixMe
+          .map((s) => (s.name: string))
+          .join(' with ');
+
+        this.traitDefOpen(clss);
+        p.selections
+          .filter((s) => s.kind !== "FragmentSpread")
+          .map((s) => this.runSelection([p.name], s));
         this.closeB();
 
         break;
       case 'Root':
         const r: ConcreteRoot = a;
         this.newClass(r.name);
+
         this.traitDefOpen();
-        r.selections.map((s) => this.runSelection(a, s));
+        r.selections.map((s) => this.runSelection([r.name], s));
         this.closeB();
       // case "ExportNamedDeclaration":
       //   const end: ExportNamedDeclaration = a;

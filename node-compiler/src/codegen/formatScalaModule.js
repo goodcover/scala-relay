@@ -47,8 +47,8 @@ ${flowText || ''}
 
 ${docTextComment}
 object ${moduleName}  {
-    val ast: _root_.scala.scalajs.js.Any = _root_.scala.scalajs.js.eval("""${concreteText}""")
-    val query: String = """${devOnlyText}"""
+  val ast: _root_.scala.scalajs.js.Any = _root_.scala.scalajs.js.eval("""${concreteText}""")
+  val query: String = """${devOnlyText}"""
 }
 
 `;

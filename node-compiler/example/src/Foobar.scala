@@ -13,6 +13,7 @@ object Foo {
     definition {
       ...DictionaryComponent_definition
       text
+      id
     }
   }
   """)

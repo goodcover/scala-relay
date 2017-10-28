@@ -131,6 +131,9 @@ class ScalaFileWriter {
 
         const relayRuntimeModule = this._config.relayRuntimeModule || 'relay-runtime';
 
+        const compiledNode = compiledDocumentMap.get(node.name);
+        invariant(compiledNode, 'RelayCompiler: did not compile definition: %s', node.name);
+
         const flowTypes = RelayFlowGenerator.generate(node, {
           customScalars: this._config.customScalars,
           enumsHasteModule: this._config.enumsHasteModule,
@@ -138,10 +141,8 @@ class ScalaFileWriter {
           inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
           relayRuntimeModule,
           useHaste: this._config.useHaste
-        }, nodes);
+        }, null, extendedSchema, nodes);
 
-        const compiledNode = compiledDocumentMap.get(node.name);
-        invariant(compiledNode, 'RelayCompiler: did not compile definition: %s', node.name);
         await writeRelayScalaFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes, this._config.persistQuery, this._config.platform, relayRuntimeModule, packageName);
       }));
 

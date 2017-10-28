@@ -12,6 +12,7 @@ type Word {
 }
 
 type WordDefinition {
+  id: String
   text: String
   image: String
 }
