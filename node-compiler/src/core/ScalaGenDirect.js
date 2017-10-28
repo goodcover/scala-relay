@@ -72,6 +72,7 @@ const babelGenerator = require('babel-generator').default;
 const {isAbstractType} = SchemaUtils;
 
 const {ScalaGen} = require('./ScalaGen');
+const invariant = require('invariant');
 
 /*
 Better typing ideas here.
@@ -86,34 +87,28 @@ function generate(
   inputFieldWhiteList?: ?Array<string>,
   schema: GraphQLSchema,
   nodes: Array<Root | Fragment>,
-): string {
+): {core: string, supporting: string} {
   // const ast = IRVisitor.visit(
   //   node,
   //   createVisitor(customScalars || {}, inputFieldWhiteList, nodes),
   // );
 
   // const code = babelGenerator(ast).code;
-  const scala = new ScalaGen(node);
-  const result = scala.out();
+  // const scala = new ScalaGen(node);
+  // const result = scala.out();
   const newCT = new ClassTracker(nodes);
-  console.log("NEWCT");
   try {
     const ast = IRVisitor.visit(
       node,
       createVisitor2(newCT)
     )
-    console.log(newCT.out());
-    // console.log(JSON.stringify(ast, null, 2));
-    // console.log(JSON.stringify(compiledNode, null, 2));
-    // console.log(code);
-    scala.start();
-    
+    const code = newCT.out();    
     // console.log(result);
+    return code;
   } catch(e) {
     console.error(e);
+    throw e;
   }
-
-  return result;
 }
 
 type Member = {
@@ -121,6 +116,8 @@ type Member = {
   tpe: Array<string>,
   comments: Array<string>,
   node?: ?ConcreteNode,
+  parentFrag?: ?string,
+  scalar: boolean,
 };
 
 type Cls = {
@@ -172,18 +169,12 @@ class ClassTracker {
       linkedField,
       open: false,
     });
-    this.passes.push(name);
+    if (!linkedField)
+      this.passes.push(name);
     return name;
   }
 
-  // TODO!
-  mergeMembers(m: Member, m2: Member): Member {
-    if (m.name !== m2.name) throw new Error('Trying to merge unrelated fields.');
-    
-    return m;
-  }
-
-  closeField(node: ConcreteLinkedField, linked: boolean) {
+  closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean) {
     //$FlowFixMe
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
     const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");
@@ -192,7 +183,11 @@ class ClassTracker {
 
     // We modify this in place.
     const localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
-    const fieldName = node.alias ? node.alias : node.name;
+    // $FlowFixMe
+    const fieldName: string = node.alias ? node.alias : node.name;
+    const newClassName = titleCase(fieldName);
+
+    const scalar = false;
     
     // Going to have to 
     if (spreadFrags.length > 0) {
@@ -208,10 +203,14 @@ class ClassTracker {
           Array.from(intersect.values()).forEach(s => {
             // $FlowFixMe: proven above.
             const m: Member = localMembers.find(om => om.name === s.name);
+            // TODO: Look at filtering this out.
             m.tpe = Array.from(new Set(m.tpe.concat(...dm.filter(exM => exM.name === s).map(s => s.tpe))).values());
           });
           // Append new fields from the intersected fields
-          newFields = newFields.concat(dm.filter(s => !intersect.has(s.name)));
+          newFields = newFields.concat(
+            dm.filter(s => !intersect.has(s.name))
+              .filter(s => !localMembers.find(lm => lm.name === s.name))
+          );
         }
       });
     }
@@ -222,31 +221,37 @@ class ClassTracker {
         name: fieldName,
         tpe: fieldExtend,
         comments: [`Combined the fields on a spread: ${fieldExtend.toString()}`],
+        parentFrag: "",
+        scalar,
       });
     } else if (node.selections.length === selectionMembers.length) {
       // No spreads.
-      const newTpe = this.newClass(fieldName, localMembers, [], linked);
+      const newTpe = this.newClass(newClassName, localMembers, [], linked);
       this.newMember({
         name: fieldName,
         tpe: [newTpe],
         comments: ["No spreads."],
+        scalar,
       });
     } else if (newFields.length > 0) {
       // Spreads and members that are conflicting
-      const newTpe = this.newClass(fieldName, localMembers.concat(newFields), fieldExtend, linked);
+      // console.log(newFields, localMembers);
+      const newTpe = this.newClass(newClassName, localMembers.concat(newFields), fieldExtend, linked);
       this.newMember({
         name: fieldName,
         tpe: [newTpe],
         comments: ['New fields added, conflicts detected.'],
+        scalar,
       });
     } else if (newFields.length == 0) {
       console.log("Else case in closing field, no conflicts, mixed");
       // Add field
-      const newTpe = this.newClass(fieldName, localMembers, fieldExtend, linked);
+      const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked);
       this.newMember({
         name: fieldName,
         tpe: [newTpe],
         comments: ['New fields added, inheriting but no conflicts'],
+        scalar,
       });
     }
   }
@@ -288,21 +293,8 @@ class ClassTracker {
     return `${this.jsPrefix()}.Dictionary[${this.jsPrefix()}.Any]`;
   }
 
-  titleCase(s: string): string {
-    return s.charAt(0).toUpperCase() + s.substr(1);
-  }
-
   newPass() {
     this.passes = [];
-  }
-
-  out(): string {
-    return this.passes.map(s => {
-      const cls = this.classes.get(s);
-      if (cls) {
-        return this.outCls(cls);
-      } else return ""
-    }).join("\n");
   }
 
   transformNonNullableScalarType(
@@ -370,47 +362,76 @@ class ClassTracker {
   getDirectMembersForFrag(name: string, backupType: ?string): Array<Member> {
     const node = this._nodes.find(n => n.kind === "Fragment" && n.name === name);
     if (node) {
-      return node.selections.map(s => {
-        return {
+      let result =  flattenArray(node.selections.map(s => {
+        
+        if (s.kind == "FragmentSpread") {
           // $FlowFixMe
-          name: s.name,
-          // $FlowFixMe
-          tpe: this.transformScalarType(s.type, backupType).join(" "),
-          comments: [`getDirectMembersForFrag child of ${name}`],
-        };
-      })
+          const name = ((s.name: any): string);
+          return this.getDirectMembersForFrag(name, backupType);
+        } else
+          return [{
+            // $FlowFixMe
+            name: s.name,
+            // $FlowFixMe
+            tpe: [this.transformScalarType(s.type, backupType).join(" ")],
+            comments: [`getDirectMembersForFrag child of ${name}`],
+            parentFrag: name,
+            scalar: true,
+          }];
+
+      }))
+      return result;
     } else return [];
   }
 
-  outCls({name, members, extendsC, open}: Cls): string {
-    // const newExtends = [];
-    // for (const extended of extendsC) {
-      
-    //   const exMembers = this.getDirectMembersForFrag(extended);
-    //   const set2 = new Set(exMembers.map(s => s.name));
-    //   const intersect = new Set(Array.from(members.keys()).filter(x => set2.has(x)));
-    //   if (intersect.size == 0) {
-    //     newExtends.push(extended);
-    //   } else {
-    //     Array.from(intersect.values()).map((s) => {
-    //       // $FlowFixMe: proven above.
-    //       const m: Member = members.get(s)
-          
-    //       m.tpe = m.tpe.concat(...exMembers.filter(exM => exM.name === s).map(s => s.tpe));
-    //     })
-    //   }
-
-    // }
-    
+  outCls({name, members, extendsC, open}: Cls, otherClasses?: ?Map<string, Cls>): string {    
+    invariant(name, "Name needs to be set");
 
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
     const cls = ["trait", name, "extends", "js.Object", ...ex , "{"].join(" ");
     const m = Array.from(members.values()).map(s => {
       const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/", "\n"];
-      return [comment.join(" "), "  val", s.name, ":", s.tpe].join(" ");
+
+      // Figure out if we've created the type, if so, add a prefix.
+      let tpe = "";
+      if (otherClasses) {
+        // Declared new classes.
+        const cs = new Set(otherClasses.keys());
+        tpe = s.tpe.map(s => {
+          if (cs.has(s)) {
+            return name + "." + s;
+          } else return s;
+        }).join(" js.| ");
+      } else {
+        tpe = s.tpe.join(" ");
+      }
+
+      return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
 
     return [cls, m, "}"].join("\n");
+  }
+
+  out(): { supporting: string, core: string } {
+    invariant(this.passes.length === 1, "passes should be 1 got");
+
+    const pass = new Set(this.passes);
+    const supporting = Array.from(this.classes.entries())
+      .filter(s => !pass.has(s[0]))
+      .map(s => s[1])
+      .map(cls => {
+        return this.outCls(cls);
+      })
+      .join("\n");
+    return {
+        core: this.passes.map(s => {
+            const cls = this.classes.get(s);
+            if (cls) {
+              return this.outCls(cls, this.classes);
+            } else return "";
+          }).join("\n"),
+        supporting
+    };
   }
 }
 
@@ -419,7 +440,7 @@ function createVisitor2(ct: ClassTracker) {
     leave: {
       Root(node: ConcreteRoot) {
         // console.log("Root", node);
-        ct.closeField(node, true);
+        ct.closeField(node, false);
         // // $FlowFixMe
         // // node.selections.map(s => ct.handleSelections(s));
         // ct.handleSelections(node);
@@ -427,7 +448,7 @@ function createVisitor2(ct: ClassTracker) {
       },
       Fragment(node: ConcreteFragment) {
         // console.log("Fragment", node);
-        ct.closeField(node, true);
+        ct.closeField(node, false);
         // // $FlowFixMe
         // ct.handleSelections(node);
         return node;
@@ -440,7 +461,7 @@ function createVisitor2(ct: ClassTracker) {
         // console.log("ScalarField", node);
         // $FlowFixMe
         const tpe = [ct.transformScalarType((node.type: GraphQLType)).join(" ")];
-        ct.newMember({name: node.name, tpe, comments: []});
+        ct.newMember({name: node.name, tpe, comments: [], scalar: true});
         return node;
       },
       LinkedField(node: ConcreteLinkedField) {
@@ -462,11 +483,15 @@ function createVisitor2(ct: ClassTracker) {
 }
 
 
+function titleCase(s: string): string {
+  return s.charAt(0).toUpperCase() + s.substr(1);
+}
 
-
-
-
-
+function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
+  const result = [];
+  arrayOfArrays.forEach(array => result.push(...array));
+  return result;
+}
 
 
 

@@ -23,6 +23,7 @@ const formatGeneratedModule: FormatModule = ({
   devTextGenerator,
   relayRuntimeModule,
   packageName,
+  flowAltText,
 }) => {
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
@@ -47,6 +48,9 @@ ${flowText || ''}
 
 ${docTextComment}
 object ${moduleName}  {
+
+  ${flowAltText || ''}
+
   val ast: _root_.scala.scalajs.js.Any = _root_.scala.scalajs.js.eval("""${concreteText}""")
   val query: String = """${devOnlyText}"""
 }

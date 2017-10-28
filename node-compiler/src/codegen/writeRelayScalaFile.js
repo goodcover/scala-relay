@@ -33,6 +33,7 @@ export type FormatModule = ({|
   devTextGenerator: (objectName: string) => string,
   relayRuntimeModule: string,
   packageName: string,
+  flowAltText: ?string,
 |}) => string;
 
 async function writeRelayScalaFile(
@@ -44,6 +45,7 @@ async function writeRelayScalaFile(
   platform: ?string,
   relayRuntimeModule: string,
   defaultPackage: ?string,
+  flowAltText: ?string,
 ): Promise<?GeneratedNode> {
   const moduleName = generatedNode.name;
   const platformName = platform ? moduleName + '.' + platform : moduleName;
@@ -103,6 +105,7 @@ async function writeRelayScalaFile(
     devTextGenerator: makeDevTextGenerator(devOnlyProperties),
     relayRuntimeModule,
     packageName,
+    flowAltText
   });
 
   codegenDir.writeFile(filename, moduleText);

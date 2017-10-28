@@ -231,11 +231,12 @@ class ScalaFileWriter implements FileWriterInterface {
             getGeneratedDirectory(compiledNode.name),
             compiledNode,
             this._config.formatModule,
-            flowTypes,
+            flowTypes.core,
             this._config.persistQuery,
             this._config.platform,
             relayRuntimeModule,
             packageName,
+            flowTypes.supporting
           );
         }),
       );
