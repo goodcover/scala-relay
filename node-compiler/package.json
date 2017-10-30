@@ -1,7 +1,7 @@
 {
   "name": "scala-relay-compiler",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "license": "Apache-2.0",
   "dependencies": {
     "babel-polyfill": "^6.20.0",
@@ -23,8 +23,8 @@
     "signedsource": "^1.0.0"
   },
   "bin": {
-    "scala-relay-compiler": "bin/scala-relay-compiler.js",
-    "scala-relay-compiler-stdin": "bin/src-stdin.js"
+    "scala-relay-compiler": "./bin/scala-relay-compiler.js",
+    "scala-relay-compiler-stdin": "./bin/src-stdin.js"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
