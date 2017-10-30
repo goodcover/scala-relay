@@ -33,13 +33,11 @@ const formatGeneratedModule: FormatModule = ({
  * scala ${hashText}
  * Generated, DON'T MANUALLY EDIT.
  */
-package ${packageName};
-/*::
-import type {${documentType}} from '${relayRuntimeModule}';
+package ${packageName}
+/*
 
 objName:      ${objectName}
 docType:      ${documentType}
-concreteText: ${concreteText};
 */
 
 import _root_.scala.scalajs.js
@@ -47,12 +45,12 @@ import _root_.scala.scalajs.js
 ${flowText || ''}
 
 ${docTextComment}
-object ${moduleName}  {
+object ${moduleName} extends _root_.relay.graphql.GenericGraphQLTaggedNode {
 
   ${flowAltText || ''}
 
-  val ast: _root_.scala.scalajs.js.Any = _root_.scala.scalajs.js.eval("""${concreteText}""")
-  val query: String = """${devOnlyText}"""
+  val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.JSON.parse("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
+  val devText: String = """${devOnlyText}"""
 }
 
 `;

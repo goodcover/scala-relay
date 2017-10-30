@@ -35,11 +35,11 @@ object RelayBasePlugin extends AutoPlugin {
     /**
       * Set the version of the sangria compiler which helps validate GQL
       */
-    relaySangriaVersion := "1.2.0",
+    relaySangriaVersion := "1.3.1",
     /**
       *
       */
-    relaySangriaCompilerVersion := "0.2.0",
+    relaySangriaCompilerVersion := "0.5.0",
     /**
       * Runtime dependency on the macro
       */
