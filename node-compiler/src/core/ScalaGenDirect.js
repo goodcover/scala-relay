@@ -132,7 +132,7 @@ type Cls = {
 class ClassTracker {
   
   classes: Map<string, Cls>;
-  passes: Array<string>;
+  topClasses: Map<string, Cls>;
   fields: Array<Member>;
   spreads: Array<string>;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
@@ -140,7 +140,7 @@ class ClassTracker {
 
   constructor(nodes: Array<ConcreteRoot | ConcreteFragment>) {
     this.classes = new Map();
-    this.passes = [];
+    this.topClasses = new Map();
     this.fields = [];
     this.spreads = [];
     this._nodes = nodes;
@@ -161,16 +161,27 @@ class ClassTracker {
 
   
   newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean): string {
-    const name = this.newClassName(cn);
-    this.classes.set(name, {
-      name, 
-      members,
-      extendsC,
-      linkedField,
-      open: false,
-    });
-    if (!linkedField)
-      this.passes.push(name);
+    let name = cn;
+    if (linkedField) {
+      name = this.newClassName(cn);
+      const cls = {
+        name, 
+        members,
+        extendsC,
+        linkedField,
+        open: false,
+      }
+      this.classes.set(name, cls);
+    } else {
+      const cls = {
+        name, 
+        members,
+        extendsC,
+        linkedField,
+        open: false,
+      }
+      this.topClasses.set(name, cls);
+    }
     return name;
   }
 
@@ -293,10 +304,6 @@ class ClassTracker {
     return `${this.jsPrefix()}.Dictionary[${this.jsPrefix()}.Any]`;
   }
 
-  newPass() {
-    this.passes = [];
-  }
-
   transformNonNullableScalarType(
     type: GraphQLType,
     backupType: ?string,
@@ -413,19 +420,17 @@ class ClassTracker {
   }
 
   out(): { supporting: string, core: string } {
-    invariant(this.passes.length === 1, "passes should be 1 got");
+    invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
 
-    const pass = new Set(this.passes);
     const supporting = Array.from(this.classes.entries())
-      .filter(s => !pass.has(s[0]))
       .map(s => s[1])
       .map(cls => {
         return this.outCls(cls);
       })
       .join("\n");
     return {
-        core: this.passes.map(s => {
-            const cls = this.classes.get(s);
+        core: Array.from(this.topClasses.entries()).map(s => {
+            const cls = s[1];
             if (cls) {
               return this.outCls(cls, this.classes);
             } else return "";
