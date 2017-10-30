@@ -35,7 +35,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           *
           */
-        relaySangriaCompilerVersion := "0.6.1",
+        relaySangriaCompilerVersion := "0.6.3",
         /**
           * Runtime dependency on the macro
           */
@@ -65,10 +65,10 @@ object RelayFilePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-        /**
-          * Piggy back on sjs bundler to add our compiler to it.
-          */
-        npmDevDependencies in Compile ++= Seq("scala-relay-compiler" -> relaySangriaCompilerVersion.value),
+//        /**
+//          * Piggy back on sjs bundler to add our compiler to it.
+//          */
+//        npmDevDependencies in Compile ++= Seq("scala-relay-compiler" -> relaySangriaCompilerVersion.value),
         /**
           * Output path of the relay compiler.  Necessary this is an empty directory as it will
           * delete files it thinks went away.
