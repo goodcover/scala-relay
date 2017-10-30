@@ -10,8 +10,8 @@ object Version {
 
   final val SjsReact = "1.1.0"
   final val Scalameta = "1.8.0"
-  final val Scalajs = "0.6.19"
-  final val ScalajsBundler = "0.7.0"
+  final val Scalajs = "0.6.20"
+  final val ScalajsBundler = "0.9.0"
   final val ScalaTest = "3.0.2"
   final val Sangria = "1.2.0"
 }

@@ -19,40 +19,29 @@ object RelayBasePlugin extends AutoPlugin {
   override def trigger = noTrigger
 
   object autoImport {
-    val relaySchema: SettingKey[File] =
-      settingKey[File]("Path to schema file")
-
-    val relaySangriaVersion: SettingKey[String] =
-      settingKey[String]("Set the Sangria version")
-
-    val relaySangriaCompilerVersion: SettingKey[String] =
-      settingKey[String]("Set the Sangria version")
+    val relaySchema: SettingKey[File]                   = settingKey[File]("Path to schema file")
+    val relaySangriaVersion: SettingKey[String]         = settingKey[String]("Set the Sangria version")
+    val relaySangriaCompilerVersion: SettingKey[String] = settingKey[String]("Set the Sangria version")
   }
 
   import autoImport._
 
-  override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    /**
-      * Set the version of the sangria compiler which helps validate GQL
-      */
-    relaySangriaVersion := "1.3.1",
-    /**
-      *
-      */
-    relaySangriaCompilerVersion := "0.5.0",
-    /**
-      * Runtime dependency on the macro
-      */
-    libraryDependencies ++= Seq(
-      "com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
-      "org.sangria-graphql" %% "sangria" % relaySangriaVersion.value % Provided
-    ),
-    initialize := {
-      val () = sys.props("relay.schema") = relaySchema.value.getAbsolutePath
-    }
-  )
+  override lazy val projectSettings: Seq[Setting[_]] =
+    Seq(
+        /**
+          * Set the version of the sangria compiler which helps validate GQL
+          */
+        relaySangriaVersion := "1.3.1",
+        /**
+          *
+          */
+        relaySangriaCompilerVersion := "0.6.1",
+        /**
+          * Runtime dependency on the macro
+          */
+        libraryDependencies ++= Seq("com.dispalt.relay"   %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
+                                    "org.sangria-graphql" %% "sangria"      % relaySangriaVersion.value % Provided))
 }
-
 
 object RelayFilePlugin extends AutoPlugin {
 
@@ -63,11 +52,10 @@ object RelayFilePlugin extends AutoPlugin {
 
   object autoImport {
 
-    val relayCompile: TaskKey[Unit] = taskKey[Unit]("Run the relay compiler")
-
-    val relayOutput: SettingKey[File] =
-      settingKey[File]("Output of the schema stuff")
-
+    val relayCompile: TaskKey[Seq[File]] = taskKey[Seq[File]]("Run the relay compiler")
+    val relayOutput: SettingKey[File]    = settingKey[File]("Output of the schema stuff")
+    val relayCompilerPath: SettingKey[String] =
+      settingKey[String]("The location of the `scala-relay-compiler` executable.")
   }
 
   import RelayBasePlugin.autoImport._
@@ -75,84 +63,120 @@ object RelayFilePlugin extends AutoPlugin {
 
   val relayFolder = "relay-compiler-out"
 
-  override lazy val projectSettings: Seq[Setting[_]] = Seq(
-    /**
-      * Piggy back on sjs bundler to add our compiler to it.
-      */
-    npmDevDependencies in Compile ++= Seq(
-      "scala-relay-compiler" -> relaySangriaCompilerVersion.value
-    ),
-    /**
-      * Output path of the relay compiler.  Necessary this is an empty directory as it will
-      * delete files it thinks went away.
-      *
-      * **YOU CANNNOT CHANGE THIS SETTING, UNTIL I FIGURE OUT HOW TO PASS SETTINGS TO META GQL**
-      *
-      */
-    relayOutput in Compile := (resourceDirectory in Compile).value / relayFolder,
-    /**
-      * I don't like this at all but I have no idea how to do this otherwise though...
-      *
-      * Maybe when this is done, it will work https://github.com/scalameta/scalameta/issues/840
-      */
-    compile in Compile := {
-      (compile in Compile)
-        .dependsOn(Def.task[Unit] {
-          System.setProperty("relay.out",
-                             (relayOutput in Compile).value.getAbsolutePath)
-          System.setProperty("relay.schema", relaySchema.value.getAbsolutePath)
-        })
-        .value
-    },
-    /**
-      * This is used to pass some settings down to a macro, through a old style macro.
-      */
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:relay.schema=${relaySchema.value.absolutePath}",
-      s"-Xmacro-settings:relay.out=${(relayOutput in Compile).value.absolutePath}"
-    ),
-    /**
-      * Actually compile relay, don't overwrite this.
-      */
-    relayCompile := {
-      val workingDir = (crossTarget in npmUpdate in Compile).value
+  override lazy val projectSettings: Seq[Setting[_]] =
+    Seq(
+        /**
+          * Piggy back on sjs bundler to add our compiler to it.
+          */
+        npmDevDependencies in Compile ++= Seq("scala-relay-compiler" -> relaySangriaCompilerVersion.value),
+        /**
+          * Output path of the relay compiler.  Necessary this is an empty directory as it will
+          * delete files it thinks went away.
+          *
+          *
+          */
+        relayOutput in Compile := (sourceManaged in Compile).value / relayFolder,
+        /**
+          *
+          */
+        relayCompilerPath := {
+          "scala-relay-compiler"
+        },
+        scalaJSNativeLibraries in Compile := Attributed.blank(Seq.empty),
+        scalaJSNativeLibraries in Test := Attributed.blank(Seq.empty),
+        //        compile in Compile := {
+        //          (npmUpdate in Compile).value
+        //          relayCompile.value
+        //          (compile in Compile).value
+        //        },
+        /**
+          * Meat of the function.
+          */
+        relayCompile in Compile := Def
+          .taskDyn[Seq[File]] {
+            val log          = streams.value.log
+            val cache        = streams.value.cacheDirectory / "relay-compile"
+            val sourceFiles  = (unmanagedSourceDirectories in Compile).value
+            val outpath      = (relayOutput in Compile).value
+            val compilerPath = relayCompilerPath.value
 
-      /* This actually does the yarn/npm update */
-      (npmUpdate in Compile).value
-      val logger = streams.value.log
-      val sp = relaySchema.value
-      val source = sourceDirectory.value
-      val outpath = (relayOutput in Compile).value
-      runCompiler(workingDir, sp, source, outpath, logger)
-      IO.copyDirectory(outpath, (crossTarget in npmUpdate in Compile).value / relayFolder)
-    },
-    /**
-      * Rewire the webpack task to depend on compiling relay
-      */
-    webpack in fastOptJS in Compile := (webpack in fastOptJS in Compile)
-      .dependsOn(relayCompile)
-      .value
-  )
+            IO.createDirectory(outpath)
+
+            val scalaFiles =
+              (sourceFiles ** "*.scala").get
+                .filter(f => IO.read(f).contains("@gql"))
+                .toSet
+            val label = Reference.display(thisProjectRef.value)
+            // TODO: fix mutability
+            var ran = false
+
+            def handleUpdate(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+              val files = in.modified -- in.removed
+              import sbt._
+              inc.Analysis
+                .counted("Scala source", "", "s", files.size)
+                .foreach { count =>
+                  ran = true
+                  log.info(s"Executing relayCompile on $count $label...")
+                }
+              files
+            }
+
+            /* I used to count the result, but it was weird and inconsistent */
+            FileFunction.cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate)(scalaFiles)
+            if (ran) {
+              Def.task[Seq[File]] {
+//                val workingDir = (crossTarget in npmUpdate in Compile).value
+                val workingDir = file(sys.props("user.dir"))
+
+//                /* Actually run the update */
+//                val _      = (npmUpdate in Compile).value
+                val logger = streams.value.log
+                val sp     = relaySchema.value
+                val source = sourceDirectory.value
+                runCompiler(workingDir, compilerPath, sp, source, outpath, logger)
+                outpath.listFiles()
+              }
+            } else {
+              Def.task[Seq[File]](outpath.listFiles())
+            }
+          }
+          .value,
+        /**
+          * Hook the relay compiler into the compile pipeline.
+          */
+        sourceGenerators in Compile += (relayCompile in Compile).taskValue)
+
+  implicit class QuoteStr(s: String) {
+    def quote: String = "\"" + s + "\""
+  }
 
   def runCompiler(workingDir: File,
+                  compilerPath: String,
                   schemaPath: File,
                   sourceDirectory: File,
                   outputPath: File,
                   logger: Logger): Unit = {
+    import sbt._
 
-    Commands.run(
-      Seq(
-        "node",
-        "./node_modules/scala-relay-compiler/bin/scala-relay-compiler",
-        "--schema",
-        schemaPath.getAbsolutePath,
-        "--src",
-        sourceDirectory.getAbsolutePath,
-        "--out",
-        outputPath.getAbsolutePath
-      ),
-      workingDir,
-      logger
-    )
+    // TODO: this sucks not sure how to get npm scripts to work from java PB.
+    val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
+      List("cmd.exe", "/C")
+    } else List("sh")
+
+
+    val cmd = shell :+ List(compilerPath,
+      "--schema",
+      schemaPath.getAbsolutePath.quote,
+      "--src",
+      sourceDirectory.getAbsolutePath.quote,
+      "--out",
+      outputPath.getAbsolutePath.quote).mkString(" ")
+    println(cmd)
+
+    Commands.run(cmd,
+                 workingDir,
+                 logger)
+    ()
   }
 }

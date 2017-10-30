@@ -4,7 +4,7 @@ libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.2"
 
 enablePlugins(RelayFilePlugin, ScalaJSBundlerPlugin)
 
-scalaVersion := "2.12.3"
+scalaVersion := "2.12.4"
 
 useYarn := true
 

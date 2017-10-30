@@ -4,7 +4,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
 import dispalt.relay.gql
-import org.scalajs.dom.document
+import org.scalajs.dom
 
 import scala.scalajs.js.annotation.JSImport
 
@@ -15,7 +15,7 @@ import scala.scalajs.js.annotation.JSImport
       }
     }
   """)
-object foo extends js.Object
+object foo
 
 @gql("""
     mutation ActorSubscribe($input: ActorSubscribeInput!) {
@@ -24,30 +24,20 @@ object foo extends js.Object
       }
     }
   """)
-object ActorSubscribe extends js.Object
+object ActorSubscribe
 
 @gql("""
     fragment Task_foo on Task {
       title
     }
   """)
-object frag extends js.Object
+object frag
 
 object Main extends JSApp {
 
-  final val test = "./relay-compiler-out/ActorSubscribe.graphql.js"
-
   def main(): Unit = {
 
-    frag2
-    ActorSubscribe
-    foo
-    frag
-
-    val someFn = () => println("someFn")
+    val q = relay.generated.Task_foo.query
+    dom.console.log(q)
   }
 }
-
-@js.native
-@JSImport(Main.test, JSImport.Default)
-object frag2 extends js.Object
