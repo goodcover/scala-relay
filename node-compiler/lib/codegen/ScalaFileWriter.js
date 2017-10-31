@@ -141,7 +141,7 @@ class ScalaFileWriter {
           inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
           relayRuntimeModule,
           useHaste: this._config.useHaste
-        }, null, extendedSchema, nodes);
+        }, null, extendedSchema, nodes, compiledNode);
 
         await writeRelayScalaFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes.core, this._config.persistQuery, this._config.platform, relayRuntimeModule, packageName, flowTypes.supporting);
       }));

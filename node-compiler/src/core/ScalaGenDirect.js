@@ -118,6 +118,7 @@ type Member = {
   node?: ?ConcreteNode,
   parentFrag?: ?string,
   scalar: boolean,
+  or?: ?boolean,
 };
 
 type Cls = {
@@ -134,7 +135,7 @@ class ClassTracker {
   classes: Map<string, Cls>;
   topClasses: Map<string, Cls>;
   fields: Array<Member>;
-  spreads: Array<string>;
+  spreads: Array<[string, Array<Member>]>;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
   _missingFrags: Array<string>;
 
@@ -185,90 +186,105 @@ class ClassTracker {
     return name;
   }
 
-  closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean) {
+  handleInline(node: ConcreteInlineFragment) {
     //$FlowFixMe
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
     const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");
-    const fieldExtend = [];
-    let newFields: Array<Member> = [];
+  }
 
-    // We modify this in place.
-    const localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+  flattenMembers(members: Array<Member>, spreads: Array<[string, Array<Member>]>): Map<string, Array<Member>> {
+    const m : Map<string, Array<Member>> = new Map();
+    members.forEach(s => {
+      const mem = m.get(s.name)
+      m.set(s.name, mem ? mem.concat(s) : [s]);
+    });
+
+    for (const [key, value] of spreads) {
+      value.forEach(s => {
+        const mem = m.get(s.name)
+        m.set(s.name, mem ? mem.concat(s) : [s]);
+      });
+    }
+    return m;
+  }
+
+  closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean) {
+    //$FlowFixMe
+    const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
+    // $FlowFixMe
+    const inlineFrags: Array<ConcreteInlineFragment> = node.selections.filter(s => s.kind === "InlineFragment");
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");
+    const fieldExtend = [];
+
+    // We modify this in the baton.  Pop all the members off.
+    let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+    let localSpreads: Array<[string, Array<Member>]> = spreadFrags.map(_ => this.popSpread());
+
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
-    const newClassName = titleCase(fieldName);
+    // $FlowFixMe
+    const newClassName = linked ? (node.parentTpe ? node.parentTpe.slice(1).join("") + titleCase(node.name) : titleCase(node.name)) : titleCase(node.name);
 
     const scalar = false;
     
-    // Going to have to 
-    if (spreadFrags.length > 0) {
-      // Pop all the members off.
-      spreadFrags.map((select) => {
-        const dm = this.getDirectMembersForFrag(select.name, fieldName);
-        const directMemberSet = new Set(dm.map(s => s.name));
-        const intersect = new Set(localMembers.filter(x => directMemberSet.has(x.name)));
-        if (intersect.size == 0) {
-          fieldExtend.push(select.name);
-        } else {
-          // Edit the fields in place
-          Array.from(intersect.values()).forEach(s => {
-            // $FlowFixMe: proven above.
-            const m: Member = localMembers.find(om => om.name === s.name);
-            // TODO: Look at filtering this out.
-            m.tpe = Array.from(new Set(m.tpe.concat(...dm.filter(exM => exM.name === s).map(s => s.tpe))).values());
-          });
-          // Append new fields from the intersected fields
-          newFields = newFields.concat(
-            dm.filter(s => !intersect.has(s.name))
-              .filter(s => !localMembers.find(lm => lm.name === s.name))
-          );
-        }
-      });
-    }
-
-    if (spreadFrags.length == node.selections.length && newFields.length == 0) {
+    // Very simple case, we are sure it can combine.
+    if (spreadFrags.length == 1 && selectionMembers.length == 0) {
       // Only FragmentSpreads and no conflicting members
-      this.newMember({
+      return this.newMember({
         name: fieldName,
-        tpe: fieldExtend,
-        comments: [`Combined the fields on a spread: ${fieldExtend.toString()}`],
+        tpe: [spreadFrags[0].name],
+        comments: [`Combined the fields on a spread: ${spreadFrags[0].name}`],
         parentFrag: "",
         scalar,
       });
-    } else if (node.selections.length === selectionMembers.length) {
+    } 
+    
+    
+    if (spreadFrags.length > 0) {
+      // Combine all the children both spreads and 
+      const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);      
+
+      //TODO: This is like a shitty version of fold.
+      // console.log(JSON.stringify(sumOfMembers, null, 2));
+      localMembers = Array.from(sumOfMembers.entries()).map(s => {
+        if (s[1].length == 1)
+          return s[1][0];
+        let m = s[1][0];
+        // Set the or bit, since we don't know how to recursively combine yet.
+        m.or = true;
+        s[1].slice(1).forEach(ss => {
+          m = this.combineFields(m, ss);
+        })
+        return m;
+      });
+    }
+
+    
+    if (node.selections.length === selectionMembers.length) {
       // No spreads.
       const newTpe = this.newClass(newClassName, localMembers, [], linked);
       this.newMember({
         name: fieldName,
         tpe: [newTpe],
-        comments: ["No spreads."],
+        comments: ["No spreads, just field combining."],
         scalar,
       });
-    } else if (newFields.length > 0) {
+    } else {
       // Spreads and members that are conflicting
-      // console.log(newFields, localMembers);
-      const newTpe = this.newClass(newClassName, localMembers.concat(newFields), fieldExtend, linked);
+      const newTpe = this.newClass(newClassName, localMembers, [], linked);
       this.newMember({
         name: fieldName,
         tpe: [newTpe],
         comments: ['New fields added, conflicts detected.'],
         scalar,
       });
-    } else if (newFields.length == 0) {
-      console.log("Else case in closing field, no conflicts, mixed");
-      // Add field
-      const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked);
-      this.newMember({
-        name: fieldName,
-        tpe: [newTpe],
-        comments: ['New fields added, inheriting but no conflicts'],
-        scalar,
-      });
-    }
+    } 
   }
 
-  newSpread(ext: string) {
-    this.spreads.unshift(ext);   
+  newSpread(n: ConcreteFragmentSpread) {
+    // this.spreads.unshift(ext);   
+    const dm = this.getDirectMembersForFrag(n.name, titleCase(n.name));
+    this.spreads.unshift([n.name, dm]);
   }
 
   newMember(m: Member): void {
@@ -277,6 +293,10 @@ class ClassTracker {
 
   popMember(): Member {
     return this.fields.shift();
+  }
+
+  popSpread(): [string, Array<Member>] {
+    return this.spreads.shift();
   }
 
   memberCopy(): Array<Member> {
@@ -366,26 +386,41 @@ class ClassTracker {
     }
   }
 
+  combineFields(m: Member, m2: Member): Member {
+    invariant(m.name === m2.name, "Names need to match to combine.");
+    let tpe: Array<string>;
+    tpe = [...new Set([...m.tpe, ...m2.tpe])];
+
+    return {
+      ...m,
+      name: m.name,
+      tpe,
+      comments: [...m.comments, ...m2.comments],
+      scalar: m.scalar || m2.scalar,
+    }
+  }
+
   getDirectMembersForFrag(name: string, backupType: ?string): Array<Member> {
     const node = this._nodes.find(n => n.kind === "Fragment" && n.name === name);
     if (node) {
       let result =  flattenArray(node.selections.map(s => {
         
         if (s.kind == "FragmentSpread") {
+          // console.log(s);
           // $FlowFixMe
-          const name = ((s.name: any): string);
-          return this.getDirectMembersForFrag(name, backupType);
-        } else
+          return this.getDirectMembersForFrag(s.name, name + "." + titleCase(s.name));
+        } else {
+
           return [{
             // $FlowFixMe
             name: s.name,
             // $FlowFixMe
-            tpe: [this.transformScalarType(s.type, backupType).join(" ")],
+            tpe: [this.transformScalarType(s.type, name + "." + titleCase(s.name)).join(" ")],
             comments: [`getDirectMembersForFrag child of ${name}`],
             parentFrag: name,
-            scalar: true,
+            scalar: s.kind == "ScalarField" ? true : false,
           }];
-
+        }
       }))
       return result;
     } else return [];
@@ -401,6 +436,7 @@ class ClassTracker {
 
       // Figure out if we've created the type, if so, add a prefix.
       let tpe = "";
+      const joinStr = s.or ? " | " : " with ";
       if (otherClasses) {
         // Declared new classes.
         const cs = new Set(otherClasses.keys());
@@ -408,9 +444,9 @@ class ClassTracker {
           if (cs.has(s)) {
             return name + "." + s;
           } else return s;
-        }).join(" js.| ");
+        }).join(joinStr);
       } else {
-        tpe = s.tpe.join(" ");
+        tpe = s.tpe.join(joinStr);
       }
 
       return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
@@ -427,7 +463,7 @@ class ClassTracker {
       .map(cls => {
         return this.outCls(cls);
       })
-      .join("\n");
+      .join("\n  ");
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
             const cls = s[1];
@@ -442,6 +478,72 @@ class ClassTracker {
 
 function createVisitor2(ct: ClassTracker) {
   return {
+    enter : {
+      Root(node: ConcreteRoot) {
+        // console.log("Root", node);
+        const selections = node.selections.map(s => {
+          return {
+            ...s,
+            parentTpe: [node.name]
+          }
+        })
+        return {
+          ...node,
+          selections
+        };
+      },
+      Fragment(node: ConcreteFragment) {
+        // console.log("Root", node);
+        const selections = node.selections.map(s => {
+          return {
+            ...s,
+            parentTpe: [node.name]
+          }
+        })
+        return {
+          ...node,
+          selections
+        };
+      },
+      InlineFragment(node: ConcreteInlineFragment) {
+        const {parentTpe} = node;
+        const ptpe = parentTpe || [];
+        const selections = node.selections.map(s => {
+          return {
+            ...s,
+            parentTpe: ptpe,
+          }
+        })
+        return {
+          ...node,
+          selections
+        };
+      },
+      ScalarField(node: ConcreteScalarField) {
+        return node;
+      },
+      LinkedField(node: ConcreteLinkedField) {
+        // console.log("Root", node);
+        const {parentTpe} = node;
+        const ptpe = parentTpe || [];
+        const selections = node.selections.map(s => {
+          return {
+            ...s,
+            parentTpe: ptpe.concat([titleCase(node.name)]),
+          }
+        })
+        return {
+          ...node,
+          selections
+        };
+      },
+      FragmentSpread(node: ConcreteFragmentSpread) {
+        return node;
+      },
+      Condition(node: ConcreteCondition) {
+        return node;
+      },
+    },
     leave: {
       Root(node: ConcreteRoot) {
         // console.log("Root", node);
@@ -460,6 +562,7 @@ function createVisitor2(ct: ClassTracker) {
       },
       InlineFragment(node: ConcreteInlineFragment) {
         // console.log("InlineFragment", node);
+        // node.selections.map(s => s)
         return node;
       },
       ScalarField(node: ConcreteScalarField) {
@@ -476,11 +579,11 @@ function createVisitor2(ct: ClassTracker) {
       },
       FragmentSpread(node: ConcreteFragmentSpread) {
         // console.log("FragmentSpread", node);
-        ct.newSpread(node.name);
+        ct.newSpread(node);
         return node;
       },
       Condition(node: ConcreteCondition) {
-        // console.log("Condition", node);
+        console.log("Condition", node);
         return node;
       },
     }

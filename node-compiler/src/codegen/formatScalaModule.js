@@ -41,6 +41,7 @@ docType:      ${documentType}
 */
 
 import _root_.scala.scalajs.js
+import _root_.scala.scalajs.js.|
 
 ${flowText || ''}
 

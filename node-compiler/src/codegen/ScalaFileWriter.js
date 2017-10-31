@@ -225,7 +225,7 @@ class ScalaFileWriter implements FileWriterInterface {
             inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
             relayRuntimeModule,
             useHaste: this._config.useHaste,
-          }, null, extendedSchema, nodes);
+          }, null, extendedSchema, nodes, compiledNode);
 
           await writeRelayScalaFile(
             getGeneratedDirectory(compiledNode.name),
