@@ -431,7 +431,8 @@ class ClassTracker {
 
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
     const cls = ["trait", name, "extends", "js.Object", ...ex , "{"].join(" ");
-    const m = Array.from(members.values()).map(s => {
+    // TODO: Investigate why this member is not there, probably has to do with InlineFragments.
+    const m = Array.from(members.values()).filter(s => !!s).map(s => {
       const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/", "\n"];
 
       // Figure out if we've created the type, if so, add a prefix.
