@@ -277,7 +277,7 @@ class ClassTracker {
       // Combine all the children both spreads and 
       const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
       const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);      
-      console.log(JSON.stringify(sumOfMembers, null, 2));
+      // console.log(JSON.stringify(sumOfMembers, null, 2));
 
       //TODO: This is like a shitty version of fold.
       localMembers = Array.from(sumOfMembers.entries()).map(s => {
@@ -285,6 +285,7 @@ class ClassTracker {
           return s[1][0];
         let m = s[1][0];
         s[1].slice(1).forEach(ss => {
+          ss.comments.push(`Combining fields, with or? "${ss.or}" `)
           m = this.combineFields(m, ss);
         });
         return m;
@@ -315,9 +316,10 @@ class ClassTracker {
     } 
   }
 
-  hasSjsWithDirective(directives: ?Array<ConcreteDirective>): boolean {
+  hasAndStripSjsWithDirective(n: ConcreteFragmentSpread): boolean {
     // $FlowFixMe
-    const hasD = directives.filter(s => s.name === "sjs" && s.args[0] && s.args[0].name == 'with' && s.args[0].value.value);
+    const hasD = n.directives.filter(s => s.name === "sjs" && s.args[0] && s.args[0].name == 'with' && s.args[0].value.value);
+    n.directives = n.directives ? n.directives.filter(s => s.name !== "sjs") : [];
     return hasD.length > 0;
   }
 
@@ -325,7 +327,7 @@ class ClassTracker {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
     // console.log(JSON.stringify(n, null, 2));
-    const hasD = this.hasSjsWithDirective(n.directives);
+    const hasD = this.hasAndStripSjsWithDirective(n);
 
     const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
       if (hasD) {
