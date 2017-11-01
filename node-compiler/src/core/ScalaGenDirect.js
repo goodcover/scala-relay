@@ -49,6 +49,7 @@ import type {
   ConcreteFragmentSpread,
   ConcreteInlineFragment,
   ConcreteCondition,
+  ConcreteDirective,
 } from 'react-relay';
 
 const {
@@ -111,6 +112,11 @@ function generate(
   }
 }
 
+type ASpread = {
+  members: Array<Member>,
+  extendCls: Array<string>,
+}
+
 type ATpe = {
   name: string,
   isArray?: boolean,
@@ -141,7 +147,7 @@ class ClassTracker {
   classes: Map<string, Cls>;
   topClasses: Map<string, Cls>;
   fields: Array<Member>;
-  spreads: Array<[string, Array<Member>]>;
+  spreads: Array<[string, ASpread]>;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
   _missingFrags: Array<string>;
 
@@ -241,12 +247,12 @@ class ClassTracker {
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
     // $FlowFixMe
     const inlineFrags: Array<ConcreteInlineFragment> = node.selections.filter(s => s.kind === "InlineFragment");
-    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");
-    const fieldExtend = [];
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");    
 
     // We modify this in the baton.  Pop all the members off.
     let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
-    let localSpreads: Array<[string, Array<Member>]> = spreadFrags.map(_ => this.popSpread());
+    let listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
+    const fieldExtend: Array<string> = [];// flattenArray(listOfSpreads.map(s => s[1].extendCls));
 
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
@@ -269,19 +275,18 @@ class ClassTracker {
     
     if (spreadFrags.length > 0) {
       // Combine all the children both spreads and 
+      const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
       const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);      
-      // console.log(JSON.stringify(sumOfMembers, null, 2));
+      console.log(JSON.stringify(sumOfMembers, null, 2));
 
       //TODO: This is like a shitty version of fold.
       localMembers = Array.from(sumOfMembers.entries()).map(s => {
         if (s[1].length == 1)
           return s[1][0];
         let m = s[1][0];
-        // Set the or bit, since we don't know how to recursively combine yet.
-        m.or = true;
         s[1].slice(1).forEach(ss => {
           m = this.combineFields(m, ss);
-        })
+        });
         return m;
       });
     }
@@ -289,7 +294,7 @@ class ClassTracker {
     
     if (node.selections.length === selectionMembers.length) {
       // No spreads.
-      const newTpe = this.newClass(newClassName, localMembers, [], linked);
+      const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked);
       const newNewTpe = this.transformScalarType(node.type, newTpe);
       this.newMember({
         name: fieldName,
@@ -299,7 +304,7 @@ class ClassTracker {
       });
     } else {
       // Spreads and members that are conflicting
-      const newTpe = this.newClass(newClassName, localMembers, [], linked);
+      const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked);
       const newNewTpe = this.transformScalarType(node.type, newTpe);
       this.newMember({
         name: fieldName,
@@ -310,11 +315,30 @@ class ClassTracker {
     } 
   }
 
+  hasSjsWithDirective(directives: ?Array<ConcreteDirective>): boolean {
+    // $FlowFixMe
+    const hasD = directives.filter(s => s.name === "sjs" && s.args[0] && s.args[0].name == 'with' && s.args[0].value.value);
+    return hasD.length > 0;
+  }
+
   newSpread(n: ConcreteFragmentSpread) {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
-    const dm = this.getDirectMembersForFrag(n.name, tpe);
-    this.spreads.unshift([n.name, dm]);
+    // console.log(JSON.stringify(n, null, 2));
+    const hasD = this.hasSjsWithDirective(n.directives);
+
+    const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
+      if (hasD) {
+        s.or = false;
+      } else {
+        s.or = true;
+      }
+      return s;
+    });
+    this.spreads.unshift([n.name, {
+      members: dm,
+      extendCls: [],
+    }]);
   }
 
   newMember(m: Member): void {
@@ -325,7 +349,7 @@ class ClassTracker {
     return this.fields.shift();
   }
 
-  popSpread(): [string, Array<Member>] {
+  popSpread(): [string, ASpread] {
     return this.spreads.shift();
   }
 
@@ -439,6 +463,7 @@ class ClassTracker {
 
     return {
       ...m,
+      or: m.or || m2.or,
       name: m.name,
       tpe: flattenArray(Array.from(tpeMap.values())),
       comments: [...m.comments, ...m2.comments],
@@ -508,7 +533,7 @@ class ClassTracker {
         }).join(joinStr);
       }
 
-      return [comment.join("; "), "  val", s.name, ":", tpe].join(" ");
+      return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
 
     return [cls, m, "}"].join("\n");

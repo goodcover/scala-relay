@@ -189,11 +189,13 @@ declare module 'react-relay' {
     metadata: ?{ [key: string]: mixed },
     name: string,
     selections: Array<ConcreteSelection>,
+    directives?: ?Array<ConcreteDirective>,
     type: string,
   }
   declare export type ConcreteFragmentSpread = {
     args: ?Array<ConcreteArgument>,
     kind: 'FragmentSpread',
+    directives?: ?Array<ConcreteDirective>,
     name: string,
   }
   declare export type ConcreteHandle = ConcreteScalarHandle | ConcreteLinkedHandle
