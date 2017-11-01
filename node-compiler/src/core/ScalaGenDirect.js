@@ -111,9 +111,15 @@ function generate(
   }
 }
 
+type ATpe = {
+  name: string,
+  isArray?: boolean,
+  isOptional?: boolean,
+}
+
 type Member = {
   name: string,
-  tpe: Array<string>,
+  tpe: Array<ATpe>,
   comments: Array<string>,
   node?: ?ConcreteNode,
   parentFrag?: ?string,
@@ -208,6 +214,28 @@ class ClassTracker {
     return m;
   }
 
+  getNewTpe(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
+    if (node.kind == "LinkedField") {
+      if (node.parentTpe) {
+        return node.parentTpe.slice(1).join("") + titleCase(node.name);
+      } 
+    }
+    return titleCase(node.name);
+  }
+
+  getNewTpeMember(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
+    if (node.kind == "LinkedField") {
+      if (node.parentTpe) {
+        if (node.parentTpe.length == 1) {
+          return node.parentTpe.join("") + titleCase(node.name)
+        } else {
+          return node.parentTpe.slice(1).join("") + titleCase(node.name);
+        }
+      } 
+    }
+    return titleCase(node.name);
+  }
+
   closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean) {
     //$FlowFixMe
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
@@ -222,17 +250,16 @@ class ClassTracker {
 
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
-    // $FlowFixMe
-    const newClassName = linked ? (node.parentTpe ? node.parentTpe.slice(1).join("") + titleCase(node.name) : titleCase(node.name)) : titleCase(node.name);
-
+    let newClassName: string = this.getNewTpe(node);
     const scalar = false;
     
     // Very simple case, we are sure it can combine.
     if (spreadFrags.length == 1 && selectionMembers.length == 0) {
       // Only FragmentSpreads and no conflicting members
+      const newTpe = this.transformScalarType(node.type, spreadFrags[0].name);
       return this.newMember({
         name: fieldName,
-        tpe: [spreadFrags[0].name],
+        tpe: newTpe,
         comments: [`Combined the fields on a spread: ${spreadFrags[0].name}`],
         parentFrag: "",
         scalar,
@@ -243,9 +270,9 @@ class ClassTracker {
     if (spreadFrags.length > 0) {
       // Combine all the children both spreads and 
       const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);      
+      // console.log(JSON.stringify(sumOfMembers, null, 2));
 
       //TODO: This is like a shitty version of fold.
-      // console.log(JSON.stringify(sumOfMembers, null, 2));
       localMembers = Array.from(sumOfMembers.entries()).map(s => {
         if (s[1].length == 1)
           return s[1][0];
@@ -263,18 +290,20 @@ class ClassTracker {
     if (node.selections.length === selectionMembers.length) {
       // No spreads.
       const newTpe = this.newClass(newClassName, localMembers, [], linked);
+      const newNewTpe = this.transformScalarType(node.type, newTpe);
       this.newMember({
         name: fieldName,
-        tpe: [newTpe],
+        tpe: newNewTpe,
         comments: ["No spreads, just field combining."],
         scalar,
       });
     } else {
       // Spreads and members that are conflicting
       const newTpe = this.newClass(newClassName, localMembers, [], linked);
+      const newNewTpe = this.transformScalarType(node.type, newTpe);
       this.newMember({
         name: fieldName,
-        tpe: [newTpe],
+        tpe: newNewTpe,
         comments: ['New fields added, conflicts detected.'],
         scalar,
       });
@@ -282,8 +311,9 @@ class ClassTracker {
   }
 
   newSpread(n: ConcreteFragmentSpread) {
-    // this.spreads.unshift(ext);   
-    const dm = this.getDirectMembersForFrag(n.name, titleCase(n.name));
+    // $FlowFixMe
+    const tpe = this.getNewTpe(n);
+    const dm = this.getDirectMembersForFrag(n.name, tpe);
     this.spreads.unshift([n.name, dm]);
   }
 
@@ -327,10 +357,14 @@ class ClassTracker {
   transformNonNullableScalarType(
     type: GraphQLType,
     backupType: ?string,
-  ): Array<string> {
+  ): Array<ATpe> {
     if (type instanceof GraphQLList) {
       // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
-      return ["js.Array[", ...this.transformScalarType(type.ofType, backupType), "]"];
+      return this.transformScalarType(type.ofType, backupType).map(s => {
+
+        s.isArray = true;
+        return s;
+      });
     } else if (
       type instanceof GraphQLObjectType ||
       type instanceof GraphQLUnionType ||
@@ -340,44 +374,44 @@ class ClassTracker {
       if (!backupType) {
         throw new Error(`Could not convert from GraphQL type ${type.toString()}, missing backup type`);
       }
-      return [backupType];
+      return [{name: backupType}];
     } else if (type instanceof GraphQLScalarType) {
       return this.transformGraphQLScalarType(type, backupType);
     } else if (type instanceof GraphQLEnumType) {
       // TODO: String for now.
-      return ["String"];
+      return [{name: "String"}];
     } else {
       throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
     }
   }
 
-  transformGraphQLScalarType(type: GraphQLScalarType, backupType: ?string): Array<string> {
+  transformGraphQLScalarType(type: GraphQLScalarType, backupType: ?string): Array<ATpe> {
     switch (type.name) {
       case 'ID':
       case 'String':
       case 'Url':
-        return ["String"];
+        return [{name: "String"}];
         
       case 'Float':
       case 'Int':
       case 'BigDecimal':
       case 'BigInt':
       case 'Long':
-        return ["Double"];
+        return [{name: "Double"}];
       case 'Boolean':
-        return ["Boolean"];
+        return [{name: "Boolean"}];
       default:
         if (backupType) {
-          return [backupType];
+          return [{name: backupType}];
         } 
-        return [`js.Any`];
+        return [{name: `js.Any`}];
     }
   }
 
   transformScalarType(
     type: GraphQLType,
     backupType: ?string,
-  ): Array<string> {
+  ): Array<ATpe> {
     if (type instanceof GraphQLNonNull) {
       return this.transformNonNullableScalarType(type.ofType, backupType);
     } else {
@@ -388,13 +422,25 @@ class ClassTracker {
 
   combineFields(m: Member, m2: Member): Member {
     invariant(m.name === m2.name, "Names need to match to combine.");
-    let tpe: Array<string>;
-    tpe = [...new Set([...m.tpe, ...m2.tpe])];
+    const tpeMap: Map<string, Array<ATpe>> = new Map();
+    [...m.tpe, ...m2.tpe].forEach(tpe => {
+
+      const found = tpeMap.get(tpe.name)
+      if (!found) {
+        tpeMap.set(tpe.name, [tpe]);
+      } else {
+        if (!found.every(s => {
+          return s.isArray == tpe.isArray && s.isOptional == tpe.isOptional && s.name === tpe.name;
+        })) {
+          found.push(tpe);
+        }
+      }
+    });
 
     return {
       ...m,
       name: m.name,
-      tpe,
+      tpe: flattenArray(Array.from(tpeMap.values())),
       comments: [...m.comments, ...m2.comments],
       scalar: m.scalar || m2.scalar,
     }
@@ -415,7 +461,7 @@ class ClassTracker {
             // $FlowFixMe
             name: s.name,
             // $FlowFixMe
-            tpe: [this.transformScalarType(s.type, name + "." + titleCase(s.name)).join(" ")],
+            tpe: this.transformScalarType(s.type, name + "." + titleCase(s.name)),
             comments: [`getDirectMembersForFrag child of ${name}`],
             parentFrag: name,
             scalar: s.kind == "ScalarField" ? true : false,
@@ -438,19 +484,31 @@ class ClassTracker {
       // Figure out if we've created the type, if so, add a prefix.
       let tpe = "";
       const joinStr = s.or ? " | " : " with ";
+      // console.log(JSON.stringify(s,null,2));
       if (otherClasses) {
         // Declared new classes.
         const cs = new Set(otherClasses.keys());
         tpe = s.tpe.map(s => {
-          if (cs.has(s)) {
-            return name + "." + s;
-          } else return s;
+
+          let newTpeName = cs.has(s.name) ? name + "." + s.name: s.name;
+          if (s.isArray) {
+            newTpeName = "js.Array[" + newTpeName + "]";
+          }
+
+          return newTpeName;
         }).join(joinStr);
       } else {
-        tpe = s.tpe.join(joinStr);
+        tpe = s.tpe.map(s => {
+          let newTpeName = s.name;
+          if (s.isArray) {
+            newTpeName = "js.Array[" + newTpeName + "]";
+          }
+
+          return newTpeName;
+        }).join(joinStr);
       }
 
-      return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
+      return [comment.join("; "), "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
 
     return [cls, m, "}"].join("\n");
@@ -569,7 +627,7 @@ function createVisitor2(ct: ClassTracker) {
       ScalarField(node: ConcreteScalarField) {
         // console.log("ScalarField", node);
         // $FlowFixMe
-        const tpe = [ct.transformScalarType((node.type: GraphQLType)).join(" ")];
+        const tpe = ct.transformScalarType((node.type: GraphQLType));
         ct.newMember({name: node.name, tpe, comments: [], scalar: true});
         return node;
       },
