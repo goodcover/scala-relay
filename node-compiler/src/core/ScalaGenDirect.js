@@ -72,8 +72,9 @@ const babelGenerator = require('babel-generator').default;
 
 const {isAbstractType} = SchemaUtils;
 
-const {ScalaGen} = require('./ScalaGen');
 const invariant = require('invariant');
+
+const SJSTransform = require('../transforms/SJSTransform');
 
 /*
 Better typing ideas here.
@@ -95,8 +96,6 @@ function generate(
   // );
 
   // const code = babelGenerator(ast).code;
-  // const scala = new ScalaGen(node);
-  // const result = scala.out();
   const newCT = new ClassTracker(nodes);
   try {
     const ast = IRVisitor.visit(
@@ -327,7 +326,7 @@ class ClassTracker {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
     // console.log(JSON.stringify(n, null, 2));
-    const hasD = this.hasAndStripSjsWithDirective(n);
+    const hasD = n.metadata && n.metadata.with;
 
     const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
       if (hasD) {
@@ -664,12 +663,12 @@ function createVisitor2(ct: ClassTracker) {
         return node;
       },
       FragmentSpread(node: ConcreteFragmentSpread) {
-        // console.log("FragmentSpread", node);
         ct.newSpread(node);
+        // console.log("FragmentSpread", node);
         return node;
       },
       Condition(node: ConcreteCondition) {
-        console.log("Condition", node);
+        // console.log("Condition", node);
         return node;
       },
     }
@@ -1004,6 +1003,7 @@ function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
 
 const FLOW_TRANSFORMS: Array<IRTransform> = [
   (ctx: CompilerContext) => FlattenTransform.transform(ctx, {}),
+  (ctx: CompilerContext) => SJSTransform.transform(ctx),
 ];
 
 module.exports = {

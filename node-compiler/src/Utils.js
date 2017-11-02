@@ -13,7 +13,7 @@ const ScalaFileWriter = require('./codegen/ScalaFileWriter');
 const {FileWriter} = require('relay-compiler');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
 
-const formatGeneratedModule  = require('./codegen/formatScalaModule');
+const formatModule  = require('./codegen/formatScalaModule');
 const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs');
@@ -35,6 +35,8 @@ const {
 
 const SCRIPT_NAME = 'relay-compiler';
 
+const SJS = require('./transforms/SJSTransform');
+
 const WATCH_EXPRESSION = [
   'allof',
   ['type', 'f'],
@@ -43,6 +45,9 @@ const WATCH_EXPRESSION = [
   ['not', ['match', '**/__tests__/**', 'wholename']],
   ['not', ['match', '**/__generated__/**', 'wholename']],
 ];
+
+// Inject
+printTransforms.unshift(SJS.transformRemoveSjs);
 
 function getSchema(schemaPath: string) {
   try {
@@ -66,10 +71,9 @@ ${error.stack}
 function getScalaFileWriter(baseDir: string, outputDir: string) {
   // $FlowFixMe
   return (onlyValidate, schema, documents, baseDocuments) =>
-  // $FlowFixMe
   new ScalaFileWriter({ 
     config: {
-      formatModule: formatGeneratedModule,
+      formatModule,
       compilerTransforms: {
         codegenTransforms,
         fragmentTransforms,

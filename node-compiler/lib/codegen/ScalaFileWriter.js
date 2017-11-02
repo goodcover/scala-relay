@@ -110,6 +110,7 @@ class ScalaFileWriter {
     compiler.addDefinitions(definitions);
 
     const transformedFlowContext = RelayFlowGenerator.flowTransforms.reduce((ctx, transform) => transform(ctx, extendedSchema), compiler.context());
+
     const transformedQueryContext = compiler.transformedQueryContext();
     const compiledDocumentMap = compiler.compile();
 

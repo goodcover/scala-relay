@@ -184,6 +184,7 @@ class ScalaFileWriter implements FileWriterInterface {
       (ctx, transform) => transform(ctx, extendedSchema),
       compiler.context(),
     );
+
     const transformedQueryContext = compiler.transformedQueryContext();
     const compiledDocumentMap: CompiledDocumentMap<
       GeneratedNode,

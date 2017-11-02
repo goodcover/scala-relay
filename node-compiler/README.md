@@ -18,6 +18,9 @@ $ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graph
  - Handles first layer of spreading, right now we spit out `js.|` to
    join disjoint fields, even though in fact they are not disjoint,
    they are a union, however, this requires a fix later down the line.
+ - `@sjs(with:Boolean!)` basically this allows us to control from a fragment spread level
+   whether to combine the fields as an `js.|` or using ` with `.  With has more compile
+   time constraints where ` js.| ` is easier to generate.
 
 ## TODO
  - [ ] Med: Fix `InlineFragments` so they work properly.  Right now we just really
@@ -28,3 +31,4 @@ $ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graph
    - [ ] Med: Generate the necessary class depth.
    - [ ] Big: How to handle traversing since the order of the frags are unable to
     to be changed.
+  - [ ] Med: Handle connections and edges with a superclass.
