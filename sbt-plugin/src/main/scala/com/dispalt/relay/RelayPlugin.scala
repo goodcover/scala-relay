@@ -162,7 +162,7 @@ object RelayFilePlugin extends AutoPlugin {
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
       List("cmd.exe", "/C")
-    } else List("sh")
+    } else List("sh", "-c")
 
 
     val cmd = shell :+ List(compilerPath,
