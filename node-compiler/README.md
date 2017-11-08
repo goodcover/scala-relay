@@ -155,7 +155,9 @@ object DictionaryComponent_word extends _root_.relay.graphql.GenericGraphQLTagge
 }
 ```
 
-So that's it.
+Ill skip the other definition because there's nothing additionally interesting.
+
+**So that's it.**
 
 You can use from sbt by using, and it will include the tiny shim of javascript traits to use.
 
