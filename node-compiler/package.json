@@ -36,5 +36,11 @@
   "scripts": {
     "build": "babel src/ -d lib/",
     "prepublish": "yarn run build"
+  },
+  "url": "https://github.com/dispalt/relay-modern-helper/",
+  "email": "dan@goodcover.com",
+  "repository" :
+  { "type" : "git"
+  , "url" : "https://github.com/dispalt/relay-modern-helper.git"
   }
 }
