@@ -228,10 +228,15 @@ class ClassTracker {
     throw new Error(`Shouldn't happen, ${node.typeCondition.toString} parent: ${node.parentTpe}`);
   }
 
-  getNewTpeParent(node: ConcreteInlineFragment): string {
+  /**
+   * Valid for any type.
+   * @param {*} node 
+   */
+  getNewTpeParent(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment): string {
     if (node.parentTpe)
       return node.parentTpe.slice(1).join("");
-    throw new Error(`Shouldn't happen, ${node.typeCondition.toString} parent: ${node.parentTpe}`);
+    else 
+      return node.parentTpe.join("");
   }
 
   getNewTpe(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
@@ -256,6 +261,9 @@ class ClassTracker {
     return titleCase(node.name);
   }
 
+  /**
+   * Handle inline frags. 
+   */
   inlineFrag(node: ConcreteInlineFragment) {
     const newClassName: string = this.getNewTpeInlineFrag(node);
     const localMembers: Array<Member> = node.selections.map(foo => this.popMember());
@@ -272,24 +280,33 @@ class ClassTracker {
     // $FlowFixMe
     const inlineFrags: Array<ConcreteInlineFragment> = node.selections.filter(s => s.kind === "InlineFragment");
 
-    // Don't look at Inline Fragments or Fragment Spreads, those get treated differently.
+    // Don't look at Inline Fragments or Fragment Spreads, they get treated differently.
     const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");    
-
     // We modify this in the baton.  Pop all the members off.
     let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+
+  
     if (inlineFrags.length > 0) {
+      // if we don't have __typename in the set of selection members add it synthetically since the relay compiler will
+      // anyways.
       if (!selectionMembers.find(f => f.name === "__typename"))
         localMembers.push({name: "__typename", tpe: [{name: "String"}], comments: [], scalar: true});
     }
 
-    let listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
+    const listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
     const fieldExtend: Array<string> = [];// flattenArray(listOfSpreads.map(s => s[1].extendCls));
 
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
     const newClassName: string = this.getNewTpe(node);
     const scalar = false;
-    
+
+
+    // Create implicit conversions here.
+    listOfSpreads.forEach(([k, {members}]) => {
+      this.newImplicit(newClassName, k, k, false);
+    });
+  
     // Very simple case, we are sure it can combine.
     if (spreadFrags.length == 1 && selectionMembers.length == 0) {
       // Only FragmentSpreads and no conflicting members
@@ -604,6 +621,13 @@ class ClassTracker {
 
   }
 
+  outImplicitsConversion(impl: Array<ImplDef>): string {
+    const text = impl.map(({from, to, name}) => {
+      return `implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`;
+    }).join("\n  ");
+    return text;
+  }
+
   out(): { supporting: string, core: string, implicits: string } {
     invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
 
@@ -614,7 +638,10 @@ class ClassTracker {
       })
       .join("\n  ");
 
-    const implicits = this.outImplicitsFrags(this.implicits.filter(s => s.inline));
+    const implicits = [
+      this.outImplicitsFrags(this.implicits.filter(s => s.inline)),
+      this.outImplicitsConversion(this.implicits.filter(s => !s.inline)),
+    ].join("\n  ");
 
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
