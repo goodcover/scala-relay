@@ -18,14 +18,7 @@ const {
   IRVisitor,
   SchemaUtils,
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
-const {
-  exactObjectTypeAnnotation,
-  exportType,
-  lineComments,
-  readOnlyArrayOfType,
-  readOnlyObjectTypeProperty,
-  stringLiteralTypeAnnotation
-} = require('./ScalaBabelFactories');
+
 const {
   transformScalarType,
   transformInputType,
@@ -141,6 +134,7 @@ type ImplDef = {
   from: string,
   to: string,
   name: string,
+  inline: boolean,
 }
 
 class ClassTracker {
@@ -175,8 +169,8 @@ class ClassTracker {
     }
   }
 
-  newImplicit(from: string, to: string, name: string) {
-    this.implicits.unshift({from, to, name});
+  newImplicit(from: string, to: string, name: string, inline: boolean) {
+    this.implicits.unshift({from, to, name, inline});
   }
 
   
@@ -268,7 +262,7 @@ class ClassTracker {
     const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment"); 
     const newTpe = this.newClass(newClassName, localMembers, [], true);
     const parentCls = this.getNewTpeParent(node);
-    this.newImplicit(parentCls, newTpe, `${node.typeCondition.toString()}`);
+    this.newImplicit(parentCls, newTpe, `${node.typeCondition.toString()}`, true);
     node.selections;
   }
 
@@ -578,8 +572,11 @@ class ClassTracker {
     return [cls, m, "}"].join("\n");
   }
 
-  outImplicits(impl: Array<ImplDef>): string {
-    // return [`  implicit def ${from}2${name}(f: ${from}): ${to} = {`, `  f.asInstanceOf[${to}]`, `}`].join("\n  ");
+  /**
+   * Group all the implicits, and create
+   * @param {} impl 
+   */
+  outImplicitsFrags(impl: Array<ImplDef>): string {
 
     var groups: {[string]: Array<ImplDef>} = {};
     impl.forEach((item) => {
@@ -596,7 +593,11 @@ class ClassTracker {
 
       const items = groups[k]
       const members = Array.from(items).map(({from, to, name}) => {
-        return `  def to${name}: ${to} = f.asInstanceOf[${to}]`
+        return [`  def as${name}: Option[${to}] = {`,
+          `    if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
+          `    else None`,
+          '  }'
+        ].join("\n  ");
       });
       return [`implicit class ${k}2Ops(f: ${k}) {`, ...members, `}`].join("\n  ");
     }).join("\n  ");
@@ -613,7 +614,7 @@ class ClassTracker {
       })
       .join("\n  ");
 
-    const implicits = this.outImplicits(this.implicits)
+    const implicits = this.outImplicitsFrags(this.implicits.filter(s => s.inline));
 
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
@@ -626,22 +627,6 @@ class ClassTracker {
         implicits
     };
   }
-}
-
-function groupBy(collection: Array<any>, property: string) {
-  var i = 0, val, index,
-      values = [], result = [];
-  for (; i < collection.length; i++) {
-      val = collection[i][property];
-      index = values.indexOf(val);
-      if (index > -1)
-          result[index].push(collection[i]);
-      else {
-          values.push(val);
-          result.push([collection[i]]);
-      }
-  }
-  return result;
 }
 
 function createVisitor(ct: ClassTracker) {
@@ -769,321 +754,6 @@ function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
   arrayOfArrays.forEach(array => result.push(...array));
   return result;
 }
-
-
-
-
-
-
-
-// function makeProp(
-//   {key, schemaName, value, conditional, nodeType, nodeSelections},
-//   customScalars: ScalarTypeMapping,
-//   concreteType,
-// ) {
-//   if (nodeType) {
-//     value = transformScalarType(
-//       nodeType,
-//       customScalars,
-//       selectionsToBabel([Array.from(nodeSelections.values())], customScalars),
-//     );
-//   }
-//   if (schemaName === '__typename' && concreteType) {
-//     value = stringLiteralTypeAnnotation(concreteType);
-//   }
-//   const typeProperty = readOnlyObjectTypeProperty(key, value);
-//   if (conditional) {
-//     typeProperty.optional = true;
-//   }
-//   return typeProperty;
-// }
-
-// const isTypenameSelection = selection => selection.schemaName === '__typename';
-// const hasTypenameSelection = selections => selections.some(isTypenameSelection);
-// const onlySelectsTypename = selections => selections.every(isTypenameSelection);
-
-// function selectionsToBabel(selections, customScalars: ScalarTypeMapping) {
-//   const baseFields = new Map();
-//   const byConcreteType = {};
-
-//   flattenArray(selections).forEach(selection => {
-//     const {concreteType} = selection;
-//     if (concreteType) {
-//       byConcreteType[concreteType] = byConcreteType[concreteType] || [];
-//       byConcreteType[concreteType].push(selection);
-//     } else {
-//       const previousSel = baseFields.get(selection.key);
-
-//       baseFields.set(
-//         selection.key,
-//         previousSel ? mergeSelection(selection, previousSel) : selection,
-//       );
-//     }
-//   });
-
-//   const types = [];
-
-//   if (
-//     Object.keys(byConcreteType).length &&
-//     onlySelectsTypename(Array.from(baseFields.values())) &&
-//     (hasTypenameSelection(Array.from(baseFields.values())) ||
-//       Object.keys(byConcreteType).every(type =>
-//         hasTypenameSelection(byConcreteType[type]),
-//       ))
-//   ) {
-//     for (const concreteType in byConcreteType) {
-//       types.push(
-//         exactObjectTypeAnnotation([
-//           ...Array.from(baseFields.values()).map(selection =>
-//             makeProp(selection, customScalars, concreteType),
-//           ),
-//           ...byConcreteType[concreteType].map(selection =>
-//             makeProp(selection, customScalars, concreteType),
-//           ),
-//         ]),
-//       );
-//     }
-//     // It might be some other type then the listed concrete types. Ideally, we
-//     // would set the type to diff(string, set of listed concrete types), but
-//     // this doesn't exist in Flow at the time.
-//     const otherProp = readOnlyObjectTypeProperty(
-//       '__typename',
-//       stringLiteralTypeAnnotation('%other'),
-//     );
-//     otherProp.leadingComments = lineComments(
-//       "This will never be '%other', but we need some",
-//       'value in case none of the concrete values match.',
-//     );
-//     types.push(exactObjectTypeAnnotation([otherProp]));
-//   } else {
-//     let selectionMap = selectionsToMap(Array.from(baseFields.values()));
-//     for (const concreteType in byConcreteType) {
-//       selectionMap = mergeSelections(
-//         selectionMap,
-//         selectionsToMap(
-//           byConcreteType[concreteType].map(sel => ({
-//             ...sel,
-//             conditional: true,
-//           })),
-//         ),
-//       );
-//     }
-//     const selectionMapValues = Array.from(selectionMap.values()).map(
-//       sel =>
-//         isTypenameSelection(sel) && sel.concreteType
-//           ? makeProp(
-//               {...sel, conditional: false},
-//               customScalars,
-//               sel.concreteType,
-//             )
-//           : makeProp(sel, customScalars),
-//     );
-//     types.push(exactObjectTypeAnnotation(selectionMapValues));
-//   }
-
-//   if (types.length === 0) {
-//     return exactObjectTypeAnnotation([]);
-//   }
-
-//   return types.length > 1 ? t.unionTypeAnnotation(types) : types[0];
-// }
-
-// function mergeSelection(a, b) {
-//   if (!a) {
-//     return {
-//       ...b,
-//       conditional: true,
-//     };
-//   }
-//   return {
-//     ...a,
-//     nodeSelections: a.nodeSelections
-//       ? mergeSelections(a.nodeSelections, b.nodeSelections)
-//       : null,
-//     conditional: a.conditional && b.conditional,
-//   };
-// }
-
-// function mergeSelections(a, b) {
-//   const merged = new Map();
-//   for (const [key, value] of a.entries()) {
-//     merged.set(key, value);
-//   }
-//   for (const [key, value] of b.entries()) {
-//     merged.set(key, mergeSelection(a.get(key), value));
-//   }
-//   return merged;
-// }
-
-// function isPlural({directives}): boolean {
-//   const relayDirective = directives.find(({name}) => name === 'relay');
-//   return (
-//     relayDirective != null &&
-//     relayDirective.args.some(
-//       ({name, value}) => name === 'plural' && value.value,
-//     )
-//   );
-// }
-
-
-
-// function createVisitor(
-//   customScalars: ScalarTypeMapping,
-//   inputFieldWhiteList: ?Array<string>,
-//   nodes: Array<Root | Fragment>,
-// ) {
-//   return {
-//     // enter: {
-//     //   FragmentSpread(node) {
-//     //     const fragmentNode = nodes.find(n => n.kind === 'Fragment' && n.name === node.name);
-//     //     if (fragmentNode) {
-//     //       const newObj = {
-//     //         ...fragmentNode,
-//     //         kind: 'InlineFragment', // Replace by an inline fragment
-//     //         typeCondition: fragmentNode.type,
-//     //       };
-//     //       return newObj;
-//     //     } else {
-//     //       return {};
-//     //     }
-//     //   }
-//     // },
-//     leave: {
-//       Root(node) {
-//         const statements = [];
-//         if (node.operation !== 'query') {
-//           statements.push(
-//             generateInputVariablesType(
-//               node,
-//               customScalars,
-//               inputFieldWhiteList,
-//             ),
-//           );
-//         }
-//         statements.push(
-//           exportType(
-//             `${node.name}Response`,
-//             selectionsToBabel(node.selections, customScalars),
-//           ),
-//         );
-//         return t.program(statements);
-//       },
-
-//       Fragment(node) {
-//         let selections = flattenArray(node.selections);
-//         const numConecreteSelections = selections.filter(s => s.concreteType)
-//           .length;
-//         selections = selections.map(selection => {
-//           if (
-//             numConecreteSelections <= 1 &&
-//             isTypenameSelection(selection) &&
-//             !isAbstractType(node.type)
-//           ) {
-//             return [
-//               {
-//                 ...selection,
-//                 concreteType: node.type.toString(),
-//               },
-//             ];
-//           }
-//           return [selection];
-//         });
-//         const baseType = selectionsToBabel(selections, customScalars);
-//         const type = isPlural(node) ? readOnlyArrayOfType(baseType) : baseType;
-
-//         return t.program([exportType(node.name, type)]);
-//       },
-
-//       InlineFragment(node) {
-//         const typeCondition = node.typeCondition;
-
-//         return flattenArray(node.selections).map(typeSelection => {
-//           return isAbstractType(typeCondition)
-//             ? {
-//                 ...typeSelection,
-//                 conditional: true,
-//               }
-//             : {
-//                 ...typeSelection,
-//                 concreteType: typeCondition.toString(),
-//               };
-//         });
-//       },
-//       Condition(node) {
-//         return flattenArray(node.selections).map(selection => {
-//           return {
-//             ...selection,
-//             conditional: true,
-//           };
-//         });
-//       },
-//       ScalarField(node) {
-//         return [
-//           {
-//             key: node.alias || node.name,
-//             schemaName: node.name,
-//             value: transformScalarType(node.type, customScalars),
-//           },
-//         ];
-//       },
-//       LinkedField(node) {
-//         return [
-//           {
-//             key: node.alias || node.name,
-//             schemaName: node.name,
-//             nodeType: node.type,
-//             nodeSelections: selectionsToMap(flattenArray(node.selections)),
-//           },
-//         ];
-//       },
-//       FragmentSpread(node) {
-//         return [];
-//       },
-//     },
-//   };
-// }
-
-
-
-// function selectionsToMap(selections) {
-//   const map = new Map();
-//   selections.forEach(selection => {
-//     const previousSel = map.get(selection.key);
-//     map.set(
-//       selection.key,
-//       previousSel ? mergeSelection(previousSel, selection) : selection,
-//     );
-//   });
-//   return map;
-// }
-
-// function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
-//   const result = [];
-//   arrayOfArrays.forEach(array => result.push(...array));
-//   return result;
-// }
-
-// function generateInputVariablesType(
-//   node: Root,
-//   customScalars: ScalarTypeMapping,
-//   inputFieldWhiteList?: ?Array<string>,
-// ) {
-//   return exportType(
-//     `${node.name}Variables`,
-//     exactObjectTypeAnnotation(
-//       node.argumentDefinitions.map(arg => {
-//         const property = t.objectTypeProperty(
-//           t.identifier(arg.name),
-//           transformInputType(arg.type, customScalars, inputFieldWhiteList),
-//         );
-//         if (!(arg.type instanceof GraphQLNonNull)) {
-//           property.optional = true;
-//         }
-//         return property;
-//       }),
-//     ),
-//   );
-// }
 
 const FLOW_TRANSFORMS: Array<IRTransform> = [
   (ctx: CompilerContext) => FlattenTransform.transform(ctx, {}),

@@ -37,6 +37,8 @@ const SCRIPT_NAME = 'relay-compiler';
 
 const SJS = require('./transforms/SJSTransform');
 
+const verbose = false;
+
 const WATCH_EXPRESSION = ['allof', ['type', 'f'], ['suffix', 'scala'], ['not', ['match', '**/__mocks__/**', 'wholename']], ['not', ['match', '**/__tests__/**', 'wholename']], ['not', ['match', '**/__generated__/**', 'wholename']]];
 
 // Inject
@@ -84,7 +86,7 @@ function getScalaFileWriter(baseDir, outputDir) {
 }
 
 // $FlowFixMe
-function compileAll(srcDir, schemaPath, writer /* $FlowFixMe */, parser, fileFilter, getFilepathsFromGlob) {
+function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepathsFromGlob) {
   const files = getFilepathsFromGlob(srcDir, { include: ["**"], extensions: ["scala"] });
 
   const parserConfigs = {
@@ -104,7 +106,7 @@ function compileAll(srcDir, schemaPath, writer /* $FlowFixMe */, parser, fileFil
       isGeneratedFile: filePath => true
     }
   };
-  const reporter = new ConsoleReporter({ verbose: true });
+  const reporter = new ConsoleReporter({ verbose });
 
   // $FlowFixMe
   const codegenRunner = new CodegenRunner({

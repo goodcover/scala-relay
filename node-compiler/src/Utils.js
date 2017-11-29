@@ -37,6 +37,8 @@ const SCRIPT_NAME = 'relay-compiler';
 
 const SJS = require('./transforms/SJSTransform');
 
+const verbose = false;
+
 const WATCH_EXPRESSION = [
   'allof',
   ['type', 'f'],
@@ -94,7 +96,7 @@ function getScalaFileWriter(baseDir: string, outputDir: string) {
 
 
 // $FlowFixMe
-function compileAll(srcDir: string, schemaPath: string, writer /* $FlowFixMe */, parser, fileFilter, getFilepathsFromGlob) {
+function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob) {
   const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]});
 
   const parserConfigs = {
@@ -114,7 +116,7 @@ function compileAll(srcDir: string, schemaPath: string, writer /* $FlowFixMe */,
       isGeneratedFile: (filePath) => true
     },
   };
-  const reporter = new ConsoleReporter({verbose: true});
+  const reporter = new ConsoleReporter({verbose});
 
   // $FlowFixMe
   const codegenRunner = new CodegenRunner({
