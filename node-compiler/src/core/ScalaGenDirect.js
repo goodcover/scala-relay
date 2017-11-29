@@ -91,7 +91,7 @@ function generate(
       node,
       createVisitor(newCT)
     )
-    const code = newCT.out();    
+    const code = newCT.out();
     // console.log(result);
     return code;
   } catch(e) {
@@ -138,7 +138,7 @@ type ImplDef = {
 }
 
 class ClassTracker {
-  
+
   classes: Map<string, Cls>;
   topClasses: Map<string, Cls>;
   implicits: Array<ImplDef>;
@@ -173,13 +173,13 @@ class ClassTracker {
     this.implicits.unshift({from, to, name, inline});
   }
 
-  
+
   newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean): string {
     let name = cn;
     if (linkedField) {
       name = this.newClassName(cn);
       const cls = {
-        name, 
+        name,
         members,
         extendsC,
         linkedField,
@@ -188,7 +188,7 @@ class ClassTracker {
       this.classes.set(name, cls);
     } else {
       const cls = {
-        name, 
+        name,
         members,
         extendsC,
         linkedField,
@@ -230,12 +230,12 @@ class ClassTracker {
 
   /**
    * Valid for any type.
-   * @param {*} node 
+   * @param {*} node
    */
   getNewTpeParent(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment): string {
     if (node.parentTpe)
       return node.parentTpe.slice(1).join("");
-    else 
+    else
       return node.parentTpe.join("");
   }
 
@@ -243,7 +243,7 @@ class ClassTracker {
     if (node.kind == "LinkedField") {
       if (node.parentTpe) {
         return node.parentTpe.slice(1).join("") + titleCase(node.name);
-      } 
+      }
     }
     return titleCase(node.name);
   }
@@ -256,18 +256,18 @@ class ClassTracker {
         } else {
           return node.parentTpe.slice(1).join("") + titleCase(node.name);
         }
-      } 
+      }
     }
     return titleCase(node.name);
   }
 
   /**
-   * Handle inline frags. 
+   * Handle inline frags.
    */
   inlineFrag(node: ConcreteInlineFragment) {
     const newClassName: string = this.getNewTpeInlineFrag(node);
     const localMembers: Array<Member> = node.selections.map(foo => this.popMember());
-    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment"); 
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");
     const newTpe = this.newClass(newClassName, localMembers, [], true);
     const parentCls = this.getNewTpeParent(node);
     this.newImplicit(parentCls, newTpe, `${node.typeCondition.toString()}`, true);
@@ -281,11 +281,11 @@ class ClassTracker {
     const inlineFrags: Array<ConcreteInlineFragment> = node.selections.filter(s => s.kind === "InlineFragment");
 
     // Don't look at Inline Fragments or Fragment Spreads, they get treated differently.
-    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");    
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");
     // We modify this in the baton.  Pop all the members off.
     let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
 
-  
+
     if (inlineFrags.length > 0) {
       // if we don't have __typename in the set of selection members add it synthetically since the relay compiler will
       // anyways.
@@ -301,12 +301,6 @@ class ClassTracker {
     const newClassName: string = this.getNewTpe(node);
     const scalar = false;
 
-
-    // Create implicit conversions here.
-    listOfSpreads.forEach(([k, {members}]) => {
-      this.newImplicit(newClassName, k, k, false);
-    });
-  
     // Very simple case, we are sure it can combine.
     if (spreadFrags.length == 1 && selectionMembers.length == 0) {
       // Only FragmentSpreads and no conflicting members
@@ -318,13 +312,17 @@ class ClassTracker {
         parentFrag: "",
         scalar,
       });
-    } 
-    
-    
+    }
+
+    // Create implicit conversions here, only after the above simple case didn't match
+    listOfSpreads.forEach(([k, {members}]) => {
+      this.newImplicit(newClassName, k, k, false);
+    });
+
     if (spreadFrags.length > 0) {
-      // Combine all the children both spreads and 
+      // Combine all the children both spreads and
       const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
-      const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);      
+      const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);
       // console.log(JSON.stringify(sumOfMembers, null, 2));
 
       //TODO: This is like a shitty version of fold.
@@ -340,7 +338,7 @@ class ClassTracker {
       });
     }
 
-    
+
     if (node.selections.length === selectionMembers.length) {
       // No spreads.
       const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked);
@@ -361,7 +359,7 @@ class ClassTracker {
         comments: ['New fields added, conflicts detected.'],
         scalar,
       });
-    } 
+    }
   }
 
   hasAndStripSjsWithDirective(n: ConcreteFragmentSpread): boolean {
@@ -465,7 +463,7 @@ class ClassTracker {
       case 'String':
       case 'Url':
         return [{name: "String"}];
-        
+
       case 'Float':
       case 'Int':
       case 'BigDecimal':
@@ -477,7 +475,7 @@ class ClassTracker {
       default:
         if (backupType) {
           return [{name: backupType}];
-        } 
+        }
         return [{name: `js.Any`}];
     }
   }
@@ -525,7 +523,7 @@ class ClassTracker {
     const node = this._nodes.find(n => n.kind === "Fragment" && n.name === name);
     if (node) {
       let result =  flattenArray(node.selections.map(s => {
-        
+
         if (s.kind == "FragmentSpread") {
           // console.log(s);
           // $FlowFixMe
@@ -547,7 +545,7 @@ class ClassTracker {
     } else return [];
   }
 
-  outCls({name, members, extendsC, open}: Cls, otherClasses?: ?Map<string, Cls>): string {    
+  outCls({name, members, extendsC, open}: Cls, otherClasses?: ?Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
 
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
@@ -591,14 +589,14 @@ class ClassTracker {
 
   /**
    * Group all the implicits, and create
-   * @param {} impl 
+   * @param {} impl
    */
   outImplicitsFrags(impl: Array<ImplDef>): string {
 
     var groups: {[string]: Array<ImplDef>} = {};
     impl.forEach((item) => {
        var list = groups[item.from];
-    
+
        if(list){
            list.push(item);
        } else{
