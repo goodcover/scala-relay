@@ -35,7 +35,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           *
           */
-        relaySangriaCompilerVersion := "0.6.3",
+        relaySangriaCompilerVersion := "0.6.10",
         /**
           * Runtime dependency on the macro
           */
