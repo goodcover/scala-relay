@@ -43,6 +43,15 @@ lazy val `sbt-relay-compiler` = project
       val () = publishLocal.value
       val () = (publishLocal in `relay-macro`).value
     },
+//    crossSbtVersions := List("0.13.16", "1.0.4"),
+//    scalaVersion := {
+//       (sbtBinaryVersion in pluginCrossBuild).value match {
+//         case "0.13" => "2.10.6"
+//         case _ => "2.12.4"
+//       }
+//    },
+//    // fixed in https://github.com/sbt/sbt/pull/3397 (for sbt 0.13.17)
+//    sbtBinaryVersion in update := (sbtBinaryVersion in pluginCrossBuild).value,
     publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)
