@@ -89,18 +89,14 @@ function generate(
   inputFieldWhiteList?: ?Array<string>,
   schema: GraphQLSchema,
   nodes: Array<Root | Fragment>,
-): {core: string, supporting: string} {
-  // const ast = IRVisitor.visit(
-  //   node,
-  //   createVisitor(customScalars || {}, inputFieldWhiteList, nodes),
-  // );
+): {core: string, supporting: string, implicits: string} {
 
   // const code = babelGenerator(ast).code;
   const newCT = new ClassTracker(nodes);
   try {
     const ast = IRVisitor.visit(
       node,
-      createVisitor2(newCT)
+      createVisitor(newCT)
     )
     const code = newCT.out();    
     // console.log(result);
@@ -141,10 +137,17 @@ type Cls = {
   children?: ?Map<string, Cls>,
 };
 
+type ImplDef = {
+  from: string,
+  to: string,
+  name: string,
+}
+
 class ClassTracker {
   
   classes: Map<string, Cls>;
   topClasses: Map<string, Cls>;
+  implicits: Array<ImplDef>;
   fields: Array<Member>;
   spreads: Array<[string, ASpread]>;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
@@ -157,6 +160,7 @@ class ClassTracker {
     this.spreads = [];
     this._nodes = nodes;
     this._missingFrags = [];
+    this.implicits = [];
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -169,6 +173,10 @@ class ClassTracker {
     } else {
       return name;
     }
+  }
+
+  newImplicit(from: string, to: string, name: string) {
+    this.implicits.unshift({from, to, name});
   }
 
   
@@ -219,6 +227,19 @@ class ClassTracker {
     return m;
   }
 
+  getNewTpeInlineFrag(node: ConcreteInlineFragment): string {
+    if (node.parentTpe) {
+      return node.parentTpe.slice(1).join("") + node.typeCondition.toString();
+    }
+    throw new Error(`Shouldn't happen, ${node.typeCondition.toString} parent: ${node.parentTpe}`);
+  }
+
+  getNewTpeParent(node: ConcreteInlineFragment): string {
+    if (node.parentTpe)
+      return node.parentTpe.slice(1).join("");
+    throw new Error(`Shouldn't happen, ${node.typeCondition.toString} parent: ${node.parentTpe}`);
+  }
+
   getNewTpe(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
     if (node.kind == "LinkedField") {
       if (node.parentTpe) {
@@ -229,7 +250,7 @@ class ClassTracker {
   }
 
   getNewTpeMember(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
-    if (node.kind == "LinkedField") {
+    if (node.kind == "LinkedField" || node.kind === "InlineFragment") {
       if (node.parentTpe) {
         if (node.parentTpe.length == 1) {
           return node.parentTpe.join("") + titleCase(node.name)
@@ -241,21 +262,38 @@ class ClassTracker {
     return titleCase(node.name);
   }
 
+  inlineFrag(node: ConcreteInlineFragment) {
+    const newClassName: string = this.getNewTpeInlineFrag(node);
+    const localMembers: Array<Member> = node.selections.map(foo => this.popMember());
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment"); 
+    const newTpe = this.newClass(newClassName, localMembers, [], true);
+    const parentCls = this.getNewTpeParent(node);
+    this.newImplicit(parentCls, newTpe, `${node.typeCondition.toString()}`);
+    node.selections;
+  }
+
   closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean) {
     //$FlowFixMe
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
     // $FlowFixMe
     const inlineFrags: Array<ConcreteInlineFragment> = node.selections.filter(s => s.kind === "InlineFragment");
-    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");    
+
+    // Don't look at Inline Fragments or Fragment Spreads, those get treated differently.
+    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");    
 
     // We modify this in the baton.  Pop all the members off.
     let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+    if (inlineFrags.length > 0) {
+      if (!selectionMembers.find(f => f.name === "__typename"))
+        localMembers.push({name: "__typename", tpe: [{name: "String"}], comments: [], scalar: true});
+    }
+
     let listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
     const fieldExtend: Array<string> = [];// flattenArray(listOfSpreads.map(s => s[1].extendCls));
 
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
-    let newClassName: string = this.getNewTpe(node);
+    const newClassName: string = this.getNewTpe(node);
     const scalar = false;
     
     // Very simple case, we are sure it can combine.
@@ -540,7 +578,32 @@ class ClassTracker {
     return [cls, m, "}"].join("\n");
   }
 
-  out(): { supporting: string, core: string } {
+  outImplicits(impl: Array<ImplDef>): string {
+    // return [`  implicit def ${from}2${name}(f: ${from}): ${to} = {`, `  f.asInstanceOf[${to}]`, `}`].join("\n  ");
+
+    var groups: {[string]: Array<ImplDef>} = {};
+    impl.forEach((item) => {
+       var list = groups[item.from];
+    
+       if(list){
+           list.push(item);
+       } else{
+          groups[item.from] = [item];
+       }
+    });
+
+    return Object.keys(groups).map(k => {
+
+      const items = groups[k]
+      const members = Array.from(items).map(({from, to, name}) => {
+        return `  def to${name}: ${to} = f.asInstanceOf[${to}]`
+      });
+      return [`implicit class ${k}2Ops(f: ${k}) {`, ...members, `}`].join("\n  ");
+    }).join("\n  ");
+
+  }
+
+  out(): { supporting: string, core: string, implicits: string } {
     invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
 
     const supporting = Array.from(this.classes.entries())
@@ -549,6 +612,9 @@ class ClassTracker {
         return this.outCls(cls);
       })
       .join("\n  ");
+
+    const implicits = this.outImplicits(this.implicits)
+
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
             const cls = s[1];
@@ -556,12 +622,29 @@ class ClassTracker {
               return this.outCls(cls, this.classes);
             } else return "";
           }).join("\n"),
-        supporting
+        supporting,
+        implicits
     };
   }
 }
 
-function createVisitor2(ct: ClassTracker) {
+function groupBy(collection: Array<any>, property: string) {
+  var i = 0, val, index,
+      values = [], result = [];
+  for (; i < collection.length; i++) {
+      val = collection[i][property];
+      index = values.indexOf(val);
+      if (index > -1)
+          result[index].push(collection[i]);
+      else {
+          values.push(val);
+          result.push([collection[i]]);
+      }
+  }
+  return result;
+}
+
+function createVisitor(ct: ClassTracker) {
   return {
     enter : {
       Root(node: ConcreteRoot) {
@@ -648,6 +731,7 @@ function createVisitor2(ct: ClassTracker) {
       InlineFragment(node: ConcreteInlineFragment) {
         // console.log("InlineFragment", node);
         // node.selections.map(s => s)
+        ct.inlineFrag(node);
         return node;
       },
       ScalarField(node: ConcreteScalarField) {

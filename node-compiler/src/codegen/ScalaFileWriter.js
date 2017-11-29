@@ -237,7 +237,8 @@ class ScalaFileWriter implements FileWriterInterface {
             this._config.platform,
             relayRuntimeModule,
             packageName,
-            flowTypes.supporting
+            flowTypes.supporting,
+            flowTypes.implicits
           );
         }),
       );

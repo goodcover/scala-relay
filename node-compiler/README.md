@@ -169,7 +169,7 @@ addSbtPlugin("com.dispalt.relay" % "sbt-relay-compiler" % "<version>")
 
 A list of tasks/ideas the community could help with. `High | Med | Low` refers to the complexity/difficulty.
 
- - [ ] Med: Fix `InlineFragments` so they work properly.  Right now we just really
+ - [x] Med: Fix `InlineFragments` so they work properly.  Right now we just really
  don't handle them.
  - [ ] Big: Fix spreading so it goes recursively?  Right now spreading is
  difficult because the types that are mixed in couple potentially conflict
@@ -177,9 +177,11 @@ A list of tasks/ideas the community could help with. `High | Med | Low` refers t
    - [ ] Med: Generate the necessary class depth.
    - [ ] Big: How to handle traversing since the order of the frags are unable to
     to be changed.
-  - [ ] Med: Handle connections and edges with a superclass.
-  - [ ] High: Handle exotic features of graphql.
-    - [ ] Low: Handle conditionals.
-    - [ ] Low: Figure out what is not working.
-  - [ ] High: Does recursion work?
-  - [ ] High: handle nullable, in relay/graphql world this basically means `T | Null` not `js.UndefOr`
+ - [ ] Med: Handle connections and edges with a superclass.
+ - [ ] High: Handle exotic features of graphql.
+   - [ ] Low: Handle conditionals.
+   - [ ] Low: Figure out what is not working.
+ - [ ] High: Does recursion work?
+ - [ ] High: handle nullable, in relay/graphql world this basically means `T | Null` not `js.UndefOr`
+ - [ ] Low: handle indents in generated code better
+ - [ ] 

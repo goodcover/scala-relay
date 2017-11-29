@@ -18,20 +18,22 @@ const formatGeneratedModule: FormatModule = ({
   documentType,
   docText,
   concreteText,
-  flowText,
+  topClasses,
   hash,
   devTextGenerator,
   relayRuntimeModule,
   packageName,
-  flowAltText,
+  supportingClasses,
+  implicits,
+  
 }) => {
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
   const hashText = hash ? `\n * ${hash}` : '';
   const devOnlyText = devTextGenerator ? devTextGenerator(objectName) : '';
   return `/**
- * scala ${hashText}
- * Generated, DON'T MANUALLY EDIT.
+ * scala-relay-compiler: ${hashText}
+ * GENERATED, DON'T MANUALLY EDIT.
  */
 package ${packageName}
 /*
@@ -43,12 +45,20 @@ docType:      ${documentType}
 import _root_.scala.scalajs.js
 import _root_.scala.scalajs.js.|
 
-${flowText || ''}
+${topClasses || ''}
 
 ${docTextComment}
 object ${moduleName} extends _root_.relay.graphql.GenericGraphQLTaggedNode {
 
-  ${flowAltText || ''}
+  ////////////////////////////////////
+  ////// Supporting classes begin here
+  ////////////////////////////////////
+  ${supportingClasses || ''}
+
+  ///////////////////////////
+  ////// Implicits begin here
+  ///////////////////////////
+  ${implicits || ''}
 
   val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.JSON.parse("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
   val devText: String = """${devOnlyText}"""

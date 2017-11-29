@@ -172,7 +172,7 @@ object RelayFilePlugin extends AutoPlugin {
       sourceDirectory.getAbsolutePath.quote,
       "--out",
       outputPath.getAbsolutePath.quote).mkString(" ")
-    println(cmd)
+//    println(cmd)
 
     Commands.run(cmd,
                  workingDir,

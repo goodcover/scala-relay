@@ -28,24 +28,26 @@ export type FormatModule = ({|
   documentType: 'ConcreteBatch' | 'ConcreteFragment',
   docText: ?string,
   concreteText: string,
-  flowText: ?string,
+  topClasses: ?string,
   hash: ?string,
   devTextGenerator: (objectName: string) => string,
   relayRuntimeModule: string,
   packageName: string,
-  flowAltText: ?string,
+  supportingClasses: ?string,
+  implicits: ?string,
 |}) => string;
 
 async function writeRelayScalaFile(
   codegenDir: CodegenDirectory,
   generatedNode: GeneratedNode,
   formatModule: FormatModule,
-  flowText: ?string,
+  topClasses: ?string,
   persistQuery: ?(text: string) => Promise<string>,
   platform: ?string,
   relayRuntimeModule: string,
   defaultPackage: ?string,
-  flowAltText: ?string,
+  supportingClasses: ?string,
+  implicits: ?string,
 ): Promise<?GeneratedNode> {
   const moduleName = generatedNode.name;
   const platformName = platform ? moduleName + '.' + platform : moduleName;
@@ -69,8 +71,14 @@ async function writeRelayScalaFile(
     const hasher = crypto.createHash('md5');
     hasher.update('cache-breaker-2');
     hasher.update(JSON.stringify(generatedNode));
-    if (flowText) {
-      hasher.update(flowText);
+    if (topClasses) {
+      hasher.update(topClasses);
+    }
+    if (supportingClasses) {
+      hasher.update(supportingClasses);
+    }
+    if (implicits) {
+      hasher.update(implicits);
     }
     if (persistQuery) {
       hasher.update('persisted');
@@ -99,13 +107,14 @@ async function writeRelayScalaFile(
     moduleName,
     documentType: flowTypeName,
     docText: text,
-    flowText,
+    topClasses,
     hash: hash ? `@relayHash ${hash}` : null,
     concreteText: prettyStringify(generatedNode),
     devTextGenerator: makeDevTextGenerator(devOnlyProperties),
     relayRuntimeModule,
     packageName,
-    flowAltText
+    supportingClasses,
+    implicits
   });
 
   codegenDir.writeFile(filename, moduleText);
