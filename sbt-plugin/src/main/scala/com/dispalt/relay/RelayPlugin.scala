@@ -160,19 +160,16 @@ object RelayFilePlugin extends AutoPlugin {
       List("cmd.exe", "/C")
     } else List("sh", "-c")
 
-
     val cmd = shell :+ List(compilerPath,
-      "--schema",
-      schemaPath.getAbsolutePath.quote,
-      "--src",
-      sourceDirectory.getAbsolutePath.quote,
-      "--out",
-      outputPath.getAbsolutePath.quote).mkString(" ")
+                            "--schema",
+                            schemaPath.getAbsolutePath.quote,
+                            "--src",
+                            sourceDirectory.getAbsolutePath.quote,
+                            "--out",
+                            outputPath.getAbsolutePath.quote).mkString(" ")
 //    println(cmd)
 
-    Commands.run(cmd,
-                 workingDir,
-                 logger)
+    Commands.run(cmd, workingDir, logger)
     ()
   }
 }

@@ -1,6 +1,5 @@
 package sbt.shim
 
-
 import java.io.File
 import sbt.FileInfo
 import sbt.util.{CacheStore, CacheStoreFactory, Tracked}
@@ -11,7 +10,8 @@ object SbtCompat {
   type UpdateFunction = sbt.FileFunction.UpdateFunction
 
   object FileFunction {
-    def cached(cacheBaseDirectory: File)(inStyle: FileInfo.Style, outStyle: FileInfo.Style)(action: UpdateFunction): Set[File] => Set[File] =
+    def cached(cacheBaseDirectory: File)(inStyle: FileInfo.Style, outStyle: FileInfo.Style)(
+      action: UpdateFunction): Set[File] => Set[File] =
       sbt.FileFunction.cached(CacheStoreFactory(cacheBaseDirectory), inStyle, outStyle)(action)
   }
 
@@ -33,8 +33,7 @@ object SbtCompat {
     def update(value: O): Unit = store.write(value)
     def uptodate(value: O): Boolean = {
       val equiv: Equiv[O] = implicitly
-      try { equiv.equiv(value, store.read[O]) }
-      catch { case _: Exception => false }
+      try { equiv.equiv(value, store.read[O]) } catch { case _: Exception => false }
     }
   }
 }

@@ -9,7 +9,8 @@ object SbtCompat {
   type UpdateFunction = sbt.FileFunction.UpdateFunction
 
   object FileFunction {
-    def cached(cacheBaseDirectory: File)(inStyle: FilesInfo.Style, outStyle: FilesInfo.Style)(action: UpdateFunction): Set[File] => Set[File] =
+    def cached(cacheBaseDirectory: File)(inStyle: FilesInfo.Style, outStyle: FilesInfo.Style)(
+      action: UpdateFunction): Set[File] => Set[File] =
       sbt.FileFunction.cached(cacheBaseDirectory)(inStyle, outStyle)(action)
   }
 
