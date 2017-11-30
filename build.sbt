@@ -128,7 +128,6 @@ lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
                         "-Ywarn-numeric-widen",
                         "-Ywarn-value-discard",
                         "-Xfuture"),
-  crossSbtVersions := List("0.13.16", "1.0.4"),
   organization := "com.dispalt.relay",
   sonatypeProfileName := "com.dispalt",
   pomExtra :=
