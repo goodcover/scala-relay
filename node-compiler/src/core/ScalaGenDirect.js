@@ -614,7 +614,7 @@ class ClassTracker {
        var list = groups[item.from];
 
        if(list){
-           list.push(item);
+          list.push(item);
        } else{
           groups[item.from] = [item];
        }
@@ -641,7 +641,7 @@ class ClassTracker {
    *    types are to casting from one type directly to another.  Usually this is set by
    *    the logic in LinkedField or something similar
    *  - 2nd thing it does is handles converting top level objects to something that you can pass around
-   *    I am not sure how sound this is though.
+   *    I am not sure how sound this is though. **I explain below**
    *
    * @param {*} impl filtered list of implicits
    * @param {*} otherClasses the list of non top level classes in part of this root node
