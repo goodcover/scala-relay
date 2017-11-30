@@ -1,7 +1,7 @@
 {
   "name": "scala-relay-compiler",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.6.13",
+  "version": "0.6.14",
   "license": "Apache-2.0",
   "dependencies": {
     "babel-polyfill": "^6.20.0",
@@ -39,8 +39,8 @@
   },
   "url": "https://github.com/dispalt/relay-modern-helper/",
   "email": "dan@goodcover.com",
-  "repository" :
-  { "type" : "git"
-  , "url" : "https://github.com/dispalt/relay-modern-helper.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dispalt/relay-modern-helper.git"
   }
 }
