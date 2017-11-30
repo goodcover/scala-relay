@@ -72,6 +72,7 @@ lazy val `sbt-relay-compiler` = project
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
+  .enablePlugins(CrossPerProjectPlugin)
   .settings(publishMavenStyle := true,
             scalaVersion := Version.Scala212,
             crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
