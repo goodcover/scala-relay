@@ -9,7 +9,7 @@ object Version {
   final val Scala212 = "2.12.4"
 
   final val SjsReact       = "1.1.0"
-  final val Scalameta      = "2.1.2"
+  final val Scalameta      = "1.8.0"
   final val Scalajs        = org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.scalaJSVersion
   final val ScalajsBundler = "0.9.0"
   final val ScalaTest      = "3.0.4"

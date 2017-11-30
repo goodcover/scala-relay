@@ -73,12 +73,12 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
-  .settings(publishMavenStyle := true,
-            scalaVersion := Version.Scala212,
-            crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
-            libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
   .settings(metaMacroSettings)
   .settings(commonSettings)
+  .settings(publishMavenStyle := true,
+    scalaVersion := Version.Scala212,
+    crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
+    libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] =
   Seq(
