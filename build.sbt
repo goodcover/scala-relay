@@ -56,6 +56,8 @@ lazy val `sbt-relay-compiler` = project
             sourceGenerators in Compile += Def.task {
               Generators.version(version.value, (sourceManaged in Compile).value)
             }.taskValue,
+            releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+            releaseCrossBuild := false,
             releaseProcess :=
               Seq[ReleaseStep](checkSnapshotDependencies,
                                inquireVersions,
