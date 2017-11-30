@@ -8,7 +8,7 @@ lazy val root =
     .in(file("."))
     .settings(commonSettings)
     .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact in Compile := false, publish := {})
-//    .enablePlugins(CrossPerProjectPlugin)
+    .enablePlugins(CrossPerProjectPlugin)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
