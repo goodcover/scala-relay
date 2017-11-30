@@ -18,7 +18,7 @@ lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(CrossPerProjectPlugin)
-  .settings(commonSettings)
+  .settings(commonSettings, bintraySettings)
   .settings(sbtPlugin := true,
             addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % Version.Scalajs),
             addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
@@ -74,7 +74,7 @@ lazy val `relay-macro` = project
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
   .settings(metaMacroSettings)
-  .settings(commonSettings)
+  .settings(commonSettings, releaseSettings)
   .settings(publishMavenStyle := true,
     scalaVersion := Version.Scala212,
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
@@ -117,7 +117,7 @@ lazy val releaseSettings =
                          commitNextVersion,
                          pushChanges))
 
-lazy val commonSettings = bintraySettings ++ releaseSettings ++ Seq(
+lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-feature",
                         "-deprecation",
                         "-encoding",
