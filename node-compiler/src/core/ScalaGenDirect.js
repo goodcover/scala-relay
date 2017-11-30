@@ -284,6 +284,15 @@ class ClassTracker {
     node.selections;
   }
 
+  /**
+   * TODO: This needs to severly be cleaned up, wayyyy too much going on.
+   *
+   *
+   *
+   * @param {*} node
+   * @param {*} linked is it a linked field
+   * @param {*} root is it the root?
+   */
   closeField(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment, linked: boolean, root: boolean) {
     //$FlowFixMe
     const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
@@ -328,7 +337,6 @@ class ClassTracker {
     //   });
     // }
 
-    // Create implicit conversions here, only after the above simple case didn't match
 
     // TODO: Revisit if we shouldn't just use implicits all together.
     if (spreadFrags.length > 0) {
@@ -622,38 +630,65 @@ class ClassTracker {
           '  }'
         ].join("\n  ");
       });
-      return [`implicit class ${k}2Ops(f: ${k}) {`, ...members, `}`].join("\n  ");
+      return [`implicit class ${k}_Ops(f: ${k}) {`, ...members, `}`].join("\n  ");
     }).join("\n  ");
 
   }
 
+  /**
+   * This logic is fairly convoluted, but it accomplishes a couple different things,
+   *  - It handles non inline conversions from a type to another.  The purpose of these
+   *    types are to casting from one type directly to another.  Usually this is set by
+   *    the logic in LinkedField or something similar
+   *  - 2nd thing it does is handles converting top level objects to something that you can pass around
+   *    I am not sure how sound this is though.
+   *
+   * @param {*} impl filtered list of implicits
+   * @param {*} otherClasses the list of non top level classes in part of this root node
+   * @param {*} topClasses the root node, usually a list of one.
+   */
   outImplicitsConversion(impl: Array<ImplDef>, otherClasses?: ?Map<string, Cls>, topClasses: Array<Cls>): string {
-    const text = impl.map(({from, to, name}) => {
-      return `implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`;
-    }).join("\n  ");
 
-    let implExtra = ""
-    const oc = otherClasses && Array.from(otherClasses.values()) || [];
+    const oc = otherClasses && Array.from(otherClasses.values());
+    let extraImplicits = ""
     if (oc) {
-      implExtra = topClasses.map((tc) => {
-        const tcName = tc.name;
-        invariant(tcName, "top class missing name");
-
-        return oc.map(({name, spreadFrags}) => {
-          const ocName = name;
-          invariant(ocName, "other class missing name");
-
-          return spreadFrags.map(frag => {
-            const rt = `relay.generated.lifted.Lifted${ocName}[${frag}]`;
-            return [
-              `implicit def ${tcName}2${frag}(f: ${tcName})`, ':', rt,
-              '=', `f.asInstanceOf[${rt}]`,
-            ].join(" ");
-          }).join("\n  ");
-        }).join("\n ");
-      }).join("\n ");
+      oc.forEach(({spreadFrags, name}) => {
+        spreadFrags.forEach(frag => {
+          const i: ImplDef = {from: name, to: frag, name: frag, inline: false};
+          impl.push(i);
+        });
+      });
     }
-    return [text, implExtra].join("\n");
+
+
+    // Handle explicits implicits we've asked for.
+    const text = impl.map(({from, to, name}) => {
+      return `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`;
+    }).join("\n");
+
+    // TODO: I am going to leave this in for now, its a weird concept though.
+    // let implExtra = ""
+    // const oc = otherClasses && Array.from(otherClasses.values()) || [];
+    // if (oc) {
+    //   implExtra = topClasses.map((tc) => {
+    //     const tcName = tc.name;
+    //     invariant(tcName, "top class missing name");
+
+    //     return oc.map(({name, spreadFrags}) => {
+    //       const ocName = name;
+    //       invariant(ocName, "other class missing name");
+
+    //       return spreadFrags.map(frag => {
+    //         const rt = `relay.generated.lifted.Lifted${ocName}[${frag}]`;
+    //         return [
+    //           `  implicit def ${tcName}2${frag}(f: ${tcName})`, ':', rt,
+    //           '=', `f.asInstanceOf[${rt}]`,
+    //         ].join(" ");
+    //       }).join("\n  ");
+    //     }).join("\n  ");
+    //   }).join("\n  ");
+    // }
+    return [text].join("\n");
   }
 
   out(): { supporting: string, core: string, implicits: string } {
