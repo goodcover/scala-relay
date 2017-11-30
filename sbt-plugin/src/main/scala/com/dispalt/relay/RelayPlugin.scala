@@ -4,11 +4,8 @@ import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
-import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin
-import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
-import sbt.inc.Analysis
 
 import scalajsbundler.util.Commands
 
@@ -46,7 +43,7 @@ object RelayBasePlugin extends AutoPlugin {
 object RelayFilePlugin extends AutoPlugin {
 
   override def requires =
-    ScalaJSPlugin && ScalaJSBundlerPlugin && RelayBasePlugin
+    ScalaJSPlugin && RelayBasePlugin
 
   override def trigger = noTrigger
 
@@ -112,8 +109,7 @@ object RelayFilePlugin extends AutoPlugin {
 
             def handleUpdate(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
               val files = in.modified -- in.removed
-              import sbt._
-              inc.Analysis
+              sbt.shim.SbtCompat.Analysis
                 .counted("Scala source", "", "s", files.size)
                 .foreach { count =>
                   ran = true
@@ -123,7 +119,7 @@ object RelayFilePlugin extends AutoPlugin {
             }
 
             /* I used to count the result, but it was weird and inconsistent */
-            FileFunction.cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate)(scalaFiles)
+            sbt.shim.SbtCompat.FileFunction.cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate)(scalaFiles)
             if (ran) {
               Def.task[Seq[File]] {
 //                val workingDir = (crossTarget in npmUpdate in Compile).value

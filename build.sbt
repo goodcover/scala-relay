@@ -9,10 +9,9 @@ lazy val root =
       PgpKeys.publishSigned := {},
       publishLocal := {},
       publishArtifact in Compile := false,
-      publish := {},
-      scalaVersion := Version.Scala211
+      publish := {}
     )
-    .enablePlugins(CrossPerProjectPlugin)
+    //.enablePlugins(CrossPerProjectPlugin)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
@@ -20,11 +19,10 @@ def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
-  .enablePlugins(SbtPluginPlugins, CrossPerProjectPlugin)
+  .enablePlugins(SbtPluginPlugins)
+  //.enablePlugins(CrossPerProjectPlugin)
   .settings(commonSettings)
   .settings(
-    scalaVersion := Version.Scala210,
-    crossScalaVersions := Seq(Version.Scala210),
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % Version.Scalajs),
     addSbtPlugin(
@@ -43,15 +41,23 @@ lazy val `sbt-relay-compiler` = project
       val () = publishLocal.value
       val () = (publishLocal in `relay-macro`).value
     },
-//    crossSbtVersions := List("0.13.16", "1.0.4"),
-//    scalaVersion := {
-//       (sbtBinaryVersion in pluginCrossBuild).value match {
-//         case "0.13" => "2.10.6"
-//         case _ => "2.12.4"
-//       }
-//    },
-//    // fixed in https://github.com/sbt/sbt/pull/3397 (for sbt 0.13.17)
-//    sbtBinaryVersion in update := (sbtBinaryVersion in pluginCrossBuild).value,
+    crossSbtVersions := List("0.13.16", "1.0.4"),
+    scalaVersion := {
+       (sbtBinaryVersion in pluginCrossBuild).value match {
+         case "0.13" => "2.10.6"
+         case _ => "2.12.4"
+       }
+    },
+    // sbt dependent libraries
+    libraryDependencies ++= {
+      (sbtVersion in pluginCrossBuild).value match {
+        case v if v.startsWith("1.") => Seq("org.scala-sbt" %% "io" % "1.0.0")
+        case _ => Seq()
+      }
+    },
+
+    // fixed in https://github.com/sbt/sbt/pull/3397 (for sbt 0.13.17)
+    sbtBinaryVersion in update := (sbtBinaryVersion in pluginCrossBuild).value,
     publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)
