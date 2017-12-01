@@ -284,6 +284,10 @@ class ClassTracker {
     node.selections;
   }
 
+  specialClassExtends(localMembers: Array<Member>, className: String): Array<string> {
+
+  }
+
   /**
    * TODO: This needs to severly be cleaned up, wayyyy too much going on.
    *
@@ -552,7 +556,32 @@ class ClassTracker {
     } else return [];
   }
 
-  outCls({name, members, extendsC, open}: Cls, otherClasses?: ?Map<string, Cls>): string {
+  makeType(className: string, s: ATpe, cs?: Set<string>): string {
+    let newTpeName = cs && cs.has(s.name) ? className + "." + s.name: s.name;
+    if (s.isArray) {
+      newTpeName = "js.Array[" + newTpeName + "]";
+    }
+    return newTpeName;
+  }
+
+  makeTypeFromMember(className: string, m: Member, otherClasses?: Map<string, Cls>): string {
+    const joinStr = m.or ? " | " : " with ";
+    let tpe = "";
+    if (otherClasses) {
+      // Declared new classes.
+      const cs = new Set(otherClasses.keys());
+      tpe = m.tpe.map(s => {
+        return this.makeType(className, s, cs);
+      }).join(joinStr);
+    } else {
+      tpe = m.tpe.map(s => {
+        return this.makeType(className, s);
+      }).join(joinStr);
+    }
+    return tpe;
+  }
+
+  outCls({name, members, extendsC, open}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
 
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
@@ -562,30 +591,7 @@ class ClassTracker {
       const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/", "\n"];
 
       // Figure out if we've created the type, if so, add a prefix.
-      let tpe = "";
-      const joinStr = s.or ? " | " : " with ";
-      if (otherClasses) {
-        // Declared new classes.
-        const cs = new Set(otherClasses.keys());
-        tpe = s.tpe.map(s => {
-
-          let newTpeName = cs.has(s.name) ? name + "." + s.name: s.name;
-          if (s.isArray) {
-            newTpeName = "js.Array[" + newTpeName + "]";
-          }
-
-          return newTpeName;
-        }).join(joinStr);
-      } else {
-        tpe = s.tpe.map(s => {
-          let newTpeName = s.name;
-          if (s.isArray) {
-            newTpeName = "js.Array[" + newTpeName + "]";
-          }
-
-          return newTpeName;
-        }).join(joinStr);
-      }
+      const tpe = this.makeTypeFromMember(name, s, otherClasses);
 
       return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
