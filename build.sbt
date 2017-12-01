@@ -18,6 +18,7 @@ lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(CrossPerProjectPlugin)
+  .enablePlugins(ReleasePlugin)
   .settings(commonSettings, bintraySettings)
   .settings(sbtPlugin := true,
             addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % Version.Scalajs),
@@ -76,6 +77,7 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
+  .enablePlugins(ReleasePlugin)
   .settings(metaMacroSettings)
   .settings(commonSettings, releaseSettings)
   .settings(publishMavenStyle := true,
