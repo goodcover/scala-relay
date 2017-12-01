@@ -7,8 +7,9 @@ trait Edge[E] extends js.Object {
   val cursor: String
 }
 
-trait Connection[E] extends js.Object {
-  val edges: js.Array[Edge[E]]
+// Can't figure how to handle the variance here.
+trait Connection[E <: Edge[_]] extends js.Object {
+  val edges: js.Array[E]
 }
 
 trait SangriaInfo extends js.Object {
