@@ -66,6 +66,7 @@ object RelayFilePlugin extends AutoPlugin {
 //          * Piggy back on sjs bundler to add our compiler to it.
 //          */
 //        npmDevDependencies in Compile ++= Seq("scala-relay-compiler" -> relaySangriaCompilerVersion.value),
+        scalacOptions += s"-Xmacro-settings:relaySchema=${relaySchema.value.absolutePath}",
         /**
           * Output path of the relay compiler.  Necessary this is an empty directory as it will
           * delete files it thinks went away.
@@ -79,13 +80,6 @@ object RelayFilePlugin extends AutoPlugin {
         relayCompilerPath := {
           "scala-relay-compiler"
         },
-        scalaJSNativeLibraries in Compile := Attributed.blank(Seq.empty),
-        scalaJSNativeLibraries in Test := Attributed.blank(Seq.empty),
-        //        compile in Compile := {
-        //          (npmUpdate in Compile).value
-        //          relayCompile.value
-        //          (compile in Compile).value
-        //        },
         /**
           * Meat of the function.
           */
