@@ -7,8 +7,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(commonSettings)
-    .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact in Compile := false, publish := {})
-    .enablePlugins(CrossPerProjectPlugin)
+    .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact := false, publish := {})
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
@@ -19,7 +18,8 @@ lazy val `sbt-relay-compiler` = project
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(CrossPerProjectPlugin)
   .enablePlugins(ReleasePlugin)
-  .settings(commonSettings, bintraySettings)
+    .settings(bintraySettings)
+  .settings(commonSettings)
   .settings(sbtPlugin := true,
             addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % Version.Scalajs),
             addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
@@ -79,15 +79,30 @@ lazy val `relay-macro` = project
   .enablePlugins(CrossPerProjectPlugin)
   .enablePlugins(ReleasePlugin)
   .settings(metaMacroSettings)
-  .settings(commonSettings, releaseSettings)
+  .settings(commonSettings)
   .settings(publishMavenStyle := true,
-    scalaVersion := Version.Scala212,
-    scalacOptions ++= {
-      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
-      else Nil
-    },
-    crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
-    libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
+            scalaVersion := Version.Scala212,
+            scalacOptions ++= {
+              if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
+              else Nil
+            },
+            crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
+            libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest),
+            releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+            releaseCrossBuild := false,
+            releaseProcess :=
+              Seq[ReleaseStep](checkSnapshotDependencies,
+                               inquireVersions,
+                               runClean,
+                               releaseStepCommandAndRemaining("+test"),
+                               setReleaseVersion,
+                               commitReleaseVersion,
+                               tagRelease,
+                               releaseStepCommandAndRemaining("+publishSigned"),
+                               releaseStepCommandAndRemaining("sonatypeReleaseAll"),
+                               setNextVersion,
+                               commitNextVersion,
+                               pushChanges))
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] =
   Seq(
@@ -108,23 +123,6 @@ lazy val bintraySettings: Seq[Setting[_]] =
       bintrayRepository := "sbt-plugins",
       bintrayPackage := "sbt-relay-compiler",
       bintrayReleaseOnPublish := true)
-
-lazy val releaseSettings =
-  Seq(releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseCrossBuild := false,
-      releaseProcess :=
-        Seq[ReleaseStep](checkSnapshotDependencies,
-                         inquireVersions,
-                         runClean,
-                         releaseStepCommandAndRemaining("+test"),
-                         setReleaseVersion,
-                         commitReleaseVersion,
-                         tagRelease,
-                         releaseStepCommandAndRemaining("+publishSigned"),
-                         releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-                         setNextVersion,
-                         commitNextVersion,
-                         pushChanges))
 
 lazy val commonSettings = Seq(
   scalacOptions ++= Seq("-feature",
