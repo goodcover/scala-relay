@@ -284,8 +284,40 @@ class ClassTracker {
     node.selections;
   }
 
-  specialClassExtends(localMembers: Array<Member>, className: String): Array<string> {
+  specialClassExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment,
+      localMembers: Array<Member>, className: string, root: boolean): Array<string> {
+    if (root) return [];
 
+    // $FlowFixMe
+    const typeString = node.type instanceof GraphQLNonNull ? node.type.ofType.toString() : node.type.toString();
+
+    if (className.endsWith("Edges")) {
+      const nodeMem = localMembers.find(s => s.name == "node")
+      if (nodeMem) {
+        const tpe = this.makeTypeFromMember(className, nodeMem)
+        return [`_root_.relay.runtime.Edge[${tpe}]`];
+      }
+      return [];
+    }
+
+    if (typeString.endsWith("Connection")) {
+      const edgesMem = localMembers.find(s => s.name == "edges")
+      if (edgesMem) {
+        //
+        const newEdge = Object.assign({}, edgesMem)
+        newEdge.tpe = newEdge.tpe.map(t => {
+          return {
+            ...t,
+            isArray: false
+          }
+        })
+        const tpe = this.makeTypeFromMember(className, newEdge);
+        return [`_root_.relay.runtime.Connection[${tpe}]`];
+      }
+      return [];
+    }
+
+    return [];
   }
 
   /**
@@ -318,7 +350,6 @@ class ClassTracker {
     }
 
     const listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
-    const fieldExtend: Array<string> = [];// flattenArray(listOfSpreads.map(s => s[1].extendCls));
 
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
@@ -330,6 +361,9 @@ class ClassTracker {
     listOfSpreads.forEach(([k, {members}]) => {
       this.newImplicit(newClassName, k, k, false);
     });
+
+    // flattenArray(listOfSpreads.map(s => s[1].extendCls));
+    const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root);
 
 
     // TODO: Revisit if we shouldn't just use implicits all together.
