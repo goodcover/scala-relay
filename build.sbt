@@ -80,6 +80,10 @@ lazy val `relay-macro` = project
   .settings(commonSettings, releaseSettings)
   .settings(publishMavenStyle := true,
     scalaVersion := Version.Scala212,
+    scalacOptions ++= {
+      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
+      else Nil
+    },
     crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
     libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
 

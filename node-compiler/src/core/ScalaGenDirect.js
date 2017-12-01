@@ -323,43 +323,29 @@ class ClassTracker {
     const spreadParentsFrags: Array<string> =
       Array.from(new Set(flattenArray(listOfSpreads.map(s => s[1].members.filter(s => !!s.parentFrag).map(s => s.parentFrag)))));
 
-    // TODO: Revisit this approach.
-    // // Very simple case, we are sure it can combine.
-    // if (spreadFrags.length == 1 && selectionMembers.length == 0) {
-    //   // Only FragmentSpreads and no conflicting members
-    //   const newTpe = this.transformScalarType(node.type, spreadFrags[0].name);
-    //   return this.newMember({
-    //     name: fieldName,
-    //     tpe: newTpe,
-    //     comments: [`Combined the fields on a spread: ${spreadFrags[0].name}`],
-    //     parentFrag: "",
-    //     scalar,
-    //   });
-    // }
-
     listOfSpreads.forEach(([k, {members}]) => {
       this.newImplicit(newClassName, k, k, false);
     });
 
 
     // TODO: Revisit if we shouldn't just use implicits all together.
-    if (spreadFrags.length > 0) {
-      // Combine all the children both spreads and
-      const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
-      const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);
+    // if (spreadFrags.length > 0) {
+    //   // Combine all the children both spreads and
+    //   const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
+    //   const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);
 
-      //TODO: This is like a shitty version of fold.
-      localMembers = Array.from(sumOfMembers.entries()).map(s => {
-        if (s[1].length == 1)
-          return s[1][0];
-        let m = s[1][0];
-        s[1].slice(1).forEach(ss => {
-          ss.comments.push(`Combining fields, with or? "${ss.or}" `)
-          m = this.combineFields(m, ss);
-        });
-        return m;
-      });
-    }
+    //   //TODO: This is like a shitty version of fold.
+    //   localMembers = Array.from(sumOfMembers.entries()).map(s => {
+    //     if (s[1].length == 1)
+    //       return s[1][0];
+    //     let m = s[1][0];
+    //     s[1].slice(1).forEach(ss => {
+    //       ss.comments.push(`Combining fields, with or? "${ss.or}" `)
+    //       m = this.combineFields(m, ss);
+    //     });
+    //     return m;
+    //   });
+    // }
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags);
     const newNewTpe = this.transformScalarType(node.type, newTpe);

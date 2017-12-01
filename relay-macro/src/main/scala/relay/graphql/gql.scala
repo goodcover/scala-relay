@@ -1,4 +1,4 @@
-package dispalt.relay
+package relay.graphql
 
 import sangria.parser.QueryParser
 
