@@ -337,6 +337,10 @@ class ClassTracker {
     //   });
     // }
 
+    listOfSpreads.forEach(([k, {members}]) => {
+      this.newImplicit(newClassName, k, k, false);
+    });
+
 
     // TODO: Revisit if we shouldn't just use implicits all together.
     if (spreadFrags.length > 0) {
@@ -649,16 +653,16 @@ class ClassTracker {
    */
   outImplicitsConversion(impl: Array<ImplDef>, otherClasses?: ?Map<string, Cls>, topClasses: Array<Cls>): string {
 
-    const oc = otherClasses && Array.from(otherClasses.values());
-    let extraImplicits = ""
-    if (oc) {
-      oc.forEach(({spreadFrags, name}) => {
-        spreadFrags.forEach(frag => {
-          const i: ImplDef = {from: name, to: frag, name: frag, inline: false};
-          impl.push(i);
-        });
-      });
-    }
+    // const oc = otherClasses && Array.from(otherClasses.values());
+    // let extraImplicits = ""
+    // if (oc) {
+    //   oc.forEach(({spreadFrags, name}) => {
+    //     spreadFrags.forEach(frag => {
+    //       const i: ImplDef = {from: name, to: frag, name: frag, inline: false};
+    //       impl.push(i);
+    //     });
+    //   });
+    // }
 
 
     // Handle explicits implicits we've asked for.
