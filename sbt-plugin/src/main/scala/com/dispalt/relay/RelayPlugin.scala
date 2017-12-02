@@ -17,6 +17,7 @@ object RelayBasePlugin extends AutoPlugin {
 
   object autoImport {
     val relaySchema: SettingKey[File]                   = settingKey[File]("Path to schema file")
+    val relayValidateQuery: SettingKey[Boolean]         = settingKey[Boolean]("Validate queries in macro")
     val relaySangriaVersion: SettingKey[String]         = settingKey[String]("Set the Sangria version")
     val relaySangriaCompilerVersion: SettingKey[String] = settingKey[String]("Set the Sangria version")
   }
@@ -37,7 +38,11 @@ object RelayBasePlugin extends AutoPlugin {
           * Runtime dependency on the macro
           */
         libraryDependencies ++= Seq("com.dispalt.relay"   %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
-                                    "org.sangria-graphql" %% "sangria"      % relaySangriaVersion.value % Provided))
+                                    "org.sangria-graphql" %% "sangria"      % relaySangriaVersion.value % Provided),
+        /**
+          * Should we validate queries?
+          */
+        relayValidateQuery := false)
 }
 
 object RelayFilePlugin extends AutoPlugin {
@@ -62,16 +67,17 @@ object RelayFilePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-//        /**
-//          * Piggy back on sjs bundler to add our compiler to it.
-//          */
-//        npmDevDependencies in Compile ++= Seq("scala-relay-compiler" -> relaySangriaCompilerVersion.value),
+        /**
+          * Add the path so the macro can find the schema.
+          */
         scalacOptions += s"-Xmacro-settings:relaySchema=${relaySchema.value.absolutePath}",
+        /**
+          * If set to validate, then pass the setting again to the macro.
+          */
+        scalacOptions ++= (if (relayValidateQuery.value) Seq(s"-Xmacro-settings:relayValidateQuery=true") else Seq()),
         /**
           * Output path of the relay compiler.  Necessary this is an empty directory as it will
           * delete files it thinks went away.
-          *
-          *
           */
         relayOutput in Compile := (sourceManaged in Compile).value / relayFolder,
         /**
@@ -147,7 +153,6 @@ object RelayFilePlugin extends AutoPlugin {
                   sourceDirectory: File,
                   outputPath: File,
                   logger: Logger): Unit = {
-    import sbt._
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
