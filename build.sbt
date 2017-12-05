@@ -75,7 +75,7 @@ lazy val `relay-macro` = project
             },
             crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
             libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest)
-            )
+  )
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] =
   Seq(

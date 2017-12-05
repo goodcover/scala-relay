@@ -14,6 +14,8 @@ object Version {
   final val ScalajsBundler = "0.9.0"
   final val ScalaTest      = "3.0.4"
   final val Sangria        = "1.3.2"
+
+  final val Ammonite = "1.0.3"
 }
 
 object Library {

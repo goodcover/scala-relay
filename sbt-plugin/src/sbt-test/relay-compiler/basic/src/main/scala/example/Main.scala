@@ -33,9 +33,12 @@ object ActorSubscribe
   """)
 object frag
 
+case class Foo(i: Int)(val f: relay.generated.Task_foo)
+
 object Main extends JSApp {
 
   def main(): Unit = {
+    val m = serde.sjs.generic.deriveBindable[Foo, relay.generated.Task_foo]
 
     val q = relay.generated.Task_foo.query
     dom.console.log(q)
