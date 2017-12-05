@@ -69,6 +69,9 @@ const invariant = require('invariant');
 
 const SJSTransform = require('../transforms/SJSTransform');
 
+const ARRAY_MOD = "array"
+const OPTIONAL_MOD = "optional"
+
 /*
 Better typing ideas here.
 
@@ -106,8 +109,7 @@ type ASpread = {
 
 type ATpe = {
   name: string,
-  isArray?: boolean,
-  isOptional?: boolean,
+  mods: Array<string>,
 }
 
 type Member = {
@@ -241,7 +243,8 @@ class ClassTracker {
   }
 
   getNodeName(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
-    const suffix = node.operation === "query" ? "Query" : "";
+    // TODO: Should I change this?
+    const suffix = node.operation === "query" ? "" : "";
     // $FlowFixMe
     const nameAlias = (node.alias || node.name) + suffix;
     return nameAlias;
@@ -293,6 +296,14 @@ class ClassTracker {
     node.selections;
   }
 
+  /**
+   * Handle adding a parent type to special classes like connections or edges or nodes.
+   *
+   * @param {ConcreteField} node The node in question
+   * @param {Array<Member>} localMembers The list of members for this type
+   * @param {string} className the name of the current class
+   * @param {boolean} root is it a root
+   */
   specialClassExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment,
       localMembers: Array<Member>, className: string, root: boolean): Array<string> {
     if (root) return [];
@@ -350,12 +361,16 @@ class ClassTracker {
     // We modify this in the baton.  Pop all the members off.
     let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
 
+    if (!node.type) {
+      throw new Error(`Expected ${node.toString()} to have a type member.`)
+    }
+
 
     if (inlineFrags.length > 0) {
       // if we don't have __typename in the set of selection members add it synthetically since the relay compiler will
       // anyways. $FlowFixMe
       if (!selectionMembers.find(f => f.name === "__typename"))
-        localMembers.push({name: "__typename", tpe: [{name: "String"}], comments: [], scalar: true});
+        localMembers.push({name: "__typename", tpe: [{name: "String", mods: []}], comments: [], scalar: true});
     }
 
     const listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
@@ -469,7 +484,7 @@ class ClassTracker {
       // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
       return this.transformScalarType(type.ofType, backupType).map(s => {
 
-        s.isArray = true;
+        s.mods.push(ARRAY_MOD);
         return s;
       });
     } else if (
@@ -481,12 +496,12 @@ class ClassTracker {
       if (!backupType) {
         throw new Error(`Could not convert from GraphQL type ${type.toString()}, missing backup type`);
       }
-      return [{name: backupType}];
+      return [{name: backupType, mods: []}];
     } else if (type instanceof GraphQLScalarType) {
       return this.transformGraphQLScalarType(type, backupType);
     } else if (type instanceof GraphQLEnumType) {
       // TODO: String for now.
-      return [{name: "String"}];
+      return [{name: "String", mods: []}];
     } else {
       throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
     }
@@ -497,21 +512,21 @@ class ClassTracker {
       case 'ID':
       case 'String':
       case 'Url':
-        return [{name: "String"}];
+        return [{name: "String", mods: []}];
 
       case 'Float':
       case 'Int':
       case 'BigDecimal':
       case 'BigInt':
       case 'Long':
-        return [{name: "Double"}];
+        return [{name: "Double", mods: []}];
       case 'Boolean':
-        return [{name: "Boolean"}];
+        return [{name: "Boolean", mods: []}];
       default:
         if (backupType) {
-          return [{name: backupType}];
+          return [{name: backupType, mods: []}];
         }
-        return [{name: `js.Any`}];
+        return [{name: `js.Any`, mods: []}];
     }
   }
 
@@ -520,39 +535,42 @@ class ClassTracker {
     backupType: ?string,
   ): Array<ATpe> {
     if (type instanceof GraphQLNonNull) {
-      return this.transformNonNullableScalarType(type.ofType, backupType);
+      return this.transformNonNullableScalarType(type.ofType, backupType).map(s => {
+        s.mods.push(OPTIONAL_MOD);
+        return s;
+      });
     } else {
       // $FlowFixMe
       return this.transformNonNullableScalarType(type, backupType);
     }
   }
 
-  combineFields(m: Member, m2: Member): Member {
-    invariant(m.name === m2.name, "Names need to match to combine.");
-    const tpeMap: Map<string, Array<ATpe>> = new Map();
-    [...m.tpe, ...m2.tpe].forEach(tpe => {
+  // combineFields(m: Member, m2: Member): Member {
+  //   invariant(m.name === m2.name, "Names need to match to combine.");
+  //   const tpeMap: Map<string, Array<ATpe>> = new Map();
+  //   [...m.tpe, ...m2.tpe].forEach(tpe => {
 
-      const found = tpeMap.get(tpe.name)
-      if (!found) {
-        tpeMap.set(tpe.name, [tpe]);
-      } else {
-        if (!found.every(s => {
-          return s.isArray == tpe.isArray && s.isOptional == tpe.isOptional && s.name === tpe.name;
-        })) {
-          found.push(tpe);
-        }
-      }
-    });
+  //     const found = tpeMap.get(tpe.name)
+  //     if (!found) {
+  //       tpeMap.set(tpe.name, [tpe]);
+  //     } else {
+  //       if (!found.every(s => {
+  //         return s.isArray == tpe.isArray && s.isOptional == tpe.isOptional && s.name === tpe.name;
+  //       })) {
+  //         found.push(tpe);
+  //       }
+  //     }
+  //   });
 
-    return {
-      ...m,
-      or: m.or || m2.or,
-      name: m.name,
-      tpe: flattenArray(Array.from(tpeMap.values())),
-      comments: [...m.comments, ...m2.comments],
-      scalar: m.scalar || m2.scalar,
-    }
-  }
+  //   return {
+  //     ...m,
+  //     or: m.or || m2.or,
+  //     name: m.name,
+  //     tpe: flattenArray(Array.from(tpeMap.values())),
+  //     comments: [...m.comments, ...m2.comments],
+  //     scalar: m.scalar || m2.scalar,
+  //   }
+  // }
 
   getDirectMembersForFrag(name: string, backupType: ?string): Array<Member> {
     const node = this._nodes.find(n => n.kind === "Fragment" && n.name === name);
@@ -581,9 +599,13 @@ class ClassTracker {
 
   makeType(className: string, s: ATpe, cs?: Set<string>): string {
     let newTpeName = cs && cs.has(s.name) ? className + "." + s.name: s.name;
-    if (s.isArray) {
-      newTpeName = "js.Array[" + newTpeName + "]";
-    }
+    s.mods.forEach(mod => {
+      if (mod == ARRAY_MOD) {
+        newTpeName = "js.Array[" + newTpeName + "]";
+      } else if (mod == OPTIONAL_MOD) {
+        // Don't do anything for now.
+      }
+    });
     return newTpeName;
   }
 
@@ -646,16 +668,17 @@ class ClassTracker {
 
     return Object.keys(groups).map(k => {
 
-      const items = groups[k]
+      const items = groups[k];
+      const indent = "  ";
       const members = Array.from(items).map(({from, to, name}) => {
         return [
-          `  def as${name}: Option[${to}] = {`,
-          `    if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
-          `    else None`,
-          '  }'
+          `${indent}  def as${name}: Option[${to}] = {`,
+          `${indent}    if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
+          `${indent}    else None`,
+          `${indent}  }`
         ].join("\n");
       });
-      return [`  implicit class ${k}_Ops(f: ${k}) {`, ...members, `  }`].join("\n");
+      return [`${indent}implicit class ${k}_Ops(f: ${k}) {`, ...members, `${indent}}`].join("\n");
     }).join("\n");
 
   }
@@ -799,7 +822,7 @@ function createVisitor(ct: ClassTracker) {
         // console.log("ScalarField", node);
         // $FlowFixMe
         const tpe = ct.transformScalarType((node.type: GraphQLType));
-        ct.newMember({name: node.name, tpe, comments: [], scalar: true});
+        ct.newMember({name: node.alias || node.name, tpe, comments: [], scalar: true});
         return node;
       },
       LinkedField(node: ConcreteLinkedField) {
