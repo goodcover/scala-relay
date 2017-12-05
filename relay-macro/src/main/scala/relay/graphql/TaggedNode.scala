@@ -23,7 +23,6 @@ object GenericGraphQLTaggedNode {
   }
 }
 
-@js.native
 trait TaggedNode extends js.Object
 
 @js.native

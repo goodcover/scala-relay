@@ -4,7 +4,9 @@ import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
 import relay.graphql.gql
+import relay.graphql.SchemaLocation
 import org.scalajs.dom
+import Impl._
 
 import scala.scalajs.js.annotation.JSImport
 

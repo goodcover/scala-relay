@@ -62,7 +62,7 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
-//  .settings(metaMacroSettings)
+  .settings(metaMacroSettings)
   .settings(commonSettings)
   .settings(publishMavenStyle := true,
             crossSbtVersions := Nil,
