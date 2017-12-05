@@ -25,7 +25,7 @@ const formatGeneratedModule: FormatModule = ({
   packageName,
   supportingClasses,
   implicits,
-  
+
 }) => {
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
@@ -53,12 +53,12 @@ object ${moduleName} extends _root_.relay.graphql.GenericGraphQLTaggedNode {
   ////////////////////////////////////
   ////// Supporting classes begin here
   ////////////////////////////////////
-  ${supportingClasses || ''}
+${supportingClasses || ''}
 
   ///////////////////////////
   ////// Implicits begin here
   ///////////////////////////
-  ${implicits || ''}
+${implicits || ''}
 
   val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.JSON.parse("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
   val devText: String = """${devOnlyText}"""

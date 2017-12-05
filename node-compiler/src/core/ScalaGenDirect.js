@@ -240,26 +240,35 @@ class ClassTracker {
       return node.parentTpe.join("");
   }
 
+  getNodeName(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
+    const suffix = node.operation === "query" ? "Query" : "";
+    // $FlowFixMe
+    const nameAlias = (node.alias || node.name) + suffix;
+    return nameAlias;
+  }
+
   getNewTpe(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
+    const nameAlias = this.getNodeName(node);
     if (node.kind == "LinkedField") {
       if (node.parentTpe) { /* $FlowFixMe */
-        return node.parentTpe.slice(1).join("") + titleCase(node.name);
+        return node.parentTpe.slice(1).join("") + titleCase(nameAlias);
       }
     }
-    return titleCase(node.name);
+    return titleCase(nameAlias);
   }
 
   getNewTpeMember(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
+    const nameAlias = this.getNodeName(node);
     if (node.kind == "LinkedField" || node.kind === "InlineFragment") {
       if (node.parentTpe) {
         if (node.parentTpe.length == 1) { /* $FlowFixMe */
-          return node.parentTpe.join("") + titleCase(node.name)
+          return node.parentTpe.join("") + titleCase(nameAlias)
         } else { /* $FlowFixMe */
-          return node.parentTpe.slice(1).join("") + titleCase(node.name);
+          return node.parentTpe.slice(1).join("") + titleCase(nameAlias);
         }
       }
     }
-    return titleCase(node.name);
+    return titleCase(nameAlias);
   }
 
   /**
@@ -364,26 +373,6 @@ class ClassTracker {
 
     // flattenArray(listOfSpreads.map(s => s[1].extendCls));
     const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root);
-
-
-    // TODO: Revisit if we shouldn't just use implicits all together.
-    // if (spreadFrags.length > 0) {
-    //   // Combine all the children both spreads and
-    //   const localSpreads = listOfSpreads.map(s => [s[0], s[1].members])
-    //   const sumOfMembers: Map<string, Array<Member>> = this.flattenMembers(localMembers, localSpreads);
-
-    //   //TODO: This is like a shitty version of fold.
-    //   localMembers = Array.from(sumOfMembers.entries()).map(s => {
-    //     if (s[1].length == 1)
-    //       return s[1][0];
-    //     let m = s[1][0];
-    //     s[1].slice(1).forEach(ss => {
-    //       ss.comments.push(`Combining fields, with or? "${ss.or}" `)
-    //       m = this.combineFields(m, ss);
-    //     });
-    //     return m;
-    //   });
-    // }
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags);
     const newNewTpe = this.transformScalarType(node.type, newTpe);
@@ -617,20 +606,25 @@ class ClassTracker {
 
   outCls({name, members, extendsC, open}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
+    const indent = otherClasses ? "" : "  ";
 
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
-    const cls = ["trait", name, "extends", "js.Object", ...ex , "{"].join(" ");
+    const cls = indent + [`trait`, name, "extends", "js.Object", ...ex , "{"].join(" ");
 
-    const m = Array.from(members.values()).filter(s => !!s).map(s => {
-      const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/", "\n"];
+    const outMembers = Array.from(members.values()).filter(s => !!s).map(s => {
+      const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/"];
+
+      if (!name) {
+        throw new Error(`Class is missing name, has the following members: ${members.toString()}`);
+      }
 
       // Figure out if we've created the type, if so, add a prefix.
       const tpe = this.makeTypeFromMember(name, s, otherClasses);
-
-      return [comment.join(" "), "  val", s.name, ":", tpe].join(" ");
+      const commentOut = comment.length > 0 ? indent + comment.join(" ") + "\n" : "";
+      return commentOut + [indent + "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
 
-    return [cls, m, "}"].join("\n");
+    return [cls, outMembers, indent + "}"].join("\n");
   }
 
   /**
@@ -654,14 +648,15 @@ class ClassTracker {
 
       const items = groups[k]
       const members = Array.from(items).map(({from, to, name}) => {
-        return [`  def as${name}: Option[${to}] = {`,
+        return [
+          `  def as${name}: Option[${to}] = {`,
           `    if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
           `    else None`,
           '  }'
-        ].join("\n  ");
+        ].join("\n");
       });
-      return [`implicit class ${k}_Ops(f: ${k}) {`, ...members, `}`].join("\n  ");
-    }).join("\n  ");
+      return [`  implicit class ${k}_Ops(f: ${k}) {`, ...members, `  }`].join("\n");
+    }).join("\n");
 
   }
 
@@ -679,45 +674,10 @@ class ClassTracker {
    */
   outImplicitsConversion(impl: Array<ImplDef>, otherClasses?: ?Map<string, Cls>, topClasses: Array<Cls>): string {
 
-    // const oc = otherClasses && Array.from(otherClasses.values());
-    // let extraImplicits = ""
-    // if (oc) {
-    //   oc.forEach(({spreadFrags, name}) => {
-    //     spreadFrags.forEach(frag => {
-    //       const i: ImplDef = {from: name, to: frag, name: frag, inline: false};
-    //       impl.push(i);
-    //     });
-    //   });
-    // }
-
-
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
       return `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`;
     }).join("\n");
-
-    // TODO: I am going to leave this in for now, its a weird concept though.
-    // let implExtra = ""
-    // const oc = otherClasses && Array.from(otherClasses.values()) || [];
-    // if (oc) {
-    //   implExtra = topClasses.map((tc) => {
-    //     const tcName = tc.name;
-    //     invariant(tcName, "top class missing name");
-
-    //     return oc.map(({name, spreadFrags}) => {
-    //       const ocName = name;
-    //       invariant(ocName, "other class missing name");
-
-    //       return spreadFrags.map(frag => {
-    //         const rt = `relay.generated.lifted.Lifted${ocName}[${frag}]`;
-    //         return [
-    //           `  implicit def ${tcName}2${frag}(f: ${tcName})`, ':', rt,
-    //           '=', `f.asInstanceOf[${rt}]`,
-    //         ].join(" ");
-    //       }).join("\n  ");
-    //     }).join("\n  ");
-    //   }).join("\n  ");
-    // }
     return [text].join("\n");
   }
 
@@ -729,12 +689,12 @@ class ClassTracker {
       .map(cls => {
         return this.outCls(cls);
       })
-      .join("\n  ");
+      .join("\n");
 
     const implicits = [
       this.outImplicitsFrags(this.implicits.filter(s => s.inline)),
       this.outImplicitsConversion(this.implicits.filter(s => !s.inline), this.classes, Array.from(this.topClasses.values())),
-    ].join("\n  ");
+    ].join("\n");
 
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
