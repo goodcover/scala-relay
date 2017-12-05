@@ -9,7 +9,6 @@ lazy val root =
     .settings(commonSettings)
     .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact := false, publish := {})
     .enablePlugins(CrossPerProjectPlugin)
-    .settings(releaseSettings)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
@@ -57,14 +56,13 @@ lazy val `sbt-relay-compiler` = project
             publishMavenStyle := isSnapshot.value,
             sourceGenerators in Compile += Def.task {
               Generators.version(version.value, (sourceManaged in Compile).value)
-            }.taskValue
-    )
+            }.taskValue)
 
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
-  .settings(metaMacroSettings)
+//  .settings(metaMacroSettings)
   .settings(commonSettings)
   .settings(publishMavenStyle := true,
             crossSbtVersions := Nil,
@@ -73,9 +71,8 @@ lazy val `relay-macro` = project
               if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
               else Nil
             },
-            crossScalaVersions := Seq(Version.Scala211, Version.Scala212),
-            libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest)
-  )
+            crossScalaVersions := Seq(Version.Scala212),
+            libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
 
 lazy val metaMacroSettings: Seq[Def.Setting[_]] =
   Seq(
@@ -123,22 +120,22 @@ lazy val commonSettings = Seq(
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
     ScmInfo(url("https://github.com/dispalt/relay-modern-helper"),
-            "scm:git:git@github.com:dispalt/relay-modern-helper.git")))
+            "scm:git:git@github.com:dispalt/relay-modern-helper.git"))) ++ releaseSettings
 
-lazy val releaseSettings = Seq(
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-  releaseCrossBuild := false,
-  releaseProcess :=
-    Seq[ReleaseStep](checkSnapshotDependencies,
-      inquireVersions,
-      runClean,
-      releaseStepCommandAndRemaining("+test"),
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned") else publishArtifacts,
-      releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-      setNextVersion,
-      commitNextVersion,
-      pushChanges)
-)
+lazy val releaseSettings =
+  Seq(releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+      releaseCrossBuild := false,
+      releaseProcess :=
+        Seq[ReleaseStep](checkSnapshotDependencies,
+                         inquireVersions,
+                         runClean,
+                         releaseStepCommandAndRemaining("+test"),
+                         setReleaseVersion,
+                         commitReleaseVersion,
+                         tagRelease,
+                         if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
+                         else publishArtifacts,
+                         releaseStepCommandAndRemaining("sonatypeReleaseAll"),
+                         setNextVersion,
+                         commitNextVersion,
+                         pushChanges))
