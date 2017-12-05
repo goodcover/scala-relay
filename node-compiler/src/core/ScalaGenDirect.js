@@ -455,15 +455,6 @@ class ClassTracker {
     return [].concat(this.fields);
   }
 
-  mergeMemberTypes(m: Member): void {
-    this.fields.forEach(mm => {
-      // $FlowFixMe
-      if (mm.name === m.name && mm.node && m.node && mm.node.type === m.node.type) {
-        mm.tpe = mm.tpe.concat(m.tpe)
-      }
-    });
-  }
-
   jsPrefix(): string {
     return "js";
   }
