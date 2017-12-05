@@ -136,7 +136,7 @@ lazy val releaseSettings = Seq(
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      releaseStepCommandAndRemaining("+publishSigned"),
+      if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned") else publishArtifacts,
       releaseStepCommandAndRemaining("sonatypeReleaseAll"),
       setNextVersion,
       commitNextVersion,
