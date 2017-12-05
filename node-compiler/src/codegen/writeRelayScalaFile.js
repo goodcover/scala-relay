@@ -35,6 +35,7 @@ export type FormatModule = ({|
   packageName: string,
   supportingClasses: ?string,
   implicits: ?string,
+  objectParent: ?string,
 |}) => string;
 
 async function writeRelayScalaFile(
@@ -48,6 +49,7 @@ async function writeRelayScalaFile(
   defaultPackage: ?string,
   supportingClasses: ?string,
   implicits: ?string,
+  objectParent: ?string,
 ): Promise<?GeneratedNode> {
   const moduleName = generatedNode.name;
   const platformName = platform ? moduleName + '.' + platform : moduleName;
@@ -79,6 +81,9 @@ async function writeRelayScalaFile(
     }
     if (implicits) {
       hasher.update(implicits);
+    }
+    if (objectParent) {
+      hasher.update(objectParent);
     }
     if (persistQuery) {
       hasher.update('persisted');
@@ -114,7 +119,8 @@ async function writeRelayScalaFile(
     relayRuntimeModule,
     packageName,
     supportingClasses,
-    implicits
+    implicits,
+    objectParent
   });
 
   codegenDir.writeFile(filename, moduleText);

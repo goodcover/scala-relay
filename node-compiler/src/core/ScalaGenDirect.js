@@ -85,7 +85,7 @@ function generate(
   inputFieldWhiteList?: ?Array<string>,
   schema: GraphQLSchema,
   nodes: Array<Root | Fragment>,
-): {core: string, supporting: string, implicits: string} {
+): {core: string, supporting: string, implicits: string, objectParent: string} {
 
   // const code = babelGenerator(ast).code;
   const newCT = new ClassTracker(nodes);
@@ -129,6 +129,7 @@ type Cls = {
   open: boolean,
   linkedField: boolean,
   spreadFrags: Array<string>,
+  isClass?: boolean,
 };
 
 type ImplDef = {
@@ -145,6 +146,8 @@ class ClassTracker {
   implicits: Array<ImplDef>;
   fields: Array<Member>;
   spreads: Array<[string, ASpread]>;
+  queryTypeParams: Array<string>;
+  isQuery: boolean;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
 
   constructor(nodes: Array<ConcreteRoot | ConcreteFragment>) {
@@ -154,6 +157,8 @@ class ClassTracker {
     this.spreads = [];
     this._nodes = nodes;
     this.implicits = [];
+    this.queryTypeParams = [];
+    this.isQuery = false;
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -170,6 +175,10 @@ class ClassTracker {
 
   newImplicit(from: string, to: string, name: string, inline: boolean) {
     this.implicits.unshift({from, to, name, inline});
+  }
+
+  newQueryTypeParam(tpe: string) {
+    this.queryTypeParams.push(tpe);
   }
 
 
@@ -328,7 +337,7 @@ class ClassTracker {
         newEdge.tpe = newEdge.tpe.map(t => {
           return {
             ...t,
-            isArray: false
+            mods: []
           }
         })
         const tpe = this.makeTypeFromMember(className, newEdge);
@@ -409,7 +418,18 @@ class ClassTracker {
     });
   }
 
-  handleQuery(n: ConcreteRoot) {
+  handleQuery(node: ConcreteRoot) {
+    const clsName = node.name + "Input";
+    if (node.operation === 'query') {
+      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+        const tpe = this.transformScalarType((type: GraphQLType));
+        return {name, tpe, comments: [], scalar: true};
+      });
+      this.newClass(clsName, members, [], false, []);
+      this.newQueryTypeParam(clsName);
+      this.isQuery = true;
+    }
+    // console.log(node);
   }
 
   hasAndStripSjsWithDirective(n: ConcreteFragmentSpread): boolean {
@@ -617,7 +637,7 @@ class ClassTracker {
     return tpe;
   }
 
-  outCls({name, members, extendsC, open}: Cls, otherClasses?: Map<string, Cls>): string {
+  outTrait({name, members, extendsC, open, isClass}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
     const indent = otherClasses ? "" : "  ";
 
@@ -674,6 +694,10 @@ class ClassTracker {
 
   }
 
+  outCompanion() {
+    return [`object `];
+  }
+
   /**
    * This logic is fairly convoluted, but it accomplishes a couple different things,
    *  - It handles non inline conversions from a type to another.  The purpose of these
@@ -695,13 +719,13 @@ class ClassTracker {
     return [text].join("\n");
   }
 
-  out(): { supporting: string, core: string, implicits: string } {
-    invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
+  out(): { supporting: string, core: string, implicits: string, objectParent: string } {
+    // invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
 
     const supporting = Array.from(this.classes.entries())
       .map(s => s[1])
       .map(cls => {
-        return this.outCls(cls);
+        return this.outTrait(cls);
       })
       .join("\n");
 
@@ -710,15 +734,24 @@ class ClassTracker {
       this.outImplicitsConversion(this.implicits.filter(s => !s.inline), this.classes, Array.from(this.topClasses.values())),
     ].join("\n");
 
+
+    if (this.isQuery) {
+      invariant(this.queryTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
+    }
+
+    const objectParent = this.isQuery && this.queryTypeParams.length == 1 ? `_root_.relay.graphql.QueryTaggedNode[${this.queryTypeParams.join("")}]` :
+     '_root_.relay.graphql.GenericGraphQLTaggedNode';
+
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
             const cls = s[1];
             if (cls) {
-              return this.outCls(cls, this.classes);
+              return this.outTrait(cls, this.classes);
             } else return "";
           }).join("\n"),
         supporting,
-        implicits
+        implicits,
+        objectParent
     };
   }
 }

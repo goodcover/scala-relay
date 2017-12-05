@@ -25,7 +25,7 @@ const formatGeneratedModule: FormatModule = ({
   packageName,
   supportingClasses,
   implicits,
-
+  objectParent,
 }) => {
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
@@ -48,7 +48,7 @@ import _root_.scala.scalajs.js.|
 ${topClasses || ''}
 
 ${docTextComment}
-object ${moduleName} extends _root_.relay.graphql.GenericGraphQLTaggedNode {
+object ${moduleName} extends ${objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
 
   ////////////////////////////////////
   ////// Supporting classes begin here

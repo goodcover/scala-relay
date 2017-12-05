@@ -7,6 +7,16 @@ trait GenericGraphQLTaggedNode {
   val query: TaggedNode
 }
 
+trait QueryTaggedNode[I <: js.Object] extends GenericGraphQLTaggedNode {
+  type Input = I
+}
+
+object QueryTaggedNode {
+  implicit def ggql2jsObj[I <: js.Object](ggqltn: QueryTaggedNode[I]): TaggedNode = {
+    ggqltn.query
+  }
+}
+
 object GenericGraphQLTaggedNode {
   implicit def ggql2jsObj(ggqltn: GenericGraphQLTaggedNode): TaggedNode = {
     ggqltn.query

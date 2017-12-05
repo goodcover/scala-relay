@@ -144,7 +144,7 @@ class ScalaFileWriter {
           useHaste: this._config.useHaste
         }, null, extendedSchema, nodes);
 
-        await writeRelayScalaFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes.core, this._config.persistQuery, this._config.platform, relayRuntimeModule, packageName, flowTypes.supporting, flowTypes.implicits);
+        await writeRelayScalaFile(getGeneratedDirectory(compiledNode.name), compiledNode, this._config.formatModule, flowTypes.core, this._config.persistQuery, this._config.platform, relayRuntimeModule, packageName, flowTypes.supporting, flowTypes.implicits, flowTypes.objectParent);
       }));
 
       if (this._config.generateExtraFiles) {
