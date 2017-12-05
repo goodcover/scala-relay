@@ -23,9 +23,11 @@ object gqlImpl {
 
         val newTemplate = ctor"_root_.relay.graphql.GenericGraphQLTaggedNode"
         val opTerm      = Term.Name(op)
+        val opType      = Type.Name(s"_root_.relay.generated.$op.type")
 
         q"""..$mods object $name extends $newTemplate {
              val query: _root_.relay.graphql.TaggedNode = _root_.relay.generated.$opTerm
+             val root: $opType = _root_.relay.generated.$opTerm
            }
            """
       case _ =>

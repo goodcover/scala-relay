@@ -139,6 +139,11 @@ type ImplDef = {
   inline: boolean,
 }
 
+type QueryType = {
+  input: string,
+  output: string,
+}
+
 class ClassTracker {
 
   classes: Map<string, Cls>;
@@ -146,7 +151,7 @@ class ClassTracker {
   implicits: Array<ImplDef>;
   fields: Array<Member>;
   spreads: Array<[string, ASpread]>;
-  queryTypeParams: Array<string>;
+  queryTypeParams: Array<QueryType>;
   isQuery: boolean;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
 
@@ -177,8 +182,8 @@ class ClassTracker {
     this.implicits.unshift({from, to, name, inline});
   }
 
-  newQueryTypeParam(tpe: string) {
-    this.queryTypeParams.push(tpe);
+  newQueryTypeParam(input: string, output: string) {
+    this.queryTypeParams.push({input, output});
   }
 
 
@@ -388,6 +393,8 @@ class ClassTracker {
     const fieldName: string = node.alias ? node.alias : node.name;
     const newClassName: string = this.getNewTpe(node);
     const scalar = false;
+
+    // $FlowFixMe
     const spreadParentsFrags: Array<string> =
       Array.from(new Set(flattenArray(listOfSpreads.map(s => s[1].members.filter(s => !!s.parentFrag).map(s => s.parentFrag)))));
 
@@ -426,7 +433,7 @@ class ClassTracker {
         return {name, tpe, comments: [], scalar: true};
       });
       this.newClass(clsName, members, [], false, []);
-      this.newQueryTypeParam(clsName);
+      this.newQueryTypeParam(clsName, node.name);
       this.isQuery = true;
     }
     // console.log(node);
@@ -694,10 +701,6 @@ class ClassTracker {
 
   }
 
-  outCompanion() {
-    return [`object `];
-  }
-
   /**
    * This logic is fairly convoluted, but it accomplishes a couple different things,
    *  - It handles non inline conversions from a type to another.  The purpose of these
@@ -739,8 +742,9 @@ class ClassTracker {
       invariant(this.queryTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
     }
 
-    const objectParent = this.isQuery && this.queryTypeParams.length == 1 ? `_root_.relay.graphql.QueryTaggedNode[${this.queryTypeParams.join("")}]` :
-     '_root_.relay.graphql.GenericGraphQLTaggedNode';
+    const objectParent = this.isQuery && this.queryTypeParams.length == 1 ?
+      `_root_.relay.graphql.QueryTaggedNode[${this.queryTypeParams[0].input}, ${this.queryTypeParams[0].output}]` :
+      '_root_.relay.graphql.GenericGraphQLTaggedNode';
 
     return {
         core: Array.from(this.topClasses.entries()).map(s => {
