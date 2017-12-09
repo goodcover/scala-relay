@@ -35,10 +35,13 @@ object frag
 
 case class Foo(i: Int)(val f: relay.generated.Task_foo)
 
+trait RelayTag
+
 object Main extends JSApp {
 
   def main(): Unit = {
     val m = serde.sjs.generic.deriveBindable[Foo, relay.generated.Task_foo]
+    val m2 = serde.sjs.generic.deriveHoc[Foo, relay.generated.Task_foo, RelayTag]
 
     val q = relay.generated.Task_foo.query
     dom.console.log(q)

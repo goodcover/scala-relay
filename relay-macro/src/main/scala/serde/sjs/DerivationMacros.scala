@@ -232,4 +232,28 @@ final class DerivationMacros(val c: blackbox.Context) {
        _root_.serde.sjs.Bindable.instance[$ktpe, $ftpe]($firstParam, _.copy()(_))
      """)
   }
+
+  def hocEffect[K: c.WeakTypeTag, F <: js.Object: c.WeakTypeTag, E: c.WeakTypeTag]
+    : c.Expr[HocEffect[K, F, E]] = { // scalastyle:ignore method.length
+    val ktpe = weakTypeOf[K]
+    val ftpe = weakTypeOf[F]
+    val etpe = weakTypeOf[E]
+
+    val kSymbol = weakTypeTag[K].tpe.typeSymbol
+
+    if (!kSymbol.isClass || !kSymbol.asClass.isCaseClass) {
+      c.abort(c.enclosingPosition, s"${kSymbol.fullName} must be a case class")
+    }
+
+    val firstParam = membersFromPrimaryCtorS(ktpe, ftpe, true).fold(
+      c.abort(c.enclosingPosition, s"could not find the primary constructor of $ktpe, or it's not a case class.")) {
+      case (members, Some(rawMember)) =>
+        q"_.${rawMember.name}"
+      case (_, None) => c.abort(c.enclosingPosition, s"expected a second parameter raw member of type `$ftpe`")
+    }
+
+    c.Expr[HocEffect[K, F, E]](q"""
+       _root_.serde.sjs.HocEffect.instance[$ktpe, $ftpe, $etpe]($firstParam, _.copy()(_))
+     """)
+  }
 }
