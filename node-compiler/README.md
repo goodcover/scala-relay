@@ -4,14 +4,14 @@
 The purpose of this project is to generate Scala.js bindings for the
 `relay-compiler`.  Typically the `relay-compiler` generates `flow` bindings
 along with the compiled queries.  This project replaces that generation and
-outputs `js.native` traits instead.  It is **experimental** and the code needs work, 
-but it can generated traits for deep hierarchical graphs.  
+outputs `js.native` traits instead.  It is **experimental** and the code needs work,
+but it can generated traits for deep hierarchical graphs.
 
 It uses flow because it's what relay uses, and its better than raw javascript.
 
 It uses `outputDir` to generate all the source files and whatnot in the same package.
-So its a big flat package repository in the same directory.  
-Typically `(resourceManaged in Compile).value / "relay-compiler-out"` is where it outputs 
+So its a big flat package repository in the same directory.
+Typically `(resourceManaged in Compile).value / "relay-compiler-out"` is where it outputs
 in sbt parlance.
 
 ## Example
@@ -25,14 +25,13 @@ $ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graph
  - Handles first layer of spreading, right now we spit out `js.|` to
    join disjoint fields, even though in fact they are not disjoint,
    they are a union, however, this requires a fix later down the line.
- - `@sjs(with:Boolean!)` basically this allows us to control from a fragment spread level
-   whether to combine the fields as an `js.|` or using ` with `.  With has more compile
-   time constraints where ` js.| ` is easier to generate.
+ - `@sjs(extends: String)` This can give you a parent class to mixin.  It's
+   your job to verify it.
 
 
 ## Example
 
-Ill walk you through a simple example.  I'll assume you know roughly how [Relay Modern](https://github.com/facebook/relay/) works.  
+Ill walk you through a simple example.  I'll assume you know roughly how [Relay Modern](https://github.com/facebook/relay/) works.
 
 We'll obviously need a schema, for which we'll use the example provided.
 
@@ -58,7 +57,7 @@ type WordDefinition {
 ```
 
 From this we'll want to generate some queries in which Ill list one top level query including
-two fragments.  Now this is where we start to diverge from the stock `relay-compiler`.  Our method 
+two fragments.  Now this is where we start to diverge from the stock `relay-compiler`.  Our method
 of collecting queries/fragments/mutations is a regex (I know, ugly) through `*.scala` files.  We look for the `@gql("""` indicator and its corresponding `""")` to isolate the queries.
 
 Here is an example taken straight from the repository.
@@ -110,7 +109,7 @@ So the generation below handles `DictionaryQuery`.  I cut some text for brevity
 
 ```scala
 trait DictionaryQuery extends js.Object {
-  /** Combined the fields on a spread: DictionaryComponent_word */ 
+  /** Combined the fields on a spread: DictionaryComponent_word */
    val dictionary : js.Array[DictionaryComponent_word]
 }
 
@@ -134,7 +133,7 @@ traits get generated underneath the trait's companion object.
 package relay.generated
 
 trait DictionaryComponent_word extends js.Object {
-  /** New fields added, conflicts detected. */ 
+  /** New fields added, conflicts detected. */
    val definition : DictionaryComponent_word.Definition
    val id : String
 }
@@ -143,9 +142,9 @@ object DictionaryComponent_word extends _root_.relay.graphql.GenericGraphQLTagge
 
   trait Definition extends js.Object {
     val id : String
-    /** getDirectMembersForFrag child of DictionaryComponent_definition Combining fields, with or? "true"  */ 
+    /** getDirectMembersForFrag child of DictionaryComponent_definition Combining fields, with or? "true"  */
     val text : String
-    /** getDirectMembersForFrag child of DictionaryComponent_definition */ 
+    /** getDirectMembersForFrag child of DictionaryComponent_definition */
     val image : String
   }
 
@@ -184,4 +183,4 @@ A list of tasks/ideas the community could help with. `High | Med | Low` refers t
  - [ ] High: Does recursion work?
  - [ ] High: handle nullable, in relay/graphql world this basically means `T | Null` not `js.UndefOr`
  - [ ] Low: handle indents in generated code better
- - [ ] 
+ - [ ]

@@ -50,7 +50,7 @@ function getSchema(schemaPath) {
     source = `
   directive @include(if: Boolean) on FRAGMENT | FIELD
   directive @skip(if: Boolean) on FRAGMENT | FIELD
-  directive @sjs(with: Boolean!) on FRAGMENT | FIELD
+  directive @sjs(with: Boolean, extends: String) on FRAGMENT | FIELD
   ${source}
   `;
     return buildASTSchema(parse(source));

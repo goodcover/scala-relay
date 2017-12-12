@@ -447,13 +447,6 @@ class ClassTracker {
     // console.log(node);
   }
 
-  hasAndStripSjsWithDirective(n: ConcreteFragmentSpread): boolean {
-    // $FlowFixMe
-    const hasD = n.directives.filter(s => s.name === "sjs" && s.args[0] && s.args[0].name == 'with' && s.args[0].value.value);
-    n.directives = n.directives ? n.directives.filter(s => s.name !== "sjs") : [];
-    return hasD.length > 0;
-  }
-
   newSpread(n: ConcreteFragmentSpread) {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
@@ -551,17 +544,7 @@ class ClassTracker {
             comments: [],
           };
         });
-/*
-type Cls = {
-  name?: ?string,
-  members: Array<Member>,
-  extendsC: Array<string>,
-  open: boolean,
-  linkedField: boolean,
-  spreadFrags: Array<string>,
-  isClass?: boolean,
-};
-*/
+
       classes.push({
         name: type.toString(),
         members: props,
