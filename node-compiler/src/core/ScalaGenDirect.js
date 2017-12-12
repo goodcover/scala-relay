@@ -19,11 +19,6 @@ const {
   SchemaUtils,
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
 
-const {
-  transformScalarType,
-  transformInputType,
-} = require('./ScalaTypeTransformers');
-
 import type {
   IRTransform,
   Fragment,
@@ -71,6 +66,7 @@ const SJSTransform = require('../transforms/SJSTransform');
 
 const ARRAY_MOD = "array"
 const OPTIONAL_MOD = "optional"
+const INPUT_MOD = "inputobj"
 
 /*
 Better typing ideas here.
@@ -110,6 +106,8 @@ type ASpread = {
 type ATpe = {
   name: string,
   mods: Array<string>,
+  members?: Array<Member>,
+  fieldName?: string,
 }
 
 type Member = {
@@ -118,7 +116,6 @@ type Member = {
   comments: Array<string>,
   node?: ?ConcreteNode,
   parentFrag?: ?string,
-  scalar: boolean,
   or?: ?boolean,
 };
 
@@ -151,8 +148,9 @@ class ClassTracker {
   implicits: Array<ImplDef>;
   fields: Array<Member>;
   spreads: Array<[string, ASpread]>;
-  queryTypeParams: Array<QueryType>;
+  topLevelTypeParams: Array<QueryType>;
   isQuery: boolean;
+  isMutation: boolean;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
 
   constructor(nodes: Array<ConcreteRoot | ConcreteFragment>) {
@@ -162,8 +160,9 @@ class ClassTracker {
     this.spreads = [];
     this._nodes = nodes;
     this.implicits = [];
-    this.queryTypeParams = [];
+    this.topLevelTypeParams = [];
     this.isQuery = false;
+    this.isMutation = false;
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -183,9 +182,8 @@ class ClassTracker {
   }
 
   newQueryTypeParam(input: string, output: string) {
-    this.queryTypeParams.push({input, output});
+    this.topLevelTypeParams.push({input, output});
   }
-
 
   newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>): string {
     let name = cn;
@@ -384,7 +382,7 @@ class ClassTracker {
       // if we don't have __typename in the set of selection members add it synthetically since the relay compiler will
       // anyways. $FlowFixMe
       if (!selectionMembers.find(f => f.name === "__typename"))
-        localMembers.push({name: "__typename", tpe: [{name: "String", mods: []}], comments: [], scalar: true});
+        localMembers.push({name: "__typename", tpe: [{name: "String", mods: []}], comments: []});
     }
 
     const listOfSpreads: Array<[string, ASpread]> = spreadFrags.map(_ => this.popSpread());
@@ -392,7 +390,6 @@ class ClassTracker {
     // $FlowFixMe
     const fieldName: string = node.alias ? node.alias : node.name;
     const newClassName: string = this.getNewTpe(node);
-    const scalar = false;
 
     // $FlowFixMe
     const spreadParentsFrags: Array<string> =
@@ -421,21 +418,32 @@ class ClassTracker {
       name: fieldName,
       tpe: newNewTpe,
       comments,
-      scalar,
     });
   }
 
   handleQuery(node: ConcreteRoot) {
     const clsName = node.name + "Input";
+    const newClasses : Array<Cls> = [];
     if (node.operation === 'query') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
-        const tpe = this.transformScalarType((type: GraphQLType));
-        return {name, tpe, comments: [], scalar: true};
+        const tpe = this.transformInputType(type, newClasses);
+        return {name, tpe, comments: []};
       });
       this.newClass(clsName, members, [], false, []);
       this.newQueryTypeParam(clsName, node.name);
       this.isQuery = true;
+    } else if (node.operation === 'mutation') {
+      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+        const tpe = this.transformInputType(type, newClasses);
+        return {name, tpe, comments: []};
+      });
+      this.newClass(clsName, members, [], false, []);
+      this.newQueryTypeParam(clsName, node.name);
+      this.isMutation = true;
     }
+    newClasses.forEach(({name, members, extendsC, linkedField, spreadFrags}) => {
+      this.newClass(name || '', members, extendsC, linkedField, spreadFrags);
+    });
     // console.log(node);
   }
 
@@ -450,14 +458,10 @@ class ClassTracker {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
     /* $FlowFixMe */
-    const hasD = n.metadata && n.metadata.with;
+    const hasD: boolean = n.metadata && n.metadata.with;
 
     const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
-      if (hasD) {
-        s.or = false;
-      } else {
-        s.or = true;
-      }
+      s.or = hasD ? false : true;
       return s;
     });
     this.spreads.unshift([n.name, {
@@ -486,20 +490,11 @@ class ClassTracker {
     return "js";
   }
 
-  anyType(): string {
-    return `${this.jsPrefix()}.Any`;
-  }
-
-  anyObjType(): string {
-    return `${this.jsPrefix()}.Dictionary[${this.jsPrefix()}.Any]`;
-  }
-
   transformNonNullableScalarType(
     type: GraphQLType,
-    backupType: ?string,
+    backupType: ?string
   ): Array<ATpe> {
     if (type instanceof GraphQLList) {
-      // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
       return this.transformScalarType(type.ofType, backupType).map(s => {
 
         s.mods.push(ARRAY_MOD);
@@ -518,10 +513,69 @@ class ClassTracker {
     } else if (type instanceof GraphQLScalarType) {
       return this.transformGraphQLScalarType(type, backupType);
     } else if (type instanceof GraphQLEnumType) {
-      // TODO: String for now.
       return [{name: "String", mods: []}];
     } else {
       throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+    }
+  }
+
+  transformInputType(type: GraphQLInputType, classes: Array<Cls>): Array<ATpe> {
+    if (type instanceof GraphQLNonNull) {
+      return this.transformNonNullableInputType(type.ofType, classes);
+    } else {
+      return this.transformNonNullableInputType(type, classes).map(s => {
+        s.mods.push(OPTIONAL_MOD)
+        return s;
+      });
+    }
+  }
+
+  transformNonNullableInputType(type: GraphQLInputType, classes: Array<Cls>): Array<ATpe> {
+    if (type instanceof GraphQLList) {
+      return this.transformInputType(type.ofType, classes).map(s => {
+        s.mods.push(OPTIONAL_MOD);
+        return s;
+      });
+    } else if (type instanceof GraphQLScalarType) {
+      return this.transformGraphQLScalarType(type);
+    } else if (type instanceof GraphQLEnumType) {
+      return [{name: "String", mods: []}];
+    } else if (type instanceof GraphQLInputObjectType) {
+      const fields = type.getFields();
+      const props: Array<Member> = Object.keys(fields)
+        .map(key => fields[key])
+        .map(field => {
+          const property = this.transformInputType(field.type, classes)
+          return {name: field.name,
+            tpe: property,
+            comments: [],
+          };
+        });
+/*
+type Cls = {
+  name?: ?string,
+  members: Array<Member>,
+  extendsC: Array<string>,
+  open: boolean,
+  linkedField: boolean,
+  spreadFrags: Array<string>,
+  isClass?: boolean,
+};
+*/
+      classes.push({
+        name: type.toString(),
+        members: props,
+        open: false,
+        extendsC: [],
+        linkedField: false,
+        spreadFrags: [],
+      });
+      return [{
+        name: type.toString(),
+        mods: [INPUT_MOD],
+      }];
+    } else {
+      throw new Error(`Could not convert from GraphQL Input type ${type.toString()}`);
     }
   }
 
@@ -531,9 +585,9 @@ class ClassTracker {
       case 'String':
       case 'Url':
         return [{name: "String", mods: []}];
-
-      case 'Float':
       case 'Int':
+        return [{name: "Int", mods: []}];
+      case 'Float':
       case 'BigDecimal':
       case 'BigInt':
       case 'Long':
@@ -622,6 +676,12 @@ class ClassTracker {
         newTpeName = "js.Array[" + newTpeName + "]";
       } else if (mod == OPTIONAL_MOD) {
         // Don't do anything for now.
+      } else if (mod === INPUT_MOD) {
+        // if (s.members) {
+        //   newTpeName = s.members.map(mem => {
+        //     return this.makeTypeFromMember(s.name, mem);
+        //   }).join("\n");
+        // }
       }
     });
     return newTpeName;
@@ -738,12 +798,16 @@ class ClassTracker {
     ].join("\n");
 
 
-    if (this.isQuery) {
-      invariant(this.queryTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
+    if (this.isQuery || this.isMutation) {
+      invariant(this.topLevelTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
     }
 
-    const objectParent = this.isQuery && this.queryTypeParams.length == 1 ?
-      `_root_.relay.graphql.QueryTaggedNode[${this.queryTypeParams[0].input}, ${this.queryTypeParams[0].output}]` :
+    const objectPrefix = this.isQuery ?
+      "_root_.relay.graphql.QueryTaggedNode" : (this.isMutation ?
+        "_root_.relay.graphql.MutationTaggedNode" : "");
+
+    const objectParent = this.topLevelTypeParams.length == 1 ?
+      `${objectPrefix}[${this.topLevelTypeParams[0].input}, ${this.topLevelTypeParams[0].output}]` :
       '_root_.relay.graphql.GenericGraphQLTaggedNode';
 
     return {
@@ -850,7 +914,7 @@ function createVisitor(ct: ClassTracker) {
         // console.log("ScalarField", node);
         // $FlowFixMe
         const tpe = ct.transformScalarType((node.type: GraphQLType));
-        ct.newMember({name: node.alias || node.name, tpe, comments: [], scalar: true});
+        ct.newMember({name: node.alias || node.name, tpe, comments: []});
         return node;
       },
       LinkedField(node: ConcreteLinkedField) {
