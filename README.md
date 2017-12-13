@@ -11,6 +11,11 @@ There are three parts to this.
 
 ## Changes
 
+### 0.8.0
+ - Mutations and Queries now are fully typed input and output
+ - Published for npm as well.  I haven't run across a query that can't compile.
+   however I don't use some of the advanced features.
+
 ### 0.6.8
  - published for sbt 1
 
