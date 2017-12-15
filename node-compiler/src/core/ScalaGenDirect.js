@@ -526,7 +526,7 @@ class ClassTracker {
   transformNonNullableInputType(type: GraphQLInputType, classes: Array<Cls>): Array<ATpe> {
     if (type instanceof GraphQLList) {
       return this.transformInputType(type.ofType, classes).map(s => {
-        s.mods.push(OPTIONAL_MOD);
+        s.mods.push(ARRAY_MOD);
         return s;
       });
     } else if (type instanceof GraphQLScalarType) {
