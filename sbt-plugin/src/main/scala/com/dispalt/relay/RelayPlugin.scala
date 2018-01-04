@@ -90,8 +90,7 @@ object RelayFilePlugin extends AutoPlugin {
           * Meat of the function.
           */
         relayCompile in Compile := Def
-          .taskDyn[Seq[File]] {
-            val log          = streams.value.log
+          .task[Seq[File]] {
             val cache        = streams.value.cacheDirectory / "relay-compile"
             val sourceFiles  = (unmanagedSourceDirectories in Compile).value
             val outpath      = (relayOutput in Compile).value
@@ -99,43 +98,21 @@ object RelayFilePlugin extends AutoPlugin {
 
             IO.createDirectory(outpath)
 
+            // Filter based on the presence of the annotation.
             val scalaFiles =
               (sourceFiles ** "*.scala").get
                 .filter(f => IO.read(f).contains("@gql"))
                 .toSet
-            val label = Reference.display(thisProjectRef.value)
-            // TODO: fix mutability
-            var ran = false
+            val label      = Reference.display(thisProjectRef.value)
+            val workingDir = file(sys.props("user.dir"))
+            val logger     = streams.value.log
+            val sp         = relaySchema.value
+            val source     = sourceDirectory.value
 
-            def handleUpdate(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
-              val files = in.modified -- in.removed
-              sbt.shim.SbtCompat.Analysis
-                .counted("Scala source", "", "s", files.size)
-                .foreach { count =>
-                  ran = true
-                  log.info(s"Executing relayCompile on $count $label...")
-                }
-              files
-            }
-
-            /* I used to count the result, but it was weird and inconsistent */
-            sbt.shim.SbtCompat.FileFunction.cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate)(scalaFiles)
-            if (ran) {
-              Def.task[Seq[File]] {
-//                val workingDir = (crossTarget in npmUpdate in Compile).value
-                val workingDir = file(sys.props("user.dir"))
-
-//                /* Actually run the update */
-//                val _      = (npmUpdate in Compile).value
-                val logger = streams.value.log
-                val sp     = relaySchema.value
-                val source = sourceDirectory.value
-                runCompiler(workingDir, compilerPath, sp, source, outpath, logger)
-                outpath.listFiles()
-              }
-            } else {
-              Def.task[Seq[File]](outpath.listFiles())
-            }
+            sbt.shim.SbtCompat.FileFunction
+              .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
+                handleUpdate(label, workingDir, compilerPath, sp, source, outpath, logger))(scalaFiles)
+              .toSeq
           }
           .value,
         /**
@@ -166,9 +143,25 @@ object RelayFilePlugin extends AutoPlugin {
                             sourceDirectory.getAbsolutePath.quote,
                             "--out",
                             outputPath.getAbsolutePath.quote).mkString(" ")
-//    println(cmd)
 
     Commands.run(cmd, workingDir, logger)
-    ()
+  }
+
+  def handleUpdate(label: String,
+                   workingDir: File,
+                   compilerPath: String,
+                   schemaPath: File,
+                   sourceDirectory: File,
+                   outputPath: File,
+                   logger: Logger)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+    val files = in.modified -- in.removed
+    sbt.shim.SbtCompat.Analysis
+      .counted("Scala source", "", "s", files.size)
+      .foreach { count =>
+        logger.info(s"Executing relayCompile on $count $label...")
+        runCompiler(workingDir, compilerPath, schemaPath, sourceDirectory, outputPath, logger)
+        logger.info(s"Finished relayCompile.")
+      }
+    files
   }
 }
