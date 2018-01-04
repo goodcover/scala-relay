@@ -112,7 +112,8 @@ object RelayFilePlugin extends AutoPlugin {
             sbt.shim.SbtCompat.FileFunction
               .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
                 handleUpdate(label, workingDir, compilerPath, sp, source, outpath, logger))(scalaFiles)
-              .toSeq
+
+            outpath.listFiles()
           }
           .value,
         /**
