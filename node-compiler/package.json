@@ -1,7 +1,7 @@
 {
   "name": "scala-relay-compiler",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "license": "Apache-2.0",
   "dependencies": {
     "babel-polyfill": "^6.20.0",

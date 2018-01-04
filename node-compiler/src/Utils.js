@@ -128,10 +128,14 @@ function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilt
 
   // $FlowFixMe
   codegenRunner.compileAll().then(
-    () => process.exit(0),
+    (result) => {
+      if (result === 'ERROR') {
+        process.exit(100);
+      }
+    },
     error => {
       console.error(String(error.stack || error));
-      process.exit(1);
+      process.exit(101);
     });
 }
 

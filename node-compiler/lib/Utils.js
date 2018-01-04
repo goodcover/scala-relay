@@ -117,9 +117,13 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepaths
   });
 
   // $FlowFixMe
-  codegenRunner.compileAll().then(() => process.exit(0), error => {
+  codegenRunner.compileAll().then(result => {
+    if (result === 'ERROR') {
+      process.exit(100);
+    }
+  }, error => {
     console.error(String(error.stack || error));
-    process.exit(1);
+    process.exit(101);
   });
 }
 
