@@ -88,6 +88,7 @@ type Options = {|
   +relayRuntimeModule: string,
   +noFutureProofEnums: boolean,
   nodes: Array<Root | Fragment>,
+  useNulls?: boolean,
 |};
 
 function generate(
@@ -97,7 +98,7 @@ function generate(
 
   // const code = babelGenerator(ast).code;
   // console.log(options.nodes);
-  const newCT = new ClassTracker(options.nodes);
+  const newCT = new ClassTracker(options.nodes, options.useNulls || false);
   try {
     const ast = IRVisitor.visit(
       node,
@@ -165,8 +166,9 @@ class ClassTracker {
   isQuery: boolean;
   isMutation: boolean;
   _nodes: Array<ConcreteRoot | ConcreteFragment>;
+  _useNulls: boolean;
 
-  constructor(nodes: Array<ConcreteRoot | ConcreteFragment>) {
+  constructor(nodes: Array<ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
     this.classes = new Map();
     this.topClasses = new Map();
     this.fields = [];
@@ -176,6 +178,7 @@ class ClassTracker {
     this.topLevelTypeParams = [];
     this.isQuery = false;
     this.isMutation = false;
+    this._useNulls = useNulls;
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -416,7 +419,8 @@ class ClassTracker {
     const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root);
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags);
-    const newNewTpe = this.transformScalarType(node.type, newTpe);
+    /* $FlowFixMe */
+    const newNewTpe = this.transformScalarType(node.type , newTpe);
     let comments: Array<string> = [];
 
     if (node.selections.length === selectionMembers.length) {
@@ -463,16 +467,16 @@ class ClassTracker {
   newSpread(n: ConcreteFragmentSpread) {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
-    /* $FlowFixMe */
-    const hasD: boolean = n.metadata && n.metadata.with;
+    // $FlowFixMe
+    const extendCls: Array<string> = (n.metadata && n.metadata.extends && [n.metadata.extends]) || [];
 
     const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
-      s.or = hasD ? false : true;
+      s.or = true;
       return s;
     });
     this.spreads.unshift([n.name, {
       members: dm,
-      extendCls: [],
+      extendCls,
     }]);
   }
 
@@ -670,7 +674,11 @@ class ClassTracker {
       if (mod == ARRAY_MOD) {
         newTpeName = "js.Array[" + newTpeName + "]";
       } else if (mod == OPTIONAL_MOD) {
-        // Don't do anything for now.
+        if (this._useNulls) {
+          newTpeName = `${newTpeName} | Null`
+        } else {
+          // Don't do anything for now.
+        }
       } else if (mod === INPUT_MOD) {
         // if (s.members) {
         //   newTpeName = s.members.map(mem => {
@@ -847,6 +855,7 @@ function createVisitor(ct: ClassTracker) {
         };
       },
       InlineFragment(node: ConcreteInlineFragment) {
+        // $FlowFixMe
         const {parentTpe} = node;
         const ptpe = parentTpe || [];
         const selections = node.selections.map(s => {
@@ -864,6 +873,7 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       LinkedField(node: ConcreteLinkedField) {
+        // $FlowFixMe
         const {parentTpe} = node;
         const ptpe = parentTpe || [];
         const selections = node.selections.map(s => {

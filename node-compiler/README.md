@@ -29,7 +29,7 @@ $ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graph
  - Handles first layer of spreading, right now we spit out `js.|` to
    join disjoint fields, even though in fact they are not disjoint,
    they are a union, however, this requires a fix later down the line.
- - `@sjs(extends: String)` This can give you a parent class to mixin.  It's
+ - `@scalajs(extends: String)` This can give you a parent class to mixin.  It's
    your job to verify it.
 
 

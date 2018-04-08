@@ -25,8 +25,7 @@
     "yargs": "^9.0.0"
   },
   "bin": {
-    "scala-relay-compiler": "./bin/scala-relay-compiler.js",
-    "scala-relay-compiler-stdin": "./bin/src-stdin.js"
+    "scala-relay-compiler": "./bin/scala-relay-compiler.js"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

@@ -36,11 +36,9 @@ const {
 
 const SCRIPT_NAME = 'relay-compiler';
 
-import type {GetWriterOptions} from 'relay-compiler/lib/graphql';
+import type {GetWriterOptions} from 'relay-compiler/lib/GraphQLCompilerPublic';
 
 const SJS = require('./transforms/SJSTransform');
-
-const verbose = true;
 
 const WATCH_EXPRESSION = [
   'allof',
@@ -63,7 +61,7 @@ function getSchema(schemaPath: string) {
     source = `
     directive @include(if: Boolean) on FRAGMENT_SPREAD | FIELD
     directive @skip(if: Boolean) on FRAGMENT_SPREAD | FIELD
-    directive @sjs(with: Boolean, extends: String) on FRAGMENT_SPREAD | FIELD
+    directive @scalajs(extends: String) on FRAGMENT_SPREAD | FIELD
 
     ${source}
   `;
@@ -79,8 +77,7 @@ ${error.stack}
   }
 }
 
-function getScalaFileWriter(baseDir: string, outputDir: string) {
-  // $FlowFixMe
+function getScalaFileWriter(baseDir: string, outputDir: string, useNulls: boolean) {
   return ({
     onlyValidate,
     schema,
@@ -106,6 +103,7 @@ function getScalaFileWriter(baseDir: string, outputDir: string) {
       useHaste: false,
       noFutureProofEnums: false,
       outputDir,
+      useNulls,
     },
     onlyValidate,
     schema,
@@ -116,10 +114,8 @@ function getScalaFileWriter(baseDir: string, outputDir: string) {
   });
 }
 
-
-
 // $FlowFixMe
-function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob) {
+function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob, verbose: boolean) {
   const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala"]});
 
   const parserConfigs = {

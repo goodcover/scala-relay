@@ -30,8 +30,7 @@ function sjsTransform(
   );
 }
 
-const SJS = 'sjs';
-const WITH = 'with';
+const SJS = 'scalajs';
 
 function visitFragment(fragment: Fragment): Fragment {
   let transformedFrag = this.traverse(fragment);

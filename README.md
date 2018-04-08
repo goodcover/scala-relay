@@ -11,6 +11,14 @@ There are three parts to this.
 
 ## Changes
 
+### 0.9.0
+ - Relay 1.5.0 compiler support, nothing extra came of that minus some code changes.
+ - Add option for `--useNulls` that specifies using a union with Null type for optional fields.
+ - Add option for `--verbose` to increase verbosity
+
+### 0.8.2
+ - Actually works against 1.4.1 with everything I can test.
+
 ### 0.8.0
  - Mutations and Queries now are fully typed input and output
  - Published for npm as well.  I haven't run across a query that can't compile.

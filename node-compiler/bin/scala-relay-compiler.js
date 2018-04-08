@@ -44,12 +44,13 @@ function run(options) {
   const src = path.resolve(process.cwd(), options.src);
   const out = path.resolve(process.cwd(), options.out);
 
-  Utils.compileAll(src, 
+  Utils.compileAll(src,
     schema,
-    Utils.getScalaFileWriter(src, out), 
-    ScalaFileParser.getParser, 
+    Utils.getScalaFileWriter(src, out, options.useNulls),
+    ScalaFileParser.getParser,
     ScalaFileParser.getFileFilter,
-    ScalaFileParser.getFilepathsFromGlob);
+    ScalaFileParser.getFilepathsFromGlob,
+    options.verbose);
 }
 
 const argv = yargs
@@ -71,7 +72,19 @@ const argv = yargs
       describe: 'Output of the runtime relay fragments',
       demandOption: true,
       type: 'string',
-    }
+    },
+    'verbose': {
+      describe: 'Output everything?',
+      demandOption: false,
+      type: 'boolean',
+      default: false
+    },
+    'useNulls': {
+      describe: 'For attributes that are optional use A | Null vs A',
+      demandOption: false,
+      type: 'boolean',
+      default: false
+    },
   })
   .help()
   .argv;

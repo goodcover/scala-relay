@@ -72,6 +72,7 @@ export type WriterConfig = {
     LOCAL_RULES?: Array<ValidationRule>,
   },
   packageName?: string,
+  useNulls?: boolean
 };
 
 class ScalaFileWriter implements FileWriterInterface {
@@ -211,11 +212,6 @@ class ScalaFileWriter implements FileWriterInterface {
       this._reporter,
     );
 
-    // Added
-    // const compiledDocumentMap: CompiledDocumentMap<
-    //   GeneratedNode,
-    // > = artifacts;
-
     const existingFragmentNames = new Set(
       definitions.map(definition => definition.name),
     );
@@ -255,6 +251,7 @@ class ScalaFileWriter implements FileWriterInterface {
             useHaste: this._config.useHaste,
             noFutureProofEnums: false,
             nodes: transformedFlowContext,
+            useNulls: this._config.useNulls
           });
 
           await writeRelayScalaFile(
