@@ -87,7 +87,7 @@ type Options = {|
   +inputFieldWhiteList: $ReadOnlyArray<string>,
   +relayRuntimeModule: string,
   +noFutureProofEnums: boolean,
-  nodes: Array<Root | Fragment>,
+  nodes: Map<String, Root | Fragment>,
   useNulls?: boolean,
 |};
 
@@ -165,10 +165,10 @@ class ClassTracker {
   topLevelTypeParams: Array<QueryType>;
   isQuery: boolean;
   isMutation: boolean;
-  _nodes: Array<ConcreteRoot | ConcreteFragment>;
+  _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
 
-  constructor(nodes: Array<ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
+  constructor(nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
     this.classes = new Map();
     this.topClasses = new Map();
     this.fields = [];
