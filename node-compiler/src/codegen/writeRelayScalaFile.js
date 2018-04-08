@@ -115,7 +115,8 @@ async function writeRelayScalaFile(
     docText: text,
     topClasses,
     hash: hash ? `@relayHash ${hash}` : null,
-    concreteText: dedupeJSONStringify(generatedNode),
+    // Since we'll be using js.eval, because scalajs, we add a parent around.
+    concreteText: '(' + dedupeJSONStringify(generatedNode) + ')',
     devTextGenerator: makeDevTextGenerator(devOnlyProperties),
     relayRuntimeModule,
     packageName,

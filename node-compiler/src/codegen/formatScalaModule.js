@@ -34,13 +34,10 @@ const formatGeneratedModule: FormatModule = ({
   return `/**
  * scala-relay-compiler: ${hashText}
  * GENERATED, DON'T MANUALLY EDIT.
+ * objName:      ${objectName}
+ * docType:      ${documentType}
  */
 package ${packageName}
-/*
-
-objName:      ${objectName}
-docType:      ${documentType}
-*/
 
 import _root_.scala.scalajs.js
 import _root_.scala.scalajs.js.|
@@ -60,7 +57,7 @@ ${supportingClasses || ''}
   ///////////////////////////
 ${implicits || ''}
 
-  val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.JSON.parse("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
+  val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
   val devText: String = """${devOnlyText}"""
 }
 
