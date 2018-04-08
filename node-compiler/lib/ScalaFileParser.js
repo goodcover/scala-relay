@@ -51,8 +51,7 @@ function getFileFilter(baseDir) {
   };
 }
 
-function getFilepathsFromGlob(baseDir, options) {
-  const { extensions, include, exclude } = options;
+function getFilepathsFromGlob(baseDir, { extensions, include, exclude }) {
   const patterns = include.map(inc => `${inc}/*.+(${extensions.join('|')})`);
 
   const glob = require('fast-glob');
@@ -60,7 +59,7 @@ function getFilepathsFromGlob(baseDir, options) {
     cwd: baseDir,
     bashNative: [],
     onlyFiles: true,
-    ignore: exclude
+    ignore: exclude || []
   });
 }
 

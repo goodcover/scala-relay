@@ -75,7 +75,7 @@ class SingleGraphQLFileWriter {
 
 function getNewParser(templates) {
   return (baseDir) => {
-    return new SingleGraphQLFileWriter(templates); 
+    return new SingleGraphQLFileWriter(templates);
   }
 }
 
@@ -88,10 +88,10 @@ function getFileFilter(baseDir) {
 function fauxWriter() {
 
   return (onlyValidate, schema, documents, baseDocuments) => {
-    
+
     return {
       writeAll: function() {
-        const baseSchema = schema; 
+        const baseSchema = schema;
 
         const config = {
           buildCommand: Utils.SCRIPT_NAME,
@@ -114,6 +114,21 @@ function fauxWriter() {
           baseDocuments.merge(documents).valueSeq().toArray()
         );
 
+        // Verify using local and global rules, can run global verifications here
+        // because all files are processed together
+        let validationRules = [
+          ...RelayValidator.LOCAL_RULES,
+          ...RelayValidator.GLOBAL_RULES,
+        ];
+        const customizedValidationRules = this._config.validationRules;
+        if (customizedValidationRules) {
+          validationRules = [
+            ...validationRules,
+            ...(customizedValidationRules.LOCAL_RULES || []),
+            ...(customizedValidationRules.GLOBAL_RULES || []),
+          ];
+        }
+
         const definitions = ASTConvert.convertASTDocumentsWithBase(
           extendedSchema,
           baseDocuments.valueSeq().toArray(),
@@ -133,11 +148,11 @@ function fauxWriter() {
         const transformedQueryContext = compiler.transformedQueryContext();
         const compiledDocumentMap = compiler.compile();
         const values = compiledDocumentMap.values().next().value
-        
+
         console.log("---GQL:SCALA---");
         console.log(JSON.stringify(values));
         console.log("---EGQL:SCALA---")
-        return ImmutableMap(); 
+        return ImmutableMap();
       }
     }
   };
@@ -161,11 +176,17 @@ function execute(srcDir, schema, writer, parser, fileFilter) {
       parser: 'default',
     },
   };
+  const reporter = new ConsoleReporter({
+    verbose: false,
+    quiet: false,
+  });
+
   const codegenRunner = new RelayCodegenRunner({
+    reporter,
     parserConfigs,
     writerConfigs,
     onlyValidate: false,
-    skipPersist: false,
+    sourceControl: null,
   });
 
   codegenRunner.compileAll().then(
@@ -192,7 +213,7 @@ function run(options) {
   });
 
   process.stdin.on('end', () => {
-    var templated = template(data) 
+    var templated = template(data)
     console.log(templated)
     templated = data;
     execute(out, schema, fauxWriter(), getNewParser([templated]), getFileFilter);

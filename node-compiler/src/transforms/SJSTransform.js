@@ -6,8 +6,9 @@ const GraphQLCompilerContext = require('relay-compiler/lib/GraphQLCompilerContex
 const GraphQLIRTransformer = require('relay-compiler/lib/GraphQLIRTransformer');
 
 const invariant = require('invariant');
-const stableJSONStringify = require('relay-compiler/lib/stableJSONStringify');
-// const stableJSONStringify = require('stableJSONStringify');
+
+import type {InlineFragment, Fragment, FragmentSpread, Directive} from 'relay-compiler/lib/GraphQLIR';
+
 
 const {
   CompilerContext,
@@ -40,7 +41,7 @@ function visitFragment(fragment: Fragment): Fragment {
   }
 
   const arg = getLiteralArgumentValues(relayDirective.args);
-  
+
   return {
     ...transformedFrag,
     directives: transformedFrag.directives.filter(
@@ -61,7 +62,7 @@ function visitFragmentSpread(fragment: Fragment): Fragment {
   }
 
   const arg = getLiteralArgumentValues(relayDirective.args);
-  
+
   return {
     ...transformedFrag,
     directives: transformedFrag.directives.filter(

@@ -26,6 +26,7 @@ const {
 } = require('graphql');
 
 const {
+  commonTransforms,
   codegenTransforms,
   fragmentTransforms,
   printTransforms,
@@ -37,7 +38,7 @@ const SCRIPT_NAME = 'relay-compiler';
 
 const SJS = require('./transforms/SJSTransform');
 
-const verbose = false;
+const verbose = true;
 
 const WATCH_EXPRESSION = ['allof', ['type', 'f'], ['suffix', 'scala'], ['not', ['match', '**/__mocks__/**', 'wholename']], ['not', ['match', '**/__tests__/**', 'wholename']], ['not', ['match', '**/__generated__/**', 'wholename']]];
 
@@ -47,17 +48,21 @@ printTransforms.unshift(SJS.transformRemoveSjs);
 function getSchema(schemaPath) {
   try {
     let source = fs.readFileSync(schemaPath, 'utf8');
+    if (path.extname(schemaPath) === '.json') {
+      source = printSchema(buildClientSchema(JSON.parse(source).data));
+    }
     source = `
-  directive @include(if: Boolean) on FRAGMENT | FIELD
-  directive @skip(if: Boolean) on FRAGMENT | FIELD
-  directive @sjs(with: Boolean, extends: String) on FRAGMENT | FIELD
-  ${source}
+    directive @include(if: Boolean) on FRAGMENT_SPREAD | FIELD
+    directive @skip(if: Boolean) on FRAGMENT_SPREAD | FIELD
+    directive @sjs(with: Boolean, extends: String) on FRAGMENT_SPREAD | FIELD
+
+    ${source}
   `;
-    return buildASTSchema(parse(source));
+    return buildASTSchema(parse(source), { assumeValid: true });
   } catch (error) {
     throw new Error(`
-Error loading schema. Expected the schema to be a .graphql file using the
-GraphQL schema definition language. Error detail:
+Error loading schema. Expected the schema to be a .graphql or a .json
+file, describing your GraphQL server's API. Error detail:
 ${error.stack}
     `.trim());
   }
@@ -65,23 +70,37 @@ ${error.stack}
 
 function getScalaFileWriter(baseDir, outputDir) {
   // $FlowFixMe
-  return (onlyValidate, schema, documents, baseDocuments) => new ScalaFileWriter({
+  return ({
+    onlyValidate,
+    schema,
+    documents,
+    baseDocuments,
+    sourceControl,
+    reporter
+  }) => new ScalaFileWriter({
     config: {
-      formatModule,
+      baseDir,
       compilerTransforms: {
+        commonTransforms,
         codegenTransforms,
         fragmentTransforms,
         printTransforms,
         queryTransforms
       },
-      outputDir,
-      baseDir,
-      schemaExtensions
+      customScalars: {},
+      formatModule,
+      inputFieldWhiteListForFlow: [],
+      schemaExtensions,
+      useHaste: false,
+      noFutureProofEnums: false,
+      outputDir
     },
     onlyValidate,
     schema,
     baseDocuments,
-    documents
+    documents,
+    reporter,
+    sourceControl
   });
 }
 
@@ -106,17 +125,20 @@ function compileAll(srcDir, schemaPath, writer, parser, fileFilter, getFilepaths
       isGeneratedFile: filePath => true
     }
   };
-  const reporter = new ConsoleReporter({ verbose });
 
-  // $FlowFixMe
+  const reporter = new ConsoleReporter({
+    verbose,
+    quiet: false
+  });
+
   const codegenRunner = new CodegenRunner({
     reporter,
     parserConfigs,
     writerConfigs,
-    onlyValidate: false
+    onlyValidate: false,
+    sourceControl: null
   });
 
-  // $FlowFixMe
   codegenRunner.compileAll().then(result => {
     if (result === 'ERROR') {
       process.exit(100);

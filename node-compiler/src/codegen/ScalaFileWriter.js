@@ -11,7 +11,7 @@
 
 'use strict';
 
-const RelayCompiler = require('relay-compiler/lib/RelayCompiler');
+const compileRelayArtifacts = require('relay-compiler/lib/compileRelayArtifacts');
 const RelayFlowGenerator = require('../core/ScalaGenDirect');
 const RelayParser = require('relay-compiler/lib/RelayParser');
 const RelayValidator = require('relay-compiler/lib/RelayValidator');
@@ -34,11 +34,12 @@ import type {
   CompiledDocumentMap,
   CompilerTransforms,
   FileWriterInterface,
+  Reporter,
 } from 'relay-compiler/lib/GraphQLCompilerPublic';
 import type {FormatModule} from './writeRelayScalaFile';
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
 import type {GeneratedNode} from 'relay-compiler/lib/RelayConcreteNode';
-import type {DocumentNode, GraphQLSchema} from 'graphql';
+import type {DocumentNode, GraphQLSchema, ValidationContext} from 'graphql';
 
 const {isOperationDefinitionAST} = SchemaUtils;
 
@@ -47,6 +48,8 @@ export type GenerateExtraFiles = (
   compilerContext: CompilerContext,
   getGeneratedDirectory: (definitionName: string) => CodegenDirectory,
 ) => void;
+
+export type ValidationRule = (context: ValidationContext) => any;
 
 export type WriterConfig = {
   baseDir: string,
@@ -64,6 +67,10 @@ export type WriterConfig = {
   // Haste style module that exports flow types for GraphQL enums.
   // TODO(T22422153) support non-haste environments
   enumsHasteModule?: string,
+  validationRules?: {
+    GLOBAL_RULES?: Array<ValidationRule>,
+    LOCAL_RULES?: Array<ValidationRule>,
+  },
   packageName?: string,
 };
 
@@ -73,20 +80,29 @@ class ScalaFileWriter implements FileWriterInterface {
   _baseSchema: GraphQLSchema;
   _baseDocuments: ImmutableMap<string, DocumentNode>;
   _documents: ImmutableMap<string, DocumentNode>;
+  _reporter: Reporter;
 
-  constructor(options: {
+  constructor({
+    config,
+    onlyValidate,
+    baseDocuments,
+    documents,
+    schema,
+    reporter,
+  }: {
     config: WriterConfig,
     onlyValidate: boolean,
     baseDocuments: ImmutableMap<string, DocumentNode>,
     documents: ImmutableMap<string, DocumentNode>,
     schema: GraphQLSchema,
+    reporter: Reporter,
   }) {
-    const {config, onlyValidate, baseDocuments, documents, schema} = options;
     this._baseDocuments = baseDocuments || ImmutableMap();
     this._baseSchema = schema;
     this._config = config;
     this._documents = documents;
     this._onlyValidate = onlyValidate;
+    this._reporter = reporter;
 
     validateConfig(this._config);
   }
@@ -152,13 +168,10 @@ class ScalaFileWriter implements FileWriterInterface {
       RelayParser.transform.bind(RelayParser),
     );
 
-    const compilerContext = new CompilerContext(extendedSchema);
-    const compiler = new RelayCompiler(
+    const compilerContext = new CompilerContext(
       this._baseSchema,
-      compilerContext,
-      this._config.compilerTransforms,
-      generate,
-    );
+      extendedSchema
+    ).addAll(definitions);
 
     const getGeneratedDirectory = definitionName => {
       if (configOutputDirectory) {
@@ -178,17 +191,30 @@ class ScalaFileWriter implements FileWriterInterface {
       return cachedDir;
     };
 
-    compiler.addDefinitions(definitions);
 
-    const transformedFlowContext = RelayFlowGenerator.flowTransforms.reduce(
-      (ctx, transform) => transform(ctx, extendedSchema),
-      compiler.context(),
+    const transformedFlowContext = compilerContext.applyTransforms(
+      RelayFlowGenerator.flowTransforms,
+      this._reporter,
     );
 
-    const transformedQueryContext = compiler.transformedQueryContext();
-    const compiledDocumentMap: CompiledDocumentMap<
-      GeneratedNode,
-    > = compiler.compile();
+    const transformedQueryContext = compilerContext.applyTransforms(
+      [
+        ...this._config.compilerTransforms.commonTransforms,
+        ...this._config.compilerTransforms.queryTransforms,
+      ],
+      this._reporter,
+    );
+
+    const artifacts = compileRelayArtifacts(
+      compilerContext,
+      this._config.compilerTransforms,
+      this._reporter,
+    );
+
+    // Added
+    // const compiledDocumentMap: CompiledDocumentMap<
+    //   GeneratedNode,
+    // > = artifacts;
 
     const existingFragmentNames = new Set(
       definitions.map(definition => definition.name),
@@ -201,9 +227,8 @@ class ScalaFileWriter implements FileWriterInterface {
     });
 
     try {
-      const nodes = transformedFlowContext.documents();
       await Promise.all(
-        nodes.map(async node => {
+        artifacts.map(async node => {
           if (baseDefinitionNames.has(node.name)) {
             // don't add definitions that were part of base context
             return;
@@ -212,25 +237,29 @@ class ScalaFileWriter implements FileWriterInterface {
           const relayRuntimeModule =
             this._config.relayRuntimeModule || 'relay-runtime';
 
-          const compiledNode = compiledDocumentMap.get(node.name);
+          const flowNode = transformedFlowContext.get(node.name);
           invariant(
-            compiledNode,
+            flowNode,
             'RelayCompiler: did not compile definition: %s',
             node.name,
           );
 
-          const flowTypes = RelayFlowGenerator.generate(node, {
+          // console.log(artifacts);
+
+          const flowTypes = RelayFlowGenerator.generate(flowNode, {
             customScalars: this._config.customScalars,
             enumsHasteModule: this._config.enumsHasteModule,
             existingFragmentNames,
             inputFieldWhiteList: this._config.inputFieldWhiteListForFlow,
             relayRuntimeModule,
             useHaste: this._config.useHaste,
-          }, null, extendedSchema, nodes);
+            noFutureProofEnums: false,
+            nodes: transformedFlowContext,
+          });
 
           await writeRelayScalaFile(
-            getGeneratedDirectory(compiledNode.name),
-            compiledNode,
+            getGeneratedDirectory(node.name),
+            node,
             this._config.formatModule,
             flowTypes.core,
             this._config.persistQuery,

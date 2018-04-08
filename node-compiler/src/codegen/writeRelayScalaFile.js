@@ -14,11 +14,12 @@
 const crypto = require('crypto');
 const invariant = require('invariant');
 // TODO T21875029 ../../relay-runtime/util/prettyStringify
-const prettyStringify = require('relay-runtime/lib/prettyStringify');
+const dedupeJSONStringify = require('relay-compiler/lib/dedupeJSONStringify');
 
-import type {CodegenDirectory} from 'relay-compiler/lib/GraphQLCompilerPublic';
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
 import type {GeneratedNode} from 'relay-compiler/lib/RelayConcreteNode';
+import type {CodegenDirectory} from 'relay-compiler/lib/GraphQLCompilerPublic';
+
 
 /**
  * Generate a module for the given document name/text.
@@ -114,7 +115,7 @@ async function writeRelayScalaFile(
     docText: text,
     topClasses,
     hash: hash ? `@relayHash ${hash}` : null,
-    concreteText: prettyStringify(generatedNode),
+    concreteText: dedupeJSONStringify(generatedNode),
     devTextGenerator: makeDevTextGenerator(devOnlyProperties),
     relayRuntimeModule,
     packageName,

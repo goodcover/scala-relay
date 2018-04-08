@@ -17,7 +17,11 @@ const {
   FlattenTransform,
   IRVisitor,
   SchemaUtils,
+  Profiler,
 } = require('relay-compiler/lib/GraphQLCompilerPublic');
+
+const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
+const RelayRelayDirectiveTransform = require('relay-compiler/lib/RelayRelayDirectiveTransform');
 
 import type {
   IRTransform,
@@ -75,16 +79,25 @@ https://github.com/facebook/relay/issues/1918
 
 */
 
+type Options = {|
+  +customScalars: ScalarTypeMapping,
+  +useHaste: boolean,
+  +enumsHasteModule: ?string,
+  +existingFragmentNames: Set<string>,
+  +inputFieldWhiteList: $ReadOnlyArray<string>,
+  +relayRuntimeModule: string,
+  +noFutureProofEnums: boolean,
+  nodes: Array<Root | Fragment>,
+|};
+
 function generate(
   node: Root | Fragment,
-  customScalars?: ?ScalarTypeMapping,
-  inputFieldWhiteList?: ?Array<string>,
-  schema: GraphQLSchema,
-  nodes: Array<Root | Fragment>,
+  options: Options,
 ): {core: string, supporting: string, implicits: string, objectParent: string} {
 
   // const code = babelGenerator(ast).code;
-  const newCT = new ClassTracker(nodes);
+  // console.log(options.nodes);
+  const newCT = new ClassTracker(options.nodes);
   try {
     const ast = IRVisitor.visit(
       node,
@@ -628,15 +641,14 @@ class ClassTracker {
   // }
 
   getDirectMembersForFrag(name: string, backupType: ?string): Array<Member> {
-    const node = this._nodes.find(n => n.kind === "Fragment" && n.name === name);
+    const node = this._nodes.get(name);
+    // console.log(node);
     if (node) {
       let result =  flattenArray(node.selections.map(s => {
-
         if (s.kind == "FragmentSpread") {
           // $FlowFixMe
           return this.getDirectMembersForFrag(s.name, name + "." + titleCase(s.name));
         } else {
-
           return [{
             // $FlowFixMe
             name: s.name,
@@ -882,6 +894,7 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       Fragment(node: ConcreteFragment) {
+        // console.log(node);
         ct.closeField(node, false, false);
         // // $FlowFixMe
         // ct.handleSelections(node);
@@ -906,8 +919,8 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       FragmentSpread(node: ConcreteFragmentSpread) {
-        ct.newSpread(node);
         // console.log("FragmentSpread", node);
+        ct.newSpread(node);
         return node;
       },
       Condition(node: ConcreteCondition) {
@@ -930,11 +943,12 @@ function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
 }
 
 const FLOW_TRANSFORMS: Array<IRTransform> = [
-  (ctx: CompilerContext) => FlattenTransform.transform(ctx, {}),
-  (ctx: CompilerContext) => SJSTransform.transform(ctx),
+  RelayRelayDirectiveTransform.transform,
+  RelayMaskTransform.transform,
+  SJSTransform.transform,
 ];
 
 module.exports = {
-  generate,
+  generate: Profiler.instrument(generate, 'RelayFlowGenerator.generate'),
   flowTransforms: FLOW_TRANSFORMS,
 };
