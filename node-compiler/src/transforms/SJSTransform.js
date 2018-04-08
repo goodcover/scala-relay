@@ -7,7 +7,7 @@ const GraphQLIRTransformer = require('relay-compiler/lib/GraphQLIRTransformer');
 
 const invariant = require('invariant');
 
-import type {InlineFragment, Fragment, FragmentSpread, Directive} from 'relay-compiler/lib/GraphQLIR';
+import type {InlineFragment, Fragment, FragmentSpread, Directive, Field} from 'relay-compiler/lib/GraphQLIR';
 
 
 const {
@@ -23,8 +23,10 @@ function sjsTransform(
   return IRTransformer.transform(
     context,
     {
-      Fragment: visitFragment,
-      FragmentSpread: visitFragmentSpread,
+      Fragment: visitField,
+      FragmentSpread: visitField,
+      InlineFragment: visitField,
+      LinkedField: visitField,
     },
     () => ({}),
   );
@@ -32,28 +34,7 @@ function sjsTransform(
 
 const SJS = 'scalajs';
 
-function visitFragment(fragment: Fragment): Fragment {
-  let transformedFrag = this.traverse(fragment);
-  const relayDirective = transformedFrag.directives.find(({name}) => name === SJS);
-  if (!relayDirective) {
-    return transformedFrag;
-  }
-
-  const arg = getLiteralArgumentValues(relayDirective.args);
-
-  return {
-    ...transformedFrag,
-    directives: transformedFrag.directives.filter(
-      directive => directive.name !== SJS,
-    ),
-    metadata: {
-      ...(transformedFrag.metadata || {}),
-      ...arg,
-    },
-  };
-}
-
-function visitFragmentSpread(fragment: Fragment): Fragment {
+function visitField(fragment): any {
   let transformedFrag = this.traverse(fragment);
   const relayDirective = transformedFrag.directives.find(({name}) => name === SJS);
   if (!relayDirective) {

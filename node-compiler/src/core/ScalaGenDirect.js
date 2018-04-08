@@ -96,8 +96,6 @@ function generate(
   options: Options,
 ): {core: string, supporting: string, implicits: string, objectParent: string} {
 
-  // const code = babelGenerator(ast).code;
-  // console.log(options.nodes);
   const newCT = new ClassTracker(options.nodes, options.useNulls || false);
   try {
     const ast = IRVisitor.visit(
@@ -201,6 +199,17 @@ class ClassTracker {
     this.topLevelTypeParams.push({input, output});
   }
 
+  /**
+   * Create a new class definitively.  It could be the result of a partial selection or a fragment spread.
+   *
+   * Linked Field means a partial/full selection.
+   *
+   * @param {} cn
+   * @param {*} members
+   * @param {*} extendsC
+   * @param {*} linkedField
+   * @param {*} spreadFrags
+   */
   newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>): string {
     let name = cn;
     if (linkedField) {
@@ -312,7 +321,8 @@ class ClassTracker {
     const listOfSpreads: Array<[string, ASpread]> = fragSpreadMembers.map(_ => this.popSpread());
     // Using selection members to pull the right amount of fields out.
     const localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
-    const newTpe = this.newClass(newClassName, localMembers, [], true, []);
+    const extendsCls = this.getScalajsDirectiveExtends(node);
+    const newTpe = this.newClass(newClassName, localMembers, extendsCls, true, []);
     const parentCls = this.getNewTpeParent(node);
 
     listOfSpreads.forEach(([k, {members}]) => {
@@ -368,6 +378,11 @@ class ClassTracker {
     return [];
   }
 
+  getScalajsDirectiveExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment): Array<string> {
+    // $FlowFixMe
+    return (node.metadata && node.metadata.extends && [node.metadata.extends]) || [];
+  }
+
   /**
    * TODO: This needs to severly be cleaned up, wayyyy too much going on.
    *
@@ -416,7 +431,9 @@ class ClassTracker {
     });
 
     // flattenArray(listOfSpreads.map(s => s[1].extendCls));
-    const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root);
+    const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root).concat(
+      this.getScalajsDirectiveExtends(node)
+    );
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags);
     /* $FlowFixMe */

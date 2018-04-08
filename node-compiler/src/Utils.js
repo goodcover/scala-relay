@@ -61,7 +61,7 @@ function getSchema(schemaPath: string) {
     source = `
     directive @include(if: Boolean) on FRAGMENT_SPREAD | FIELD
     directive @skip(if: Boolean) on FRAGMENT_SPREAD | FIELD
-    directive @scalajs(extends: String) on FRAGMENT_SPREAD | FIELD
+    directive @scalajs(extends: String) on FIELD | INLINE_FRAGMENT | FRAGMENT_DEFINITION
 
     ${source}
   `;
