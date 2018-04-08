@@ -1,5 +1,5 @@
 
-## scala-relay-compiler
+# scala-relay-compiler
 
 The purpose of this project is to generate Scala.js bindings for the
 `relay-compiler`.  Typically the `relay-compiler` generates `flow` bindings
@@ -13,6 +13,10 @@ It uses `outputDir` to generate all the source files and whatnot in the same pac
 So its a big flat package repository in the same directory.
 Typically `(resourceManaged in Compile).value / "relay-compiler-out"` is where it outputs
 in sbt parlance.
+
+### Versions
+- `0.9.0` - Relay `1.5.0`
+- `0.8.2` - Relay `1.4.0`
 
 ## Example
 
