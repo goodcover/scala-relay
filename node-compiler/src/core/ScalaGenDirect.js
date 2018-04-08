@@ -87,7 +87,7 @@ type Options = {|
   +inputFieldWhiteList: $ReadOnlyArray<string>,
   +relayRuntimeModule: string,
   +noFutureProofEnums: boolean,
-  nodes: Map<String, Root | Fragment>,
+  nodes: Map<string, Root | Fragment>,
   useNulls?: boolean,
 |};
 
