@@ -15,6 +15,7 @@ There are three parts to this.
  - Relay 1.5.0 compiler support, nothing extra came of that minus some code changes.
  - Add option for `--useNulls` that specifies using a union with Null type for optional fields.
  - Add option for `--verbose` to increase verbosity
+ - Make `@scalajs(extends: string)` work for more cases (inline frags, linked fields, and frag defs)
 
 ### 0.8.2
  - Actually works against 1.4.1 with everything I can test.
