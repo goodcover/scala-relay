@@ -378,7 +378,7 @@ class ClassTracker {
     return [];
   }
 
-  getScalajsDirectiveExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment): Array<string> {
+  getScalajsDirectiveExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment | ConcreteFragmentSpread): Array<string> {
     // $FlowFixMe
     return (node.metadata && node.metadata.extends && [node.metadata.extends]) || [];
   }
@@ -484,8 +484,7 @@ class ClassTracker {
   newSpread(n: ConcreteFragmentSpread) {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
-    // $FlowFixMe
-    const extendCls: Array<string> = (n.metadata && n.metadata.extends && [n.metadata.extends]) || [];
+    const extendCls: Array<string> = this.getScalajsDirectiveExtends(n);
 
     const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
       s.or = true;
