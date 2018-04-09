@@ -460,6 +460,7 @@ class ClassTracker {
     const newClasses : Array<Cls> = [];
     if (node.operation === 'query') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+        // $FlowFixMe
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
@@ -468,6 +469,7 @@ class ClassTracker {
       this.isQuery = true;
     } else if (node.operation === 'mutation') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+        // $FlowFixMe
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
