@@ -1,7 +1,7 @@
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 
-crossSbtVersions := List("0.13.16", "1.0.4")
+crossSbtVersions := List("0.13.17", "1.1.2")
 
 lazy val root =
   project

@@ -1,4 +1,4 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.21")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.22")
 
 libraryDependencies += "org.scala-sbt" % "scripted-plugin" % sbtVersion.value
 addSbtPlugin("me.lessis"         % "bintray-sbt"  % "0.3.0")

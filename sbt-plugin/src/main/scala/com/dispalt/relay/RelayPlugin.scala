@@ -16,10 +16,12 @@ object RelayBasePlugin extends AutoPlugin {
   override def trigger = noTrigger
 
   object autoImport {
-    val relaySchema: SettingKey[File]                   = settingKey[File]("Path to schema file")
-    val relayValidateQuery: SettingKey[Boolean]         = settingKey[Boolean]("Validate queries in macro")
-    val relaySangriaVersion: SettingKey[String]         = settingKey[String]("Set the Sangria version")
-    val relaySangriaCompilerVersion: SettingKey[String] = settingKey[String]("Set the Sangria version")
+    val relaySchema: SettingKey[File]           = settingKey[File]("Path to schema file")
+    val relayValidateQuery: SettingKey[Boolean] = settingKey[Boolean]("Validate queries in macro")
+    val relaySangriaVersion: SettingKey[String] = settingKey[String]("Set the Sangria version")
+    val relayUseNulls: SettingKey[Boolean] =
+      settingKey[Boolean]("Change the generated output to use nulls and not naked types")
+    val relayDebug: SettingKey[Boolean] = settingKey[Boolean]("Debug the relay compiler")
   }
 
   import autoImport._
@@ -29,11 +31,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * Set the version of the sangria compiler which helps validate GQL
           */
-        relaySangriaVersion := "1.3.1",
-        /**
-          *
-          */
-        relaySangriaCompilerVersion := "0.6.10",
+        relaySangriaVersion := "1.4.0",
         /**
           * Runtime dependency on the macro
           */
@@ -42,7 +40,15 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * Should we validate queries?
           */
-        relayValidateQuery := false)
+        relayValidateQuery := false,
+        /**
+          * Should we codegen optional fields as A | Null (if true) or just A (if false).
+          */
+        relayUseNulls := false,
+        /**
+          * Set this if you'd like to see timing and larger stack traces.
+          */
+        relayDebug := false)
 }
 
 object RelayFilePlugin extends AutoPlugin {
@@ -95,23 +101,34 @@ object RelayFilePlugin extends AutoPlugin {
             val sourceFiles  = (unmanagedSourceDirectories in Compile).value
             val outpath      = (relayOutput in Compile).value
             val compilerPath = relayCompilerPath.value
+            val verbose      = relayDebug.value
+            val useNulls     = relayUseNulls.value
+            val schemaPath   = relaySchema.value
 
             IO.createDirectory(outpath)
 
-            // Filter based on the presence of the annotation.
+            // Filter based on the presence of the annotation. and look for a change
+            // in the schema path
             val scalaFiles =
               (sourceFiles ** "*.scala").get
-                .filter(f => IO.read(f).contains("@gql"))
-                .toSet
+                .filter(IO.read(_).contains("@gql"))
+                .toSet ++ Set(schemaPath)
             val label      = Reference.display(thisProjectRef.value)
             val workingDir = file(sys.props("user.dir"))
             val logger     = streams.value.log
-            val sp         = relaySchema.value
-            val source     = sourceDirectory.value
+
+            val source = sourceDirectory.value
 
             sbt.shim.SbtCompat.FileFunction
-              .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
-                handleUpdate(label, workingDir, compilerPath, sp, source, outpath, logger))(scalaFiles)
+              .cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate(label = label,
+                                                                            workingDir = workingDir,
+                                                                            compilerPath = compilerPath,
+                                                                            schemaPath = schemaPath,
+                                                                            sourceDirectory = source,
+                                                                            outputPath = outpath,
+                                                                            logger = logger,
+                                                                            verbose = verbose,
+                                                                            useNulls = useNulls))(scalaFiles)
 
             outpath.listFiles()
           }
@@ -130,20 +147,25 @@ object RelayFilePlugin extends AutoPlugin {
                   schemaPath: File,
                   sourceDirectory: File,
                   outputPath: File,
-                  logger: Logger): Unit = {
+                  logger: Logger,
+                  verbose: Boolean,
+                  useNulls: Boolean): Unit = {
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
       List("cmd.exe", "/C")
     } else List("sh", "-c")
 
-    val cmd = shell :+ List(compilerPath,
-                            "--schema",
-                            schemaPath.getAbsolutePath.quote,
-                            "--src",
-                            sourceDirectory.getAbsolutePath.quote,
-                            "--out",
-                            outputPath.getAbsolutePath.quote).mkString(" ")
+    val verboseList  = if (verbose) "--verbose" :: Nil else Nil
+    val useNullsList = if (useNulls) "--useNulls" :: Nil else Nil
+
+    val cmd = shell :+ (List(compilerPath,
+                             "--schema",
+                             schemaPath.getAbsolutePath.quote,
+                             "--src",
+                             sourceDirectory.getAbsolutePath.quote,
+                             "--out",
+                             outputPath.getAbsolutePath.quote) ::: verboseList ::: useNullsList).mkString(" ")
 
     Commands.run(cmd, workingDir, logger)
   }
@@ -154,13 +176,22 @@ object RelayFilePlugin extends AutoPlugin {
                    schemaPath: File,
                    sourceDirectory: File,
                    outputPath: File,
-                   logger: Logger)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+                   logger: Logger,
+                   verbose: Boolean,
+                   useNulls: Boolean)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
       .counted("Scala source", "", "s", files.size)
       .foreach { count =>
         logger.info(s"Executing relayCompile on $count $label...")
-        runCompiler(workingDir, compilerPath, schemaPath, sourceDirectory, outputPath, logger)
+        runCompiler(workingDir = workingDir,
+                    compilerPath = compilerPath,
+                    schemaPath = schemaPath,
+                    sourceDirectory = sourceDirectory,
+                    outputPath = outputPath,
+                    logger = logger,
+                    verbose = verbose,
+                    useNulls = useNulls)
         logger.info(s"Finished relayCompile.")
       }
     files

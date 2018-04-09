@@ -14,6 +14,8 @@ useYarn := true
 
 relaySchema := (resourceDirectory in Compile).value / "testschema.graphql"
 
+relayDebug := true
+
 emitSourceMaps := false
 
 // A dependency on macro paradise 3.x is required to both write and expand

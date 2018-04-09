@@ -11,11 +11,10 @@ object Version {
   final val SjsReact       = "1.1.0"
   final val Scalameta      = "1.8.0"
   final val Scalajs        = org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.scalaJSVersion
-  final val ScalajsBundler = "0.9.0"
+  final val ScalajsBundler = "0.12.0"
   final val ScalaTest      = "3.0.4"
-  final val Sangria        = "1.3.2"
+  final val Sangria        = "1.4.0"
 
-  final val Ammonite = "1.0.3"
 }
 
 object Library {
