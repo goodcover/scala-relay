@@ -1,7 +1,9 @@
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 
-crossSbtVersions := List("0.13.17", "1.1.2")
+val sbtVersions = List("0.13.17", "1.1.2")
+
+crossSbtVersions := sbtVersions
 
 lazy val root =
   project
@@ -37,20 +39,13 @@ lazy val `sbt-relay-compiler` = project
               val () = publishLocal.value
               val () = (publishLocal in `relay-macro`).value
             },
-            crossSbtVersions := List("0.13.16", "1.0.4"),
+            crossSbtVersions := sbtVersions,
             scalaVersion := {
               (sbtBinaryVersion in pluginCrossBuild).value match {
                 case "0.13" => "2.10.6"
                 case _      => "2.12.4"
               }
             },
-//            // sbt dependent libraries
-//            libraryDependencies ++= {
-//              (sbtVersion in pluginCrossBuild).value match {
-//                case v if v.startsWith("1.") => Seq("org.scala-sbt" %% "io" % "1.0.0")
-//                case _                       => Seq()
-//              }
-//            },
             // fixed in https://github.com/sbt/sbt/pull/3397 (for sbt 0.13.17)
             sbtBinaryVersion in update := (sbtBinaryVersion in pluginCrossBuild).value,
             publishMavenStyle := isSnapshot.value,
@@ -62,7 +57,6 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .enablePlugins(CrossPerProjectPlugin)
-  .settings(metaMacroSettings)
   .settings(commonSettings)
   .settings(publishMavenStyle := true,
             crossSbtVersions := Nil,
@@ -72,21 +66,8 @@ lazy val `relay-macro` = project
               else Nil
             },
             crossScalaVersions := Seq(Version.Scala212),
+            addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.0" cross CrossVersion.full),
             libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
-
-lazy val metaMacroSettings: Seq[Def.Setting[_]] =
-  Seq(
-      // A dependency on macro paradise 3.x is required to both write and expand
-      // new-style macros.  This is similar to how it works for old-style macro
-      // annotations and a dependency on macro paradise 2.x.
-      addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
-      scalacOptions += "-Xplugin-require:macroparadise",
-      libraryDependencies += Library.scalameta,
-      // temporary workaround for https://github.com/scalameta/paradise/issues/10
-      scalacOptions in (Compile, console) := Seq(), // macroparadise plugin doesn't work in repl yet.
-      // temporary workaround for https://github.com/scalameta/paradise/issues/55
-      sources in (Compile, doc) := Nil // macroparadise doesn't work with scaladoc yet.
-  )
 
 lazy val bintraySettings: Seq[Setting[_]] =
   Seq(bintrayOrganization := Some("dispalt"),

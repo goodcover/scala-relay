@@ -15,7 +15,7 @@ import scala.scalajs.js.annotation.JSImport
       }
     }
   """)
-object foo
+object __query1
 
 @gql("""
     mutation ActorSubscribe($input: ActorSubscribeInput!) {
