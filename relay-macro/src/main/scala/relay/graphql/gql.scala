@@ -2,6 +2,7 @@ package relay.graphql
 
 import java.io.File
 
+import sangria.ast.ObjectTypeDefinition
 import sangria.parser.QueryParser
 import sangria.schema.Schema
 import sangria.validation.RuleBasedQueryValidator
@@ -22,7 +23,7 @@ private object ToGql {
 
   val relaySchemaPrefix        = "relaySchema="
   val relayValidateQueryPrefix = "relayValidateQuery=true"
-  val thinValidationRules =
+  lazy val thinValidationRules =
     new RuleBasedQueryValidator(
       List(new ValuesOfCorrectType,
            new VariablesDefaultValueAllowed,
@@ -77,17 +78,20 @@ private object ToGql {
     }
 
     val (op, document) = QueryParser.parse(query) match {
-      case Success(doc) =>
+      // Handle object type definitions.
+      case Success(doc) if doc.definitions.exists(_.isInstanceOf[ObjectTypeDefinition]) =>
+        None -> doc
+      case Success(doc) if doc.operations.nonEmpty || doc.fragments.nonEmpty =>
         val result = doc.operations.headOption
           .flatMap(_._1)
           .orElse(doc.fragments.headOption.map(_._1))
           .getOrElse(
             c.abort(c.enclosingPosition, "Can't determine operation name make sure and give the mutation/query a name"))
-        result -> doc
+        Some(result) -> doc
       case Failure(f) => c.abort(c.enclosingPosition, f.toString)
     }
 
-    if (validateQuery) {
+    if (validateQuery && op.isDefined) {
       val schemaDoc = QueryParser
         .parse(scala.io.Source.fromFile(schemaFile).mkString)
         .getOrElse(sys.error(s"Invalid graphql schema at `$schemaFilePath`."))
@@ -98,17 +102,24 @@ private object ToGql {
                 s"\nFound the following violations\n\n${violations.map(f => " *  " + f.errorMessage).mkString("\n")}")
     }
 
-    val result = annottees.map(_.tree).toList match {
-      case objectDef @ q"$mods object $className extends ..$template { $self => ..$body };" :: tail =>
-        val opTerm = TermName(op)
-        val opType = tq"_root_.relay.generated.$opTerm.type"
-        val newBody = body ::: List(q"val query: _root_.relay.graphql.TaggedNode = _root_.relay.generated.$opTerm",
-                                    q"val root: $opType = _root_.relay.generated.$opTerm")
-        val newTemplate = tq"_root_.relay.graphql.GenericGraphQLTaggedNode" :: Nil
-        q"""$mods object $className extends ..$newTemplate { $self => ..$newBody };"""
-      case _ =>
-        c.abort(c.enclosingPosition, "Needs to be on an object")
+    op match {
+      case Some(value) =>
+        val result = annottees.map(_.tree).toList match {
+          case objectDef @ q"$mods object $className extends ..$template { $self => ..$body };" :: tail =>
+            val opTerm = TermName(value)
+            val opType = tq"_root_.relay.generated.$opTerm.type"
+            val newBody = body ::: List(q"val query: _root_.relay.graphql.TaggedNode = _root_.relay.generated.$opTerm",
+                                        q"val root: $opType = _root_.relay.generated.$opTerm")
+            val newTemplate = tq"_root_.relay.graphql.GenericGraphQLTaggedNode" :: Nil
+            q"""$mods object $className extends ..$newTemplate { $self => ..$newBody };"""
+          case _ =>
+            c.abort(c.enclosingPosition, "Needs to be on an object")
+        }
+        c.Expr[Any](result)
+      case None =>
+        val result = q"..${annottees.map(_.tree)}"
+        c.Expr[Any](result)
     }
-    c.Expr[Any](result)
+
   }
 }
