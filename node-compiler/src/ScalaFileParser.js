@@ -17,35 +17,62 @@ function parseFile(baseDir, file) {
   const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
   var matches;
 
-  invariant(
-    text.indexOf('@gql') >= 0,
-    'RelayFileIRParser: Files should be filtered before passed to the ' +
-    'parser, got unfiltered file `%s`.',
-    file
-  )
+  if (path.extname(file.relPath) === '.scala') {
 
-  var regex = /@gql\("""([\s\S]*?)"""\)/g;
+    invariant(
+      text.indexOf('@gql') >= 0,
+      'RelayFileIRParser: Files should be filtered before passed to the ' +
+      'parser, got unfiltered file `%s`.',
+      file
+    )
 
-  const astDefinitions = [];
+    var regex = /@gql\("""([\s\S]*?)"""\)/g;
 
-  while (matches = regex.exec(text)) {
-      const template = matches[1];
+    const astDefinitions = [];
 
-      const ast = GraphQL.parse(template);
-      invariant(
-        ast.definitions.length,
-        'RelayFileIRParser: Expected GraphQL text to contain at least one ' +
-        'definition (fragment, mutation, query, subscription), got `%s`.',
-        template
-      );
+    while (matches = regex.exec(text)) {
+        const template = matches[1];
 
-      astDefinitions.push(...ast.definitions);
+        const ast = GraphQL.parse(template);
+        invariant(
+          ast.definitions.length,
+          'RelayFileIRParser: Expected GraphQL text to contain at least one ' +
+          'definition (fragment, mutation, query, subscription), got `%s`.',
+          template
+        );
+
+        astDefinitions.push(...ast.definitions);
+    }
+
+    return {
+      kind: 'Document',
+      definitions: astDefinitions,
+    };
+  } else if (path.extname(file.relPath) === '.graphql') {
+    const ast = GraphQL.parse(text);
+    const astDefinitions = [];
+
+    astDefinitions.push(...ast.definitions);
+    invariant(
+      ast.definitions.length,
+      'RelayFileIRParser: Expected GraphQL text to contain at least one ' +
+      'definition (fragment, mutation, query, subscription), got `%s`.',
+      text
+    );
+
+    return {
+      kind: 'Document',
+      definitions: astDefinitions,
+    };
+  } else {
+    invariant(
+      false,
+      'RelayFileIRParser: Files should be filtered before passed to the ' +
+      'parser, got unfiltered file `%s`. Should either have a .graphql extension and be a ' +
+      'single query/fragment/mutation or be embedded in a .scala file as an annotation @gql("""...""")',
+      file.relPath
+    )
   }
-
-  return {
-    kind: 'Document',
-    definitions: astDefinitions,
-  };
 }
 
 function getParser(baseDir) {
@@ -57,8 +84,12 @@ function getParser(baseDir) {
 
 function getFileFilter(baseDir): FileFilter {
   return (file: File) => {
-    const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
-    return text.indexOf('@gql') >= 0;
+    if (path.extname(file.relPath) === '.graphql') {
+      return true;
+    } else {
+      const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');
+      return text.indexOf('@gql') >= 0;
+    }
   };
 }
 
