@@ -48,7 +48,7 @@ function parseFile(baseDir, file) {
       kind: 'Document',
       definitions: astDefinitions,
     };
-  } else if (path.extname(file.relPath) === '.graphql') {
+  } else if (path.extname(file.relPath) === '.gql') {
     const ast = GraphQL.parse(text);
     const astDefinitions = [];
 
@@ -68,7 +68,7 @@ function parseFile(baseDir, file) {
     invariant(
       false,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
-      'parser, got unfiltered file `%s`. Should either have a .graphql extension and be a ' +
+      'parser, got unfiltered file `%s`. Should either have a .gql extension and be a ' +
       'single query/fragment/mutation or be embedded in a .scala file as an annotation @gql("""...""")',
       file.relPath
     )
@@ -84,7 +84,7 @@ function getParser(baseDir) {
 
 function getFileFilter(baseDir): FileFilter {
   return (file: File) => {
-    if (path.extname(file.relPath) === '.graphql') {
+    if (path.extname(file.relPath) === '.gql') {
       return true;
     } else {
       const text = fs.readFileSync(path.join(baseDir, file.relPath), 'utf8');

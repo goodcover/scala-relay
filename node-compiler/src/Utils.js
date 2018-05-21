@@ -116,7 +116,7 @@ function getScalaFileWriter(baseDir: string, outputDir: string, useNulls: boolea
 
 // $FlowFixMe
 function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob, verbose: boolean) {
-  const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala", "graphql"]});
+  const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala", "gql"]});
 
   const parserConfigs = {
     default: {

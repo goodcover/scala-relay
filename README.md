@@ -11,6 +11,10 @@ There are three parts to this.
 
 ## Changes
 
+### 0.9.2
+ - Added support to support `.gql` files in any directory from `baseDirectory.value` so while
+   it looks over more files it can support alternate locations now.
+
 ### 0.9.0
  - Relay 1.5.0 compiler support, nothing extra came of that minus some code changes.
  - Add option for `--useNulls` that specifies using a union with Null type for optional fields.
