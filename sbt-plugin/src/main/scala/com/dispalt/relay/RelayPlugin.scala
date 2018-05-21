@@ -97,13 +97,15 @@ object RelayFilePlugin extends AutoPlugin {
           */
         relayCompile in Compile := Def
           .task[Seq[File]] {
-            val cache        = streams.value.cacheDirectory / "relay-compile"
-            val sourceFiles  = (unmanagedSourceDirectories in Compile).value
-            val outpath      = (relayOutput in Compile).value
-            val compilerPath = relayCompilerPath.value
-            val verbose      = relayDebug.value
-            val useNulls     = relayUseNulls.value
-            val schemaPath   = relaySchema.value
+            val cache         = streams.value.cacheDirectory / "relay-compile"
+            val sourceFiles   = (unmanagedSourceDirectories in Compile).value
+            val resourceFiles = (resourceDirectories in Compile).value
+            val outpath       = (relayOutput in Compile).value
+            val compilerPath  = relayCompilerPath.value
+            val verbose       = relayDebug.value
+            val useNulls      = relayUseNulls.value
+            val schemaPath    = relaySchema.value
+            val source        = baseDirectory.value
 
             IO.createDirectory(outpath)
 
@@ -112,12 +114,10 @@ object RelayFilePlugin extends AutoPlugin {
             val scalaFiles =
               (sourceFiles ** "*.scala").get
                 .filter(IO.read(_).contains("@gql"))
-                .toSet ++ Set(schemaPath)
+                .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet
             val label      = Reference.display(thisProjectRef.value)
             val workingDir = file(sys.props("user.dir"))
             val logger     = streams.value.log
-
-            val source = sourceDirectory.value
 
             sbt.shim.SbtCompat.FileFunction
               .cached(cache)(FilesInfo.hash, FilesInfo.exists)(handleUpdate(label = label,
