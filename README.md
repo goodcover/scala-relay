@@ -11,6 +11,10 @@ There are three parts to this.
 
 ## Changes
 
+### 0.9.4
+ - Added support for `@scalajs(useNulls: boolean)` that gives you finer grained access to
+   using `A | Null`
+
 ### 0.9.2
  - Added support to support `.gql` files in any directory from `baseDirectory.value` so while
    it looks over more files it can support alternate locations now.

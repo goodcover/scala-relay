@@ -31,6 +31,8 @@ $ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graph
    they are a union, however, this requires a fix later down the line.
  - `@scalajs(extends: String)` This can give you a parent class to mixin.  It's
    your job to verify it.
+ - `@scalajs(useNulls: Boolean)` this can give you finer control on using `A | Null`
+   on a Fragment, field or inline fragment.
 
 
 ## Example
@@ -185,6 +187,5 @@ A list of tasks/ideas the community could help with. `High | Med | Low` refers t
    - [ ] Low: Handle conditionals.
    - [ ] Low: Figure out what is not working.
  - [ ] High: Does recursion work?
- - [ ] High: handle nullable, in relay/graphql world this basically means `T | Null` not `js.UndefOr`
  - [ ] Low: handle indents in generated code better
  - [ ]

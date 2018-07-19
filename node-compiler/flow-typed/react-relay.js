@@ -191,12 +191,16 @@ declare module 'react-relay' {
     selections: Array<ConcreteSelection>,
     directives?: ?Array<ConcreteDirective>,
     type: string,
+    parentTpe: Array<string>,
+    useNulls: boolean,
   }
   declare export type ConcreteFragmentSpread = {
     args: ?Array<ConcreteArgument>,
     kind: 'FragmentSpread',
     directives?: ?Array<ConcreteDirective>,
     name: string,
+    parentTpe: Array<string>,
+    useNulls: boolean,
   }
   declare export type ConcreteHandle = ConcreteScalarHandle | ConcreteLinkedHandle
   declare export type ConcreteRootArgument = {
@@ -208,6 +212,8 @@ declare module 'react-relay' {
     kind: 'InlineFragment',
     selections: Array<ConcreteSelection>,
     type: string,
+    parentTpe: Array<string>,
+    useNulls: boolean,
   }
   declare export type ConcreteLinkedField = {
     alias: ?string,
@@ -218,6 +224,8 @@ declare module 'react-relay' {
     plural: boolean,
     selections: Array<ConcreteSelection>,
     storageKey: ?string,
+    parentTpe: Array<string>,
+    useNulls: boolean,
   }
   declare export type ConcreteLinkedHandle = {
     alias: ?string,
@@ -252,6 +260,8 @@ declare module 'react-relay' {
     name: string,
     operation: 'mutation' | 'query' | 'subscription',
     selections: Array<ConcreteSelection>,
+    parentTpe: Array<string>,
+    useNulls: boolean,
   }
   declare export type ConcreteScalarField = {
     alias: ?string,

@@ -139,6 +139,7 @@ type Cls = {
   linkedField: boolean,
   spreadFrags: Array<string>,
   isClass?: boolean,
+  useNulls: boolean,
 };
 
 type ImplDef = {
@@ -210,7 +211,7 @@ class ClassTracker {
    * @param {*} linkedField
    * @param {*} spreadFrags
    */
-  newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>): string {
+  newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean): string {
     let name = cn;
     if (linkedField) {
       name = this.newClassName(cn);
@@ -221,6 +222,7 @@ class ClassTracker {
         linkedField,
         open: false,
         spreadFrags,
+        useNulls,
       }
       this.classes.set(name, cls);
     } else {
@@ -231,6 +233,7 @@ class ClassTracker {
         linkedField,
         open: false,
         spreadFrags,
+        useNulls,
       }
       this.topClasses.set(name, cls);
     }
@@ -322,7 +325,7 @@ class ClassTracker {
     // Using selection members to pull the right amount of fields out.
     const localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
     const extendsCls = this.getScalajsDirectiveExtends(node);
-    const newTpe = this.newClass(newClassName, localMembers, extendsCls, true, []);
+    const newTpe = this.newClass(newClassName, localMembers, extendsCls, true, [], node.useNulls);
     const parentCls = this.getNewTpeParent(node);
 
     listOfSpreads.forEach(([k, {members}]) => {
@@ -352,7 +355,7 @@ class ClassTracker {
     if (className.endsWith("Edges")) {
       const nodeMem = localMembers.find(s => s.name == "node")
       if (nodeMem) {
-        const tpe = this.makeTypeFromMember(className, nodeMem)
+        const tpe = this.makeTypeFromMember(className, nodeMem, undefined, node.useNulls)
         return [`_root_.relay.runtime.Edge[${tpe}]`];
       }
       return [];
@@ -369,7 +372,7 @@ class ClassTracker {
             mods: []
           }
         })
-        const tpe = this.makeTypeFromMember(className, newEdge);
+        const tpe = this.makeTypeFromMember(className, newEdge, undefined, node.useNulls);
         return [`_root_.relay.runtime.Connection[${tpe}]`];
       }
       return [];
@@ -381,6 +384,11 @@ class ClassTracker {
   getScalajsDirectiveExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment | ConcreteFragmentSpread): Array<string> {
     // $FlowFixMe
     return (node.metadata && node.metadata.extends && [node.metadata.extends]) || [];
+  }
+
+  isUseNulls(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment | ConcreteFragmentSpread): boolean {
+    // $FlowFixMe
+    return !!(this._useNulls || (node.metadata && node.metadata.useNulls));
   }
 
   /**
@@ -435,7 +443,8 @@ class ClassTracker {
       this.getScalajsDirectiveExtends(node)
     );
 
-    const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags);
+    const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags, node.useNulls);
+
     /* $FlowFixMe */
     const newNewTpe = this.transformScalarType(node.type , newTpe);
     let comments: Array<string> = [];
@@ -464,7 +473,7 @@ class ClassTracker {
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
-      this.newClass(clsName, members, [], false, []);
+      this.newClass(clsName, members, [], false, [], node.useNulls);
       this.newQueryTypeParam(clsName, node.name);
       this.isQuery = true;
     } else if (node.operation === 'mutation') {
@@ -473,12 +482,12 @@ class ClassTracker {
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
-      this.newClass(clsName, members, [], false, []);
+      this.newClass(clsName, members, [], false, [], node.useNulls);
       this.newQueryTypeParam(clsName, node.name);
       this.isMutation = true;
     }
     newClasses.forEach(({name, members, extendsC, linkedField, spreadFrags}) => {
-      this.newClass(name || '', members, extendsC, linkedField, spreadFrags);
+      this.newClass(name || '', members, extendsC, linkedField, spreadFrags, node.useNulls);
     });
     // console.log(node);
   }
@@ -587,6 +596,7 @@ class ClassTracker {
         extendsC: [],
         linkedField: false,
         spreadFrags: [],
+        useNulls: false,
       });
       return [{
         name: type.toString(),
@@ -625,13 +635,13 @@ class ClassTracker {
     backupType: ?string,
   ): Array<ATpe> {
     if (type instanceof GraphQLNonNull) {
-      return this.transformNonNullableScalarType(type.ofType, backupType).map(s => {
+      return this.transformNonNullableScalarType(type.ofType, backupType);
+    } else {
+      // $FlowFixMe
+      return this.transformNonNullableScalarType(type, backupType).map(s => {
         s.mods.push(OPTIONAL_MOD);
         return s;
       });
-    } else {
-      // $FlowFixMe
-      return this.transformNonNullableScalarType(type, backupType);
     }
   }
 
@@ -686,13 +696,13 @@ class ClassTracker {
     } else return [];
   }
 
-  makeType(className: string, s: ATpe, cs?: Set<string>): string {
+  makeType(className: string, s: ATpe, cs?: Set<string>, useNulls: boolean): string {
     let newTpeName = cs && cs.has(s.name) ? className + "." + s.name: s.name;
     s.mods.forEach(mod => {
       if (mod == ARRAY_MOD) {
         newTpeName = "js.Array[" + newTpeName + "]";
       } else if (mod == OPTIONAL_MOD) {
-        if (this._useNulls) {
+        if (useNulls) {
           newTpeName = `${newTpeName} | Null`
         } else {
           // Don't do anything for now.
@@ -708,24 +718,24 @@ class ClassTracker {
     return newTpeName;
   }
 
-  makeTypeFromMember(className: string, m: Member, otherClasses?: Map<string, Cls>): string {
+  makeTypeFromMember(className: string, m: Member, otherClasses?: Map<string, Cls>, useNulls: boolean): string {
     const joinStr = m.or ? " | " : " with ";
     let tpe = "";
     if (otherClasses) {
       // Declared new classes.
       const cs = new Set(otherClasses.keys());
       tpe = m.tpe.map(s => {
-        return this.makeType(className, s, cs);
+        return this.makeType(className, s, cs, useNulls);
       }).join(joinStr);
     } else {
       tpe = m.tpe.map(s => {
-        return this.makeType(className, s);
+        return this.makeType(className, s, undefined, useNulls);
       }).join(joinStr);
     }
     return tpe;
   }
 
-  outTrait({name, members, extendsC, open, isClass}: Cls, otherClasses?: Map<string, Cls>): string {
+  outTrait({name, members, extendsC, open, isClass, useNulls}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
     const indent = otherClasses ? "" : "  ";
 
@@ -739,8 +749,10 @@ class ClassTracker {
         throw new Error(`Class is missing name, has the following members: ${members.toString()}`);
       }
 
+      // console.log(name, useNulls);
+
       // Figure out if we've created the type, if so, add a prefix.
-      const tpe = this.makeTypeFromMember(name, s, otherClasses);
+      const tpe = this.makeTypeFromMember(name, s, otherClasses, useNulls);
       const commentOut = comment.length > 0 ? indent + comment.join(" ") + "\n" : "";
       return commentOut + [indent + "  val", s.name, ":", tpe].join(" ");
     }).join("\n");
@@ -849,42 +861,51 @@ function createVisitor(ct: ClassTracker) {
   return {
     enter : {
       Root(node: ConcreteRoot) {
+        const useNulls = ct.isUseNulls(node);
         const selections = node.selections.map(s => {
           return {
             ...s,
-            parentTpe: [node.name]
+            parentTpe: [node.name],
+            useNulls,
           }
         })
         return {
           ...node,
-          selections
+          selections,
+          useNulls,
         };
       },
       Fragment(node: ConcreteFragment) {
+        const useNulls = ct.isUseNulls(node);
         const selections = node.selections.map(s => {
           return {
             ...s,
-            parentTpe: [node.name]
+            parentTpe: [node.name],
+            useNulls,
           }
         })
         return {
           ...node,
-          selections
+          selections,
+          useNulls,
         };
       },
       InlineFragment(node: ConcreteInlineFragment) {
         // $FlowFixMe
         const {parentTpe} = node;
         const ptpe = parentTpe || [];
+        const useNulls = ct.isUseNulls(node);
         const selections = node.selections.map(s => {
           return {
             ...s,
             parentTpe: ptpe,
+            useNulls,
           }
         })
         return {
           ...node,
-          selections
+          selections,
+          useNulls,
         };
       },
       ScalarField(node: ConcreteScalarField) {
@@ -893,16 +914,19 @@ function createVisitor(ct: ClassTracker) {
       LinkedField(node: ConcreteLinkedField) {
         // $FlowFixMe
         const {parentTpe} = node;
+        const useNulls = ct.isUseNulls(node);
         const ptpe = parentTpe || [];
         const selections = node.selections.map(s => {
           return {
             ...s,
             parentTpe: ptpe.concat([titleCase(node.name)]),
+            useNulls,
           }
         })
         return {
           ...node,
-          selections
+          selections,
+          useNulls,
         };
       },
       FragmentSpread(node: ConcreteFragmentSpread) {
@@ -922,7 +946,6 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       Fragment(node: ConcreteFragment) {
-        // console.log(node);
         ct.closeField(node, false, false);
         // // $FlowFixMe
         // ct.handleSelections(node);
