@@ -24,6 +24,7 @@ function sjsTransform(
     context,
     {
       Fragment: visitField,
+      Root: visitField,
       FragmentSpread: visitField,
       InlineFragment: visitField,
       LinkedField: visitField,
