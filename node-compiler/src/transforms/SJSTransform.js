@@ -28,6 +28,7 @@ function sjsTransform(
       FragmentSpread: visitField,
       InlineFragment: visitField,
       LinkedField: visitField,
+      ScalarField: visitField,
     },
     () => ({}),
   );

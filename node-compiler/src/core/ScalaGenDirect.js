@@ -645,32 +645,6 @@ class ClassTracker {
     }
   }
 
-  // combineFields(m: Member, m2: Member): Member {
-  //   invariant(m.name === m2.name, "Names need to match to combine.");
-  //   const tpeMap: Map<string, Array<ATpe>> = new Map();
-  //   [...m.tpe, ...m2.tpe].forEach(tpe => {
-
-  //     const found = tpeMap.get(tpe.name)
-  //     if (!found) {
-  //       tpeMap.set(tpe.name, [tpe]);
-  //     } else {
-  //       if (!found.every(s => {
-  //         return s.isArray == tpe.isArray && s.isOptional == tpe.isOptional && s.name === tpe.name;
-  //       })) {
-  //         found.push(tpe);
-  //       }
-  //     }
-  //   });
-
-  //   return {
-  //     ...m,
-  //     or: m.or || m2.or,
-  //     name: m.name,
-  //     tpe: flattenArray(Array.from(tpeMap.values())),
-  //     comments: [...m.comments, ...m2.comments],
-  //     scalar: m.scalar || m2.scalar,
-  //   }
-  // }
 
   getDirectMembersForFrag(name: string, backupType: ?string): Array<Member> {
     const node = this._nodes.get(name);
@@ -960,7 +934,17 @@ function createVisitor(ct: ClassTracker) {
       ScalarField(node: ConcreteScalarField) {
         // console.log("ScalarField", node);
         // $FlowFixMe
+        const extendsCPresent: ?string  = node.metadata && node.metadata.extends
+
+        // $FlowFixMe
         const tpe = ct.transformScalarType((node.type: GraphQLType));
+        if (extendsCPresent) {
+          const extendsArray = [{
+            name: extendsCPresent,
+            mods: []
+          }];
+          tpe.push(...extendsArray);
+        }
         ct.newMember({name: node.alias || node.name, tpe, comments: []});
         return node;
       },
