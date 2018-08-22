@@ -11,6 +11,10 @@ There are three parts to this.
 
 ## Changes
 
+### 0.10.0
+ - Add ability to mix in traits with scalarFields so if value was a string `{ value @scalajs(extends:"Foo") }`
+  The trait would have a member `val value: String with Foo`
+
 ### 0.9.4
  - Added support for `@scalajs(useNulls: boolean)` that gives you finer grained access to
    using `A | Null`
