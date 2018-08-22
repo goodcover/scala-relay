@@ -5,8 +5,7 @@ require('babel-polyfill');
 const {
   CodegenRunner,
   ConsoleReporter,
-  WatchmanClient,
-} = require('relay-compiler/lib/GraphQLCompilerPublic');
+} = require('graphql-compiler');
 
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
 const ScalaFileWriter = require('./codegen/ScalaFileWriter');
@@ -36,7 +35,7 @@ const {
 
 const SCRIPT_NAME = 'relay-compiler';
 
-import type {GetWriterOptions} from 'relay-compiler/lib/GraphQLCompilerPublic';
+import type {GetWriterOptions} from 'relay-compiler/lib/RelayCompilerPublic';
 
 const SJS = require('./transforms/SJSTransform');
 

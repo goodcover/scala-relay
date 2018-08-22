@@ -5,7 +5,7 @@ const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
 
-const {ASTCache} = require('relay-compiler/lib/GraphQLCompilerPublic');
+const {ASTCache} = require('graphql-compiler');
 
 import type {File, FileFilter} from 'graphql-compiler';
 import type {DocumentNode} from 'graphql';

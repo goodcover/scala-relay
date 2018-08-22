@@ -16,9 +16,8 @@ const t = require('babel-types');
 const {
   FlattenTransform,
   IRVisitor,
-  SchemaUtils,
   Profiler,
-} = require('relay-compiler/lib/GraphQLCompilerPublic');
+} = require('graphql-compiler');
 
 const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
 const RelayRelayDirectiveTransform = require('relay-compiler/lib/RelayRelayDirectiveTransform');
@@ -28,7 +27,7 @@ import type {
   Fragment,
   Root,
   CompilerContext,
-} from 'relay-compiler/lib/GraphQLCompilerPublic';
+} from 'relay-compiler/lib/RelayCompilerPublic';
 
 import type {
   ConcreteNode,
@@ -61,8 +60,6 @@ const {
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
 
 const babelGenerator = require('babel-generator').default;
-
-const {isAbstractType} = SchemaUtils;
 
 const invariant = require('invariant');
 

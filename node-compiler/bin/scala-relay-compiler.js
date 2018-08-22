@@ -5,8 +5,7 @@ require('babel-polyfill');
 const {
   CodegenRunner,
   ConsoleReporter,
-  WatchmanClient,
-} = require('relay-compiler/lib/GraphQLCompilerPublic');
+} = require('relay-compiler/lib/RelayCompilerPublic');
 
 const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');

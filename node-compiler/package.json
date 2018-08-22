@@ -1,13 +1,13 @@
 {
   "name": "scala-relay-compiler",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/generator": "^7.0.0-beta",
     "@babel/types": "^7.0.0-beta",
     "babel-polyfill": "^6.20.0",
-    "relay-compiler": "1.5.0",
+    "relay-compiler": "1.6.2",
     "babel-generator": "^6.24.1",
     "babel-preset-fbjs": "^2.1.4",
     "babel-runtime": "^6.23.0",
@@ -20,7 +20,7 @@
     "fbjs": "^0.8.14",
     "graphql": "^0.13.0",
     "immutable": "~3.7.6",
-    "relay-runtime": "1.5.0",
+    "relay-runtime": "1.6.2",
     "signedsource": "^1.0.0",
     "yargs": "^9.0.0"
   },
@@ -28,10 +28,10 @@
     "scala-relay-compiler": "./bin/scala-relay-compiler.js"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
+    "babel-cli": "^6.24.1",
     "babel-preset-env": "^1.6.1",
     "babel-preset-flow": "^6.23.0",
-    "flow-bin": "^0.57.3",
+    "flow-bin": "^0.79.1",
     "flow-remove-types": "^1.2.3"
   },
   "scripts": {
