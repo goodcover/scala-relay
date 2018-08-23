@@ -11,7 +11,7 @@ There are three parts to this.
 
 ## Changes
 
-### NEXT
+### 0.11.0
  - Upgrade relay to `1.6.2`, most of the changes seem import related
  - Generate a `def newInput(args...): MutationInputType = ...` for all mutaitons, making it a little easier.
 
