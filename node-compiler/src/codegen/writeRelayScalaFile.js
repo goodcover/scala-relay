@@ -17,8 +17,8 @@ const invariant = require('invariant');
 const dedupeJSONStringify = require('relay-compiler/lib/dedupeJSONStringify');
 
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
-import type {GeneratedNode} from 'relay-compiler/lib/RelayConcreteNode';
-import type {CodegenDirectory} from 'relay-compiler/lib/GraphQLCompilerPublic';
+import type {GeneratedNode} from 'graphql-compiler';
+import type {CodegenDirectory} from 'graphql-compiler';
 
 
 /**

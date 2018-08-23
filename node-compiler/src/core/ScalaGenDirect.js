@@ -129,7 +129,7 @@ type Member = {
 };
 
 type Cls = {
-  name?: ?string,
+  name: string,
   members: Array<Member>,
   extendsC: Array<string>,
   open: boolean,
@@ -137,6 +137,7 @@ type Cls = {
   spreadFrags: Array<string>,
   isClass?: boolean,
   useNulls: boolean,
+  useVars?: boolean,
 };
 
 type ImplDef = {
@@ -163,6 +164,7 @@ class ClassTracker {
   isMutation: boolean;
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
+  factoryMethods:Map<string, Cls>;
 
   constructor(nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
     this.classes = new Map();
@@ -175,6 +177,7 @@ class ClassTracker {
     this.isQuery = false;
     this.isMutation = false;
     this._useNulls = useNulls;
+    this.factoryMethods = new Map();
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -208,7 +211,7 @@ class ClassTracker {
    * @param {*} linkedField
    * @param {*} spreadFrags
    */
-  newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean): string {
+  newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean, useVars?: boolean): string {
     let name = cn;
     if (linkedField) {
       name = this.newClassName(cn);
@@ -220,6 +223,7 @@ class ClassTracker {
         open: false,
         spreadFrags,
         useNulls,
+        useVars,
       }
       this.classes.set(name, cls);
     } else {
@@ -231,10 +235,24 @@ class ClassTracker {
         open: false,
         spreadFrags,
         useNulls,
+        useVars,
       }
       this.topClasses.set(name, cls);
     }
     return name;
+  }
+
+  newFactoryMethod(methodName: string, name: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean, useVars?: boolean) {
+    this.factoryMethods.set(methodName, {
+      name,
+      members,
+      extendsC,
+      linkedField,
+      open: false,
+      spreadFrags,
+      useNulls,
+      useVars,
+    });
   }
 
   handleInline(node: ConcreteInlineFragment) {
@@ -470,8 +488,9 @@ class ClassTracker {
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
-      this.newClass(clsName, members, [], false, [], node.useNulls);
-      this.newQueryTypeParam(clsName, node.name);
+      const resultName = this.newClass(clsName, members, [], false, [], node.useNulls, false);
+      this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
+      this.newQueryTypeParam(resultName, node.name);
       this.isQuery = true;
     } else if (node.operation === 'mutation') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
@@ -479,12 +498,14 @@ class ClassTracker {
         const tpe = this.transformInputType(type, newClasses);
         return {name, tpe, comments: []};
       });
-      this.newClass(clsName, members, [], false, [], node.useNulls);
-      this.newQueryTypeParam(clsName, node.name);
+
+      const resultName = this.newClass(clsName, members, [], false, [], node.useNulls, false);
+      this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
+      this.newQueryTypeParam(resultName, node.name);
       this.isMutation = true;
     }
-    newClasses.forEach(({name, members, extendsC, linkedField, spreadFrags}) => {
-      this.newClass(name || '', members, extendsC, linkedField, spreadFrags, node.useNulls);
+    newClasses.forEach(({name, members, extendsC, linkedField, spreadFrags, useVars}) => {
+      this.newClass(name || '', members, extendsC, linkedField, spreadFrags, node.useNulls, false);
     });
     // console.log(node);
   }
@@ -593,7 +614,7 @@ class ClassTracker {
         extendsC: [],
         linkedField: false,
         spreadFrags: [],
-        useNulls: false,
+        useNulls: true,
       });
       return [{
         name: type.toString(),
@@ -706,10 +727,11 @@ class ClassTracker {
     return tpe;
   }
 
-  outTrait({name, members, extendsC, open, isClass, useNulls}: Cls, otherClasses?: Map<string, Cls>): string {
+  outTrait({name, members, extendsC, open, isClass, useNulls, useVars}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
     const indent = otherClasses ? "" : "  ";
 
+    const declPrefix = useVars ? "  var": "  val";
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
     const cls = indent + [`trait`, name, "extends", "js.Object", ...ex , "{"].join(" ");
 
@@ -725,7 +747,7 @@ class ClassTracker {
       // Figure out if we've created the type, if so, add a prefix.
       const tpe = this.makeTypeFromMember(name, s, otherClasses, useNulls);
       const commentOut = comment.length > 0 ? indent + comment.join(" ") + "\n" : "";
-      return commentOut + [indent + "  val", s.name, ":", tpe].join(" ");
+      return commentOut + [indent + declPrefix, s.name, ":", tpe].join(" ");
     }).join("\n");
 
     return [cls, outMembers, indent + "}"].join("\n");
@@ -781,9 +803,36 @@ class ClassTracker {
 
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
-      return `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`;
+      return [
+        `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`,
+      ].join("\n");
     }).join("\n");
     return [text].join("\n");
+  }
+
+  /**
+   * Output a factory method for generating a class
+   * @param {string} methodName name of the method
+   * @param {Cls} cls class description
+   */
+  outFactoryMethod(methodName: string, cls: Cls): string {
+    const result = cls.members.map(m => {
+      let rest = ""
+      if (m.tpe[0].mods.find(f => f === OPTIONAL_MOD)) {
+        rest = " = null"
+      }
+
+      return `${m.name}: ${this.makeTypeFromMember(cls.name, m, undefined, cls.useNulls)}${rest}`;
+    }).join(", ");
+
+    const body = [
+      "js.Dynamic.literal(",
+      cls.members.map(m => {
+        return `    "${m.name}" -> ${m.name}.asInstanceOf[js.Any]`
+      }).join(",\n"),
+      `  ).asInstanceOf[${cls.name}]`
+    ].join("\n");
+    return `  def ${methodName}(${result}): ${cls.name} = ${body}`;
   }
 
   out(): { supporting: string, core: string, implicits: string, objectParent: string } {
@@ -799,6 +848,7 @@ class ClassTracker {
     const implicits = [
       this.outImplicitsFrags(this.implicits.filter(s => s.inline)),
       this.outImplicitsConversion(this.implicits.filter(s => !s.inline), this.classes, Array.from(this.topClasses.values())),
+      ...Array.from(this.factoryMethods.entries()).map(m => this.outFactoryMethod(m[0], m[1]))
     ].join("\n");
 
 

@@ -38,7 +38,7 @@ import type {
 } from 'relay-compiler/lib/RelayCompilerPublic';
 import type {FormatModule} from './writeRelayScalaFile';
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
-import type {GeneratedNode} from 'relay-compiler/lib/RelayConcreteNode';
+import type {GeneratedNode} from 'graphql-compiler';
 import type {DocumentNode, GraphQLSchema, ValidationContext} from 'graphql';
 
 const {isOperationDefinitionAST} = SchemaUtils;

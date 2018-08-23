@@ -13,6 +13,7 @@ There are three parts to this.
 
 ### NEXT
  - Upgrade relay to `1.6.2`, most of the changes seem import related
+ - Generate a `def newInput(args...): MutationInputType = ...` for all mutaitons, making it a little easier.
 
 ### 0.10.0
  - Add ability to mix in traits with scalarFields so if value was a string `{ value @scalajs(extends:"Foo") }`
