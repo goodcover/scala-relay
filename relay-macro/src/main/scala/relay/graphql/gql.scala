@@ -14,6 +14,10 @@ import scala.reflect.macros.blackbox
 import scala.util.{Failure, Success}
 
 @compileTimeOnly("enable macro paradise to expand @gql macro annotations")
+@deprecated("""Don't use this, it just slows things down, the relay compiler uses a regex to pull snippets out of scala
+code, so all you really need is some annotation that looks like this one, imported as a single term.
+  """,
+            "0.10.3")
 class gql(arg: String) extends StaticAnnotation {
 
   def macroTransform(annottees: Any*): Any = macro ToGql.impl
