@@ -40,12 +40,13 @@ const Utils = require('../lib/Utils');
 
 function run(options) {
   const schema = path.resolve(process.cwd(), options.schema);
-  const src = path.resolve(process.cwd(), options.src);
   const out = path.resolve(process.cwd(), options.out);
+  const extras = (options.extra || [""]);
 
-  Utils.compileAll(src,
+  Utils.compileAll(options.src,
+    extras,
     schema,
-    Utils.getScalaFileWriter(src, out, options.useNulls),
+    Utils.getScalaFileWriter(options.src, out, options.useNulls),
     ScalaFileParser.getParser,
     ScalaFileParser.getFileFilter,
     ScalaFileParser.getFilepathsFromGlob,
@@ -66,6 +67,11 @@ const argv = yargs
       describe: 'Root directory of scala application code',
       demandOption: true,
       type: 'string',
+    },
+    'extra': {
+      describe: 'Extra directory gqls',
+      demandOption: false,
+      type: 'array',
     },
     'out': {
       describe: 'Output of the runtime relay fragments',

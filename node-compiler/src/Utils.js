@@ -114,8 +114,8 @@ function getScalaFileWriter(baseDir: string, outputDir: string, useNulls: boolea
 }
 
 // $FlowFixMe
-function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob, verbose: boolean) {
-  const files = getFilepathsFromGlob(srcDir, {include: ["**"], extensions: ["scala", "gql"]});
+function compileAll(srcDir: string, include: string[], schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob, verbose: boolean) {
+  const files = getFilepathsFromGlob(srcDir, {include: include.map(i => [`${i}/**`]), extensions: ["scala", "gql"]});
 
   const parserConfigs = {
     default: {
@@ -160,6 +160,11 @@ function compileAll(srcDir: string, schemaPath: string, writer, parser, fileFilt
     });
 }
 
+function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
+  const result = [];
+  arrayOfArrays.forEach(array => result.push(...array));
+  return result;
+}
 
 
 module.exports = {
@@ -167,5 +172,6 @@ module.exports = {
   getScalaFileWriter,
   WATCH_EXPRESSION,
   SCRIPT_NAME,
-  compileAll
+  compileAll,
+  flattenArray
 }
