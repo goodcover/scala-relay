@@ -64,6 +64,9 @@ object RelayFilePlugin extends AutoPlugin {
     val relayOutput: SettingKey[File]    = settingKey[File]("Output of the schema stuff")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
+    val relayBaseDirectory: SettingKey[File]      = settingKey[File]("The base directory the relay compiler")
+    val relayExtraIncludes: SettingKey[Seq[File]] = settingKey[Seq[File]]("extra directories to include")
+
   }
 
   import RelayBasePlugin.autoImport._
@@ -93,10 +96,17 @@ object RelayFilePlugin extends AutoPlugin {
           "scala-relay-compiler"
         },
         /**
+          * So this should normally default to the base directory, but in some cases if you want to include stuff
+          * outside the directory, changing this should be considered.
+          */
+        relayBaseDirectory := baseDirectory.value,
+        relayExtraIncludes := Seq((sourceDirectory in Compile).value),
+        /**
           * Meat of the function.
           */
         relayCompile in Compile := Def
           .task[Seq[File]] {
+            import Path.{flat, relativeTo}
             val cache         = streams.value.cacheDirectory / "relay-compile"
             val sourceFiles   = (unmanagedSourceDirectories in Compile).value
             val resourceFiles = (resourceDirectories in Compile).value
@@ -105,7 +115,8 @@ object RelayFilePlugin extends AutoPlugin {
             val verbose       = relayDebug.value
             val useNulls      = relayUseNulls.value
             val schemaPath    = relaySchema.value
-            val source        = baseDirectory.value
+            val source        = relayBaseDirectory.value
+            val extras        = relayExtraIncludes.value.pair(relativeTo(source)).map(_._2).toList
 
             IO.createDirectory(outpath)
 
@@ -128,7 +139,8 @@ object RelayFilePlugin extends AutoPlugin {
                                                                             outputPath = outpath,
                                                                             logger = logger,
                                                                             verbose = verbose,
-                                                                            useNulls = useNulls))(scalaFiles)
+                                                                            useNulls = useNulls,
+                                                                            extras = extras))(scalaFiles)
 
             outpath.listFiles()
           }
@@ -149,7 +161,8 @@ object RelayFilePlugin extends AutoPlugin {
                   outputPath: File,
                   logger: Logger,
                   verbose: Boolean,
-                  useNulls: Boolean): Unit = {
+                  useNulls: Boolean,
+                  extras: List[String]): Unit = {
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -158,6 +171,7 @@ object RelayFilePlugin extends AutoPlugin {
 
     val verboseList  = if (verbose) "--verbose" :: Nil else Nil
     val useNullsList = if (useNulls) "--useNulls" :: Nil else Nil
+    val extrasList   = extras flatMap (e => "--extra" :: e.quote :: Nil)
 
     val cmd = shell :+ (List(compilerPath,
                              "--schema",
@@ -165,8 +179,10 @@ object RelayFilePlugin extends AutoPlugin {
                              "--src",
                              sourceDirectory.getAbsolutePath.quote,
                              "--out",
-                             outputPath.getAbsolutePath.quote) ::: verboseList ::: useNullsList).mkString(" ")
+                             outputPath.getAbsolutePath.quote) ::: verboseList ::: useNullsList ::: extrasList)
+      .mkString(" ")
 
+    println(cmd)
     Commands.run(cmd, workingDir, logger)
   }
 
@@ -178,7 +194,8 @@ object RelayFilePlugin extends AutoPlugin {
                    outputPath: File,
                    logger: Logger,
                    verbose: Boolean,
-                   useNulls: Boolean)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+                   useNulls: Boolean,
+                   extras: List[String])(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
       .counted("Scala source", "", "s", files.size)
@@ -191,7 +208,8 @@ object RelayFilePlugin extends AutoPlugin {
                     outputPath = outputPath,
                     logger = logger,
                     verbose = verbose,
-                    useNulls = useNulls)
+                    useNulls = useNulls,
+                    extras = extras)
         logger.info(s"Finished relayCompile.")
       }
     files
