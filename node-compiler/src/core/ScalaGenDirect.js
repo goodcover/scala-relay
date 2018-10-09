@@ -45,6 +45,7 @@ import type {
 
 const {
   GraphQLEnumType,
+  // $FlowFixMe
   GraphQLInputType,
   GraphQLInputObjectType,
   GraphQLInterfaceType,
@@ -52,6 +53,7 @@ const {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  // $FlowFixMe
   GraphQLType,
   GraphQLUnionType,
   GraphQLSchema,
@@ -352,50 +354,6 @@ class ClassTracker {
     node.selections;
   }
 
-  /**
-   * Handle adding a parent type to special classes like connections or edges or nodes.
-   *
-   * @param {ConcreteField} node The node in question
-   * @param {Array<Member>} localMembers The list of members for this type
-   * @param {string} className the name of the current class
-   * @param {boolean} root is it a root
-   */
-  specialClassExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment,
-      localMembers: Array<Member>, className: string, root: boolean): Array<string> {
-    if (root) return [];
-
-    // $FlowFixMe
-    const typeString = node.type instanceof GraphQLNonNull ? node.type.ofType.toString() : node.type.toString();
-
-    if (className.endsWith("Edges")) {
-      const nodeMem = localMembers.find(s => s.name == "node")
-      if (nodeMem) {
-        const tpe = this.makeTypeFromMember(className, nodeMem, undefined, node.useNulls)
-        return [`_root_.relay.runtime.Edge[${tpe}]`];
-      }
-      return [];
-    }
-
-    if (typeString.endsWith("Connection")) {
-      const edgesMem = localMembers.find(s => s.name == "edges")
-      if (edgesMem) {
-        //
-        const newEdge = Object.assign({}, edgesMem)
-        newEdge.tpe = newEdge.tpe.map(t => {
-          return {
-            ...t,
-            mods: []
-          }
-        })
-        const tpe = this.makeTypeFromMember(className, newEdge, undefined, node.useNulls);
-        return [`_root_.relay.runtime.Connection[${tpe}]`];
-      }
-      return [];
-    }
-
-    return [];
-  }
-
   getScalajsDirectiveExtends(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment | ConcreteFragmentSpread): Array<string> {
     // $FlowFixMe
     return (node.metadata && node.metadata.extends && [node.metadata.extends]) || [];
@@ -403,7 +361,7 @@ class ClassTracker {
 
   isUseNulls(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment | ConcreteFragmentSpread): boolean {
     // $FlowFixMe
-    return !!(this._useNulls || (node.metadata && node.metadata.useNulls));
+    return !!(this._useNulls || node.useNulls || (node.metadata && node.metadata.useNulls));
   }
 
   /**
@@ -454,9 +412,7 @@ class ClassTracker {
     });
 
     // flattenArray(listOfSpreads.map(s => s[1].extendCls));
-    const fieldExtend: Array<string> = this.specialClassExtends(node, localMembers, newClassName, root).concat(
-      this.getScalajsDirectiveExtends(node)
-    );
+    const fieldExtend: Array<string> = this.getScalajsDirectiveExtends(node);
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags, node.useNulls);
 
@@ -930,7 +886,12 @@ function createVisitor(ct: ClassTracker) {
         };
       },
       ScalarField(node: ConcreteScalarField) {
-        return node;
+        // $FlowFixMe
+        const useNulls = ct.isUseNulls(node);
+        return {
+          ...node,
+          useNulls,
+        };
       },
       LinkedField(node: ConcreteLinkedField) {
         // $FlowFixMe
@@ -951,7 +912,11 @@ function createVisitor(ct: ClassTracker) {
         };
       },
       FragmentSpread(node: ConcreteFragmentSpread) {
-        return node;
+        const useNulls = ct.isUseNulls(node);
+        return {
+          ...node,
+          useNulls,
+        };
       },
       Condition(node: ConcreteCondition) {
         return node;
@@ -959,6 +924,7 @@ function createVisitor(ct: ClassTracker) {
     },
     leave: {
       Root(node: ConcreteRoot) {
+        // console.log("Root", node);
         ct.handleQuery(node);
         ct.closeField(node, false, true);
         // // $FlowFixMe
@@ -967,6 +933,7 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       Fragment(node: ConcreteFragment) {
+        // console.log("Fragment", node);
         ct.closeField(node, false, false);
         // // $FlowFixMe
         // ct.handleSelections(node);
