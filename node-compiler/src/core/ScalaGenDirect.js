@@ -293,7 +293,7 @@ class ClassTracker {
    * @param {*} node
    */
   getNewTpeParent(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment | ConcreteInlineFragment): string {
-    if (node.parentTpe && node.parentTpe.size > 1) /* $FlowFixMe */
+    if (node.parentTpe && node.parentTpe.length > 1) /* $FlowFixMe */
       return node.parentTpe.slice(1).join("");
     else /* $FlowFixMe */
       return node.parentTpe.join("");
