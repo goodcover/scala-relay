@@ -471,12 +471,12 @@ class ClassTracker {
     const tpe = this.getNewTpe(n);
     const extendCls: Array<string> = this.getScalajsDirectiveExtends(n);
 
-    const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
-      s.or = true;
-      return s;
-    });
+    // const dm = this.getDirectMembersForFrag(n.name, tpe).map(s => {
+    //   s.or = true;
+    //   return s;
+    // });
     this.spreads.unshift([n.name, {
-      members: dm,
+      members: [],
       extendCls,
     }]);
   }
