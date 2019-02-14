@@ -1,7 +1,7 @@
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 
-val sbtVersions = List("0.13.17", "1.1.2")
+val sbtVersions = List("0.13.17", "1.2.8")
 
 crossSbtVersions := sbtVersions
 
@@ -10,7 +10,10 @@ lazy val root =
     .in(file("."))
     .settings(commonSettings)
     .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact := false, publish := {})
-    .enablePlugins(CrossPerProjectPlugin)
+    .settings(
+              // crossScalaVersions must be set to Nil on the aggregating project
+              crossScalaVersions := Nil,
+              publish / skip := true)
     .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
@@ -19,21 +22,20 @@ def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
-  .enablePlugins(CrossPerProjectPlugin)
+  .enablePlugins(SbtPlugin)
   .settings(bintraySettings)
   .settings(commonSettings)
   .settings(sbtPlugin := true,
             addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % Version.Scalajs),
             addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
-            ScriptedPlugin.scriptedSettings,
             scriptedLaunchOpts += "-Dplugin.version=" + version.value,
             scriptedBufferLog := false,
-            publishTo := {
-              if (isSnapshot.value) {
-                // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
-                Some(Opts.resolver.sonatypeSnapshots)
-              } else publishTo.value
-            },
+//            publishTo := Def.taskDyn {
+//              if (isSnapshot.value) {
+//                // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
+//                Def.task(Option(Opts.resolver.sonatypeSnapshots: Resolver))
+//              } else publishTo.value
+//            },
             scriptedDependencies := {
               val () = scriptedDependencies.value
               val () = publishLocal.value
@@ -56,7 +58,6 @@ lazy val `sbt-relay-compiler` = project
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
-  .enablePlugins(CrossPerProjectPlugin)
   .settings(commonSettings)
   .settings(publishMavenStyle := true,
             crossSbtVersions := Nil,
@@ -75,7 +76,7 @@ lazy val bintraySettings: Seq[Setting[_]] =
       bintrayPackage := "sbt-relay-compiler",
       bintrayReleaseOnPublish := true)
 
-lazy val commonSettings = Seq(
+lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalacOptions ++= Seq("-feature",
                         "-deprecation",
                         "-encoding",
@@ -101,22 +102,23 @@ lazy val commonSettings = Seq(
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
     ScmInfo(url("https://github.com/dispalt/relay-modern-helper"),
-            "scm:git:git@github.com:dispalt/relay-modern-helper.git"))) ++ releaseSettings
+            "scm:git:git@github.com:dispalt/relay-modern-helper.git")))
 
-lazy val releaseSettings =
-  Seq(releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseCrossBuild := false,
-      releaseProcess :=
-        Seq[ReleaseStep](checkSnapshotDependencies,
-                         inquireVersions,
-                         runClean,
-                         releaseStepCommandAndRemaining("+test"),
-                         setReleaseVersion,
-                         commitReleaseVersion,
-                         tagRelease,
-                         if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
-                         else releaseStepCommandAndRemaining("+ publishSigned"),
-                         releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-                         setNextVersion,
-                         commitNextVersion,
-                         pushChanges))
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
+releaseCrossBuild := false
+
+releaseProcess :=
+  Seq[ReleaseStep](checkSnapshotDependencies,
+                   inquireVersions,
+                   runClean,
+                   releaseStepCommandAndRemaining("+test"),
+                   setReleaseVersion,
+                   commitReleaseVersion,
+                   tagRelease,
+                   if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
+                   else releaseStepCommandAndRemaining("+ publishSigned"),
+                   releaseStepCommandAndRemaining("sonatypeReleaseAll"),
+                   setNextVersion,
+                   commitNextVersion,
+                   pushChanges)

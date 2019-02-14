@@ -1,8 +1,7 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.22")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.26")
 
-libraryDependencies += "org.scala-sbt" % "scripted-plugin" % sbtVersion.value
-addSbtPlugin("me.lessis"         % "bintray-sbt"  % "0.3.0")
-addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "1.1")
-addSbtPlugin("com.github.gseitz" % "sbt-release"  % "1.0.6")
+addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "2.4")
+addSbtPlugin("com.github.gseitz" % "sbt-release"  % "1.0.11")
 addSbtPlugin("com.jsuereth"      % "sbt-pgp"      % "1.1.0")
-addSbtPlugin("com.eed3si9n"      % "sbt-doge"     % "0.1.5")
+addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.4")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
