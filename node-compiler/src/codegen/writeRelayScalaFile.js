@@ -16,10 +16,6 @@ const invariant = require('invariant');
 // TODO T21875029 ../../relay-runtime/util/prettyStringify
 const dedupeJSONStringify = require('relay-compiler/lib/dedupeJSONStringify');
 
-// TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
-import type {GeneratedNode} from 'graphql-compiler';
-import type {CodegenDirectory} from 'graphql-compiler';
-
 
 /**
  * Generate a module for the given document name/text.

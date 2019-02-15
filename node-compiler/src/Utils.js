@@ -1,13 +1,14 @@
 // @flow
 
-require('babel-polyfill');
+require('@babel/polyfill');
 
+// TODO: graphpql-compiler
 const {
   CodegenRunner,
   ConsoleReporter,
-} = require('graphql-compiler');
+} = require('relay-compiler');
 
-const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
+const RelayJSModuleParser = require('relay-compiler/lib/RelaySourceModuleParser');
 const ScalaFileWriter = require('./codegen/ScalaFileWriter');
 const {FileWriter} = require('relay-compiler');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
@@ -114,22 +115,25 @@ function getScalaFileWriter(baseDir: string, outputDir: string, useNulls: boolea
 }
 
 // $FlowFixMe
+// TODO RESUME HERE.
+// https://github.com/facebook/relay/blob/d58d0d731bf2ff2b5f8d620509e4208c64586e76/packages/relay-compiler/bin/RelayCompilerMain.js
 function compileAll(srcDir: string, include: string[], schemaPath: string, writer, parser, fileFilter, getFilepathsFromGlob, verbose: boolean) {
   const files = getFilepathsFromGlob(srcDir, {include: include.map(i => [`${i}/**`]), extensions: ["scala", "gql"]});
+  const schema = getSchema(schemaPath);
 
   const parserConfigs = {
     default: {
       baseDir: srcDir,
       getFileFilter: fileFilter,
       getParser: parser,
-      getSchema: () => getSchema(schemaPath),
+      getSchema: () => schema,
       watchmanExpression: null,
       filepaths: files,
     },
   };
   const writerConfigs = {
     default: {
-      getWriter: writer,
+      writeFiles: writer,
       parser: 'default',
       isGeneratedFile: (filePath) => true
     },

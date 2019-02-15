@@ -2,19 +2,19 @@
  *  @flow
  */
 
-const GraphQLCompilerContext = require('graphql-compiler').CompilerContext;
-const GraphQLIRTransformer = require('graphql-compiler').IRTransformer;
+const GraphQLCompilerContext = require('relay-compiler/lib/GraphQLCompilerContext');
+const GraphQLIRTransformer = require('relay-compiler/lib/GraphQLIRTransformer');
 
 const invariant = require('invariant');
 
-import type {InlineFragment, Fragment, FragmentSpread, Directive, Field} from 'graphql-compiler/lib/GraphQLIR';
+import type {InlineFragment, Fragment, FragmentSpread, Directive, Field} from 'relay-compiler/lib/GraphQLIR';
 
 
 const {
   CompilerContext,
   IRTransformer,
   getLiteralArgumentValues,
-} = require('graphql-compiler');
+} = require('relay-compiler');
 
 function sjsTransform(
   context: GraphQLCompilerContext,

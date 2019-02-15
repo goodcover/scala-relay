@@ -1,11 +1,11 @@
-const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
+const RelayJSModuleParser = require('relay-compiler/lib/RelaySourceModuleParser');
 const GraphQL = require('graphql');
 
 const fs = require('fs');
 const invariant = require('invariant');
 const path = require('path');
 
-const {ASTCache} = require('graphql-compiler');
+const ASTCache = require('relay-compiler/lib/ASTCache');
 
 import type {File, FileFilter} from 'graphql-compiler';
 import type {DocumentNode} from 'graphql';

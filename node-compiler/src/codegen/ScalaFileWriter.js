@@ -21,12 +21,10 @@ const path = require('path');
 const writeRelayScalaFile = require('./writeRelayScalaFile');
 
 const {generate} = require('relay-compiler/lib/RelayCodeGenerator');
-const {
-  ASTConvert,
-  CodegenDirectory,
-  CompilerContext,
-  SchemaUtils,
-} = require('graphql-compiler');
+const ASTConvert = require('relay-compiler/lib/ASTConvert');
+const CodegenDirectory = require('relay-compiler/lib/CodegenDirectory');
+const CompilerContext = require('relay-compiler/lib/GraphQLCompilerContext');
+const SchemaUtils = require('relay-compiler/lib/GraphQLSchemaUtils');
 const {Map: ImmutableMap} = require('immutable');
 
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
@@ -38,7 +36,6 @@ import type {
 } from 'relay-compiler/lib/RelayCompilerPublic';
 import type {FormatModule} from './writeRelayScalaFile';
 // TODO T21875029 ../../relay-runtime/util/RelayConcreteNode
-import type {GeneratedNode} from 'graphql-compiler';
 import type {DocumentNode, GraphQLSchema, ValidationContext} from 'graphql';
 
 const {isOperationDefinitionAST} = SchemaUtils;

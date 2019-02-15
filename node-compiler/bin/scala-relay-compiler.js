@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-require('babel-polyfill');
+require('@babel/polyfill');
 
 const {
   CodegenRunner,
   ConsoleReporter,
 } = require('relay-compiler/lib/RelayCompilerPublic');
 
-const RelayJSModuleParser = require('relay-compiler/lib/RelayJSModuleParser');
+const RelayJSModuleParser = require('relay-compiler/lib/RelaySourceModuleParser');
 const RelayIRTransforms = require('relay-compiler/lib/RelayIRTransforms');
 
 const GraphQL = require('graphql');

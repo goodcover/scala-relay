@@ -11,13 +11,12 @@
 
 'use strict';
 
-const t = require('babel-types');
+// const t = require('babel-types');
 
-const {
-  FlattenTransform,
-  IRVisitor,
-  Profiler,
-} = require('graphql-compiler');
+const FlattenTransform = require('relay-compiler/lib/FlattenTransform');
+const IRVisitor = require('relay-compiler/lib/GraphQLIRVisitor');
+const Profiler = require('relay-compiler/lib/GraphQLCompilerProfiler');
+
 
 const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
 const RelayRelayDirectiveTransform = require('relay-compiler/lib/RelayRelayDirectiveTransform');
@@ -61,7 +60,7 @@ const {
 
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
 
-const babelGenerator = require('babel-generator').default;
+const babelGenerator = require('@babel/generator').default;
 
 const invariant = require('invariant');
 

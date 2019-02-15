@@ -1,8 +1,4 @@
 {
-  "presets": ["flow", ["env", {
-    "targets": {
-      "node": "current"
-    }
-  }]],
-  "plugins": ["transform-object-rest-spread"]
+  "presets": ["@babel/preset-flow"],
+  "plugins": ["@babel/plugin-proposal-object-rest-spread"]
 }
