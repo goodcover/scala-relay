@@ -1,13 +1,16 @@
 {
-  "name": "scala-relay-compiler",
+  "name": "relay-compiler-language-scalajs",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.13.0",
+  "version": "0.1.0",
   "license": "Apache-2.0",
   "dependencies": {
+    "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
     "@babel/generator": "^7.0.0",
     "@babel/parser": "^7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/polyfill": "^7.0.0",
+    "@babel/preset-flow": "^7.0.0",
     "@babel/runtime": "^7.0.0",
     "@babel/traverse": "^7.0.0",
     "@babel/types": "^7.0.0",
@@ -16,17 +19,14 @@
     "fast-glob": "^2.2.2",
     "fb-watchman": "^2.0.0",
     "fbjs": "^1.0.0",
+    "flow-bin": "^0.92.0",
+    "graphql": "^14.1.0",
     "immutable": "~3.7.6",
     "nullthrows": "^1.1.0",
     "relay-compiler": "2.0.0",
     "relay-runtime": "2.0.0",
     "signedsource": "^1.0.0",
-    "yargs": "^9.0.0",
-    "@babel/cli": "^7.0.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
-    "@babel/preset-flow": "^7.0.0",
-    "graphql": "^14.1.0",
-    "flow-bin": "^0.92.0"
+    "yargs": "^9.0.0"
   },
   "bin": {
     "scala-relay-compiler": "./bin/scala-relay-compiler.js"
