@@ -1,4 +1,4 @@
-package relay.graphql
+package relay.gql
 
 import scala.language.implicitConversions
 import scala.scalajs.js
@@ -45,3 +45,6 @@ trait ConcreteBatch extends TaggedNode
 
 @js.native
 trait ReaderFragment extends TaggedNode
+
+@js.native
+trait ConcreteRequest extends TaggedNode

@@ -1,3 +1,5 @@
 package relay
 
-class graphql {}
+import scala.annotation.StaticAnnotation
+
+class graphql(s: String) extends StaticAnnotation {}

@@ -72,9 +72,6 @@ Better typing ideas here.
 
 https://github.com/facebook/relay/issues/1918
 
- // val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
-    // val devText: String = """${devOnlyText}"""
-
 */
 
 type Options = {|
@@ -106,7 +103,7 @@ function generate(
     return `
 ${code.core}
 
-object ${node.name} extends ${code.objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
+object ${node.name} extends ${code.objectParent || '_root_.relay.gql.GenericGraphQLTaggedNode'} {
         ////////////////////////////////////
         ////// Supporting classes begin here
         ////////////////////////////////////
@@ -831,12 +828,12 @@ class ClassTracker {
     }
 
     const objectPrefix = this.isQuery ?
-      "_root_.relay.graphql.QueryTaggedNode" : (this.isMutation ?
-        "_root_.relay.graphql.MutationTaggedNode" : "");
+      "_root_.relay.gql.QueryTaggedNode" : (this.isMutation ?
+        "_root_.relay.gql.MutationTaggedNode" : "");
 
     const objectParent = this.topLevelTypeParams.length == 1 ?
       `${objectPrefix}[${this.topLevelTypeParams[0].input}, ${this.topLevelTypeParams[0].output}]` :
-      '_root_.relay.graphql.GenericGraphQLTaggedNode';
+      '_root_.relay.gql.GenericGraphQLTaggedNode';
 
     return {
         core: Array.from(this.topClasses.entries()).map(s => {

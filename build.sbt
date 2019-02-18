@@ -26,30 +26,29 @@ lazy val `sbt-relay-compiler` = project
   .settings(bintraySettings)
   .settings(commonSettings)
   .settings(sbtPlugin := true,
-            addSbtPlugin("org.scala-js"  % "sbt-scalajs"         % Version.Scalajs),
-            addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % Version.ScalajsBundler),
+            addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
+            addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % Version.ScalajsBundler),
+            addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0"),
             scriptedLaunchOpts += "-Dplugin.version=" + version.value,
             scriptedBufferLog := false,
-//            publishTo := Def.taskDyn {
-//              if (isSnapshot.value) {
-//                // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
-//                Def.task(Option(Opts.resolver.sonatypeSnapshots: Resolver))
-//              } else publishTo.value
-//            },
+////            publishTo := Def.taskDyn {
+////              if (isSnapshot.value) {
+////                // Bintray doesn't support publishing snapshots, publish to Sonatype snapshots instead
+////                Def.task(Option(Opts.resolver.sonatypeSnapshots: Resolver))
+////              } else publishTo.value
+////            },
             scriptedDependencies := {
               val () = scriptedDependencies.value
-              val () = publishLocal.value
+//              val () = publishLocal.value
               val () = (publishLocal in `relay-macro`).value
             },
             crossSbtVersions := sbtVersions,
             scalaVersion := {
               (sbtBinaryVersion in pluginCrossBuild).value match {
                 case "0.13" => "2.10.6"
-                case _      => "2.12.4"
+                case _      => Version.Scala212
               }
             },
-            // fixed in https://github.com/sbt/sbt/pull/3397 (for sbt 0.13.17)
-            sbtBinaryVersion in update := (sbtBinaryVersion in pluginCrossBuild).value,
             publishMavenStyle := isSnapshot.value,
             sourceGenerators in Compile += Def.task {
               Generators.version(version.value, (sourceManaged in Compile).value)

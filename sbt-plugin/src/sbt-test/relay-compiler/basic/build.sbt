@@ -2,11 +2,11 @@ name := "basic"
 
 libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.2"
 
-enablePlugins(RelayFilePlugin, ScalaJSBundlerPlugin)
+enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
 
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.8"
 
 useYarn := true
 
@@ -15,8 +15,6 @@ useYarn := true
 relaySchema := (resourceDirectory in Compile).value / "testschema.graphql"
 
 relayDebug := true
-
-relayValidateQuery := true
 
 emitSourceMaps := false
 

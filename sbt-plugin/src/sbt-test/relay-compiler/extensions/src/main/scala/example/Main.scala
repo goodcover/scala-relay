@@ -3,13 +3,13 @@ package example
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
-import relay.graphql.gql
+import relay.graphql
 import org.scalajs.dom
 
 import scala.scalajs.js.annotation.JSImport
 
-@gql("""
-    query ExampleQuery {
+@graphql("""
+    query MainQuery {
       defaultSettings {
         notificationSounds
       }
@@ -18,9 +18,7 @@ import scala.scalajs.js.annotation.JSImport
       }
     }
   """)
-object __query1
-
-@gql("""
+@graphql("""
     type Birthday {
       birthday: String
     }
@@ -33,7 +31,7 @@ object frag3
 
 object Main extends JSApp {
   def main(): Unit = {
-    val foo2: relay.generated.ExampleQuery.Birthdays = null
+    val foo2: relay.generated.MainQuery.Birthdays = null
 
     Option(foo2).map(_.birthday == null)
 

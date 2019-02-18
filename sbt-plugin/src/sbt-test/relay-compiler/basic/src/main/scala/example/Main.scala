@@ -3,47 +3,38 @@ package example
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
-import relay.graphql.gql
+import relay.graphql
 import org.scalajs.dom
 
 import scala.scalajs.js.annotation.JSImport
 
-@gql("""
-    query ExampleQuery {
+@graphql("""
+    query MainQuery {
       defaultSettings {
         notificationSounds
       }
     }
   """)
-object __query1
-
-@gql("""
-    mutation ActorSubscribe($input: ActorSubscribeInput!) {
+@graphql("""
+    mutation MainMutation($input: ActorSubscribeInput!) {
       actorSubscribe(input: $input) {
         clientMutationId
       }
     }
   """)
-object ActorSubscribe
-
-@gql("""
-    fragment Task_foo on Task {
+@graphql("""
+    fragment Main_foo on Task {
       title
     }
   """)
 object frag
 
-case class Foo(i: Int)(val f: relay.generated.Task_foo)
-
-trait RelayTag
+case class Foo(i: Int)(val f: relay.generated.Main_foo)
 
 object Main extends JSApp {
 
   def main(): Unit = {
-    val m = serde.sjs.generic.deriveBindable[Foo, relay.generated.Task_foo]
-    val m2 = serde.sjs.generic.deriveHoc[Foo, relay.generated.Task_foo, RelayTag]
-
-    val q = relay.generated.Task_foo.query
+    val q = relay.generated.MainQuery.query
     dom.console.log(q)
   }
 }
