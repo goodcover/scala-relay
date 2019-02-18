@@ -11,55 +11,34 @@
 
 'use strict';
 
-import type {FormatModule} from './writeRelayScalaFile';
-
 const formatGeneratedModule: FormatModule = ({
   moduleName,
   documentType,
   docText,
   concreteText,
-  topClasses,
+  typeText,
   hash,
-  devTextGenerator,
-  relayRuntimeModule,
-  packageName,
-  supportingClasses,
-  implicits,
-  objectParent,
+  kind,
+  sourceHash,
+  devOnlyAssignments,
 }) => {
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
   const hashText = hash ? `\n * ${hash}` : '';
-  const devOnlyText = devTextGenerator ? devTextGenerator(objectName) : '';
   return `/**
  * scala-relay-compiler: ${hashText}
  * GENERATED, DON'T MANUALLY EDIT.
  * objName:      ${objectName}
  * docType:      ${documentType}
  */
-package ${packageName}
 
 import _root_.scala.scalajs.js
 import _root_.scala.scalajs.js.|
 
-${topClasses || ''}
+${typeText || ''}
 
 ${docTextComment}
-object ${moduleName} extends ${objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
 
-  ////////////////////////////////////
-  ////// Supporting classes begin here
-  ////////////////////////////////////
-${supportingClasses || ''}
-
-  ///////////////////////////
-  ////// Implicits begin here
-  ///////////////////////////
-${implicits || ''}
-
-  val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
-  val devText: String = """${devOnlyText}"""
-}
 
 `;
 };

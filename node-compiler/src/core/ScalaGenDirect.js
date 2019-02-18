@@ -44,19 +44,16 @@ import type {
 
 const {
   GraphQLEnumType,
-  // $FlowFixMe
-  GraphQLInputType,
   GraphQLInputObjectType,
   GraphQLInterfaceType,
   GraphQLList,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
-  // $FlowFixMe
-  GraphQLType,
   GraphQLUnionType,
-  GraphQLSchema,
 } = require('graphql');
+
+import type {GraphQLInputType, GraphQLType} from 'graphql';
 
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
 
@@ -92,7 +89,7 @@ type Options = {|
 function generate(
   node: Root | Fragment,
   options: Options,
-): {core: string, supporting: string, implicits: string, objectParent: string} {
+): string {
 
   const newCT = new ClassTracker(options.nodes, options.useNulls || false);
   try {
@@ -101,7 +98,28 @@ function generate(
       createVisitor(newCT)
     )
     const code = newCT.out();
-    return code;
+
+
+    return `
+
+      object ${node.name} extends ${code.objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
+      ////////////////////////////////////
+      ////// Supporting classes begin here
+      ////////////////////////////////////
+
+      ${code.supporting || ''}
+
+        ///////////////////////////
+        ////// Implicits begin here
+        ///////////////////////////
+      ${code.implicits || ''}
+
+        val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
+        val devText: String = """${devOnlyText}"""
+      }
+
+    `;
+
   } catch(e) {
     console.error(e);
     throw e;
@@ -504,6 +522,7 @@ class ClassTracker {
     type: GraphQLType,
     backupType: ?string
   ): Array<ATpe> {
+    debugger;
     if (type instanceof GraphQLList) {
       return this.transformScalarType(type.ofType, backupType).map(s => {
 
@@ -884,7 +903,7 @@ function createVisitor(ct: ClassTracker) {
           useNulls,
         };
       },
-      ScalarField(node: ConcreteScalarField) {
+      ScalarField(node) {
         // $FlowFixMe
         const useNulls = ct.isUseNulls(node);
         return {
@@ -944,7 +963,7 @@ function createVisitor(ct: ClassTracker) {
         ct.inlineFrag(node);
         return node;
       },
-      ScalarField(node: ConcreteScalarField) {
+      ScalarField(node) {
         // console.log("ScalarField", node);
         // $FlowFixMe
         const extendsCPresent: ?string  = node.metadata && node.metadata.extends
@@ -998,5 +1017,5 @@ const FLOW_TRANSFORMS: Array<IRTransform> = [
 
 module.exports = {
   generate: Profiler.instrument(generate, 'RelayFlowGenerator.generate'),
-  flowTransforms: FLOW_TRANSFORMS,
+  transforms: FLOW_TRANSFORMS,
 };
