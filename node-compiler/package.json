@@ -1,7 +1,7 @@
 {
   "name": "relay-compiler-language-scalajs",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "Apache-2.0",
   "main": "lib/index.js",
   "devDependencies": {
@@ -21,15 +21,19 @@
     "fb-watchman": "^2.0.0",
     "fbjs": "^1.0.0",
     "flow-bin": "^0.92.0",
-    "graphql": "^14.1.1",
     "immutable": "~3.7.6",
     "invariant": "^2.2.4",
     "nullthrows": "^1.1.0",
     "relay-compiler": "2.0.0",
     "signedsource": "^1.0.0"
   },
+  "dependencies": {
+    "graphql": "^14.1.1",
+    "invariant": "^2.2.4",
+    "relay-runtime": "^2.0.0"
+  },
   "peerDependencies": {
-    "relay-compiler": ">=2.0.0",
+    "relay-compiler": "^2.0.0",
     "relay-runtime": "*"
   },
   "scripts": {

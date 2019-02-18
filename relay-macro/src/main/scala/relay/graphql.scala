@@ -1,0 +1,3 @@
+package relay
+
+class graphql {}
