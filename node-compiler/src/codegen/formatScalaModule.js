@@ -26,18 +26,22 @@ const formatGeneratedModule: FormatModule = ({
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
   const hashText = hash ? `\n * ${hash}` : '';
   return `/**
- * scala-relay-compiler: ${hashText}
+ * relay-compiler-language-scalajs: ${hashText}
  * GENERATED, DON'T MANUALLY EDIT.
  * objName:      ${objectName}
  * docType:      ${documentType}
  */
+package relay.generated
 
 import _root_.scala.scalajs.js
 import _root_.scala.scalajs.js.|
 
-${typeText || ''}
-
 ${docTextComment}
+
+${typeText}
+  lazy val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
+  lazy val sourceHash: String = "${sourceHash}"
+}
 
 
 `;

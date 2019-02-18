@@ -72,6 +72,9 @@ Better typing ideas here.
 
 https://github.com/facebook/relay/issues/1918
 
+ // val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
+    // val devText: String = """${devOnlyText}"""
+
 */
 
 type Options = {|
@@ -101,22 +104,19 @@ function generate(
 
 
     return `
+${code.core}
 
-      object ${node.name} extends ${code.objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
-      ////////////////////////////////////
-      ////// Supporting classes begin here
-      ////////////////////////////////////
+object ${node.name} extends ${code.objectParent || '_root_.relay.graphql.GenericGraphQLTaggedNode'} {
+        ////////////////////////////////////
+        ////// Supporting classes begin here
+        ////////////////////////////////////
 
-      ${code.supporting || ''}
+        ${code.supporting || ''}
 
-        ///////////////////////////
-        ////// Implicits begin here
-        ///////////////////////////
-      ${code.implicits || ''}
-
-        val query: _root_.relay.graphql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.graphql.${documentType}]
-        val devText: String = """${devOnlyText}"""
-      }
+          ///////////////////////////
+          ////// Implicits begin here
+          ///////////////////////////
+        ${code.implicits || ''}
 
     `;
 
