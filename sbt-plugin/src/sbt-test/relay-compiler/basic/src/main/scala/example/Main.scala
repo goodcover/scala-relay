@@ -35,6 +35,7 @@ object Main extends JSApp {
 
   def main(): Unit = {
     val q = relay.generated.MainQuery.query
+    val q2 = relay.generated.Test_foo
     dom.console.log(q)
   }
 }
