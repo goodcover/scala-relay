@@ -65,6 +65,11 @@ lazy val `relay-macro` = project
               if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
               else Nil
             },
+            publishTo := {
+              val nexus = "https://oss.sonatype.org/"
+              if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+              else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+            },
             crossScalaVersions := Seq(Version.Scala212),
             addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.0" cross CrossVersion.full),
             libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
@@ -101,7 +106,9 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
     ScmInfo(url("https://github.com/dispalt/relay-modern-helper"),
-            "scm:git:git@github.com:dispalt/relay-modern-helper.git")))
+            "scm:git:git@github.com:dispalt/relay-modern-helper.git")
+  )
+)
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
