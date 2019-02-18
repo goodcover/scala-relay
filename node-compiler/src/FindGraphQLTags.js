@@ -52,22 +52,19 @@ function parseFile(text, file): [] {
 
   } else if (path.extname(file) === '.gql') {
 
-    var regex = /@graphql\("""([\s\S]*?)"""\)/g;
-
     const astDefinitions = [];
 
-    while (matches = regex.exec(text)) {
-        const template = matches[1];
+    const keyName = GraphQL.parse(text).definitions.map(f => f.name.value)[0].split("_")[1];
+    const template = text;
 
-        astDefinitions.push({
-            template,
-            keyName: "foo",
-            sourceLocationOffset: {
-                line: 1,
-                column: 1
-            }
-        });
-    }
+    astDefinitions.push({
+      keyName,
+      template,
+      sourceLocationOffset: {
+        line: 1,
+        column: 1
+      },
+    });
 
     return astDefinitions;
   } else {
