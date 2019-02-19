@@ -59,7 +59,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * The version of the node module
           */
-        relayScalaJSVersion := "0.1.5-5",
+        relayScalaJSVersion := "0.1.5-6",
         /**
           * Set the version of the `relay-compiler` module.
           */
