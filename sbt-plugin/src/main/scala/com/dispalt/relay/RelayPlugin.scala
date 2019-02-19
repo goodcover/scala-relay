@@ -18,17 +18,17 @@ object RelayBasePlugin extends AutoPlugin {
 
   object autoImport {
     val relaySchema: SettingKey[File]           = settingKey[File]("Path to schema file")
-    val relayValidateQuery: SettingKey[Boolean] = settingKey[Boolean]("Validate queries in macro")
-    val relaySangriaVersion: SettingKey[String] = settingKey[String]("Set the Sangria version")
     val relayScalaJSVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-scalajs version")
     val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
-    val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Debug the relay compiler")
+    val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
     val relayBaseDirectory: SettingKey[File] = settingKey[File]("The base directory the relay compiler")
     val relayInclude: SettingKey[Seq[File]]  = settingKey[Seq[File]]("extra directories to include")
+    val relayPersistedPath: SettingKey[Option[File]] =
+      settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -38,14 +38,9 @@ object RelayBasePlugin extends AutoPlugin {
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
         /**
-          * Set the version of the sangria compiler which helps validate GQL
-          */
-        relaySangriaVersion := "1.4.2",
-        /**
           * Runtime dependency on the macro
           */
-        libraryDependencies ++= Seq("com.dispalt.relay"   %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current,
-                                    "org.sangria-graphql" %% "sangria"      % relaySangriaVersion.value % Provided),
+        libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
         /**
           * Set this if you'd like to see timing and larger stack traces.
           */
@@ -61,12 +56,22 @@ object RelayBasePlugin extends AutoPlugin {
         relayCompilerPath := {
           "node_modules/relay-compiler/lib/RelayCompilerBin.js"
         },
+        /**
+          * The version of the node module
+          */
         relayScalaJSVersion := "0.1.5-5",
+        /**
+          * Set the version of the `relay-compiler` module.
+          */
         relayVersion := "2.0.0",
     ) ++ inConfig(Compile)(perConfigSettings)
 
   def perConfigSettings: Seq[Setting[_]] =
-    Seq(relayCompile := relayCompileTask.value,
+    Seq(
+        /**
+          * The big task that performs all the magic.
+          */
+        relayCompile := relayCompileTask.value,
         /**
           * Output path of the relay compiler.  Necessary this is an empty directory as it will
           * delete files it thinks went away.
@@ -81,6 +86,10 @@ object RelayBasePlugin extends AutoPlugin {
           * Include files in the source directory.
           */
         relayInclude := Seq(sourceDirectory.value),
+        /**
+          * Set no use of persistence.
+          */
+        relayPersistedPath := None,
     )
 
   implicit class QuoteStr(s: String) {
@@ -99,6 +108,7 @@ object RelayBasePlugin extends AutoPlugin {
     val verbose       = relayDebug.value
     val schemaPath    = relaySchema.value
     val source        = relayBaseDirectory.value
+    val persisted     = relayPersistedPath.value
     val extras        = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
 
     IO.createDirectory(outpath)
@@ -123,7 +133,8 @@ object RelayBasePlugin extends AutoPlugin {
                      outputPath = outpath,
                      logger = logger,
                      verbose = verbose,
-                     extras = extras)
+                     extras = extras,
+                     persisted = persisted)
       )(scalaFiles)
 
     outpath.listFiles()
@@ -136,7 +147,8 @@ object RelayBasePlugin extends AutoPlugin {
                   outputPath: File,
                   logger: Logger,
                   verbose: Boolean,
-                  extras: List[String]): Unit = {
+                  extras: List[String],
+                  persisted: Option[File]): Unit = {
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -145,6 +157,10 @@ object RelayBasePlugin extends AutoPlugin {
 
     val verboseList = if (verbose) "--verbose" :: Nil else Nil
     val extrasList  = extras flatMap (e => "--include" :: e.quote :: Nil)
+    val persistedList = persisted match {
+      case Some(value) => List("--persist-output", value.getPath)
+      case None        => Nil
+    }
 
     val cmd = shell :+ (List(compilerPath,
                              "--language",
@@ -156,7 +172,7 @@ object RelayBasePlugin extends AutoPlugin {
                              "--src",
                              sourceDirectory.getAbsolutePath.quote,
                              "--artifactDirectory",
-                             outputPath.getAbsolutePath.quote) ::: verboseList ::: extrasList)
+                             outputPath.getAbsolutePath.quote) ::: verboseList ::: extrasList ::: persistedList)
       .mkString(" ")
 
     println(cmd)
@@ -171,7 +187,8 @@ object RelayBasePlugin extends AutoPlugin {
                    outputPath: File,
                    logger: Logger,
                    verbose: Boolean,
-                   extras: List[String])(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+                   extras: List[String],
+                   persisted: Option[File])(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
       .counted("Scala source", "", "s", files.size)
@@ -184,7 +201,8 @@ object RelayBasePlugin extends AutoPlugin {
                     outputPath = outputPath,
                     logger = logger,
                     verbose = verbose,
-                    extras = extras)
+                    extras = extras,
+                    persisted = persisted)
         logger.info(s"Finished relayCompile.")
       }
     files

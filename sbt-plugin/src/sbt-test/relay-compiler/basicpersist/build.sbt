@@ -16,6 +16,8 @@ relaySchema := (resourceDirectory in Compile).value / "testschema.graphql"
 
 relayDebug := true
 
+Compile / relayPersistedPath := Some((resourceDirectory in Compile).value / "persist.json")
+
 emitSourceMaps := false
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)

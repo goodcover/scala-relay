@@ -2,21 +2,27 @@
 # Relay Modern Tools for Scala.js Folks
 
 There are three parts to this.
-  - Node compiler - `scala-relay-compiler` [details](./node-compiler/)
+  - Relay Compiler Language for SJS - `relay-compiler-language-scalajs` [details](./node-compiler/)
   - Sbt plugin - `addSbtPlugin("com.dispalt.relay" % "sbt-relay-compiler" % "<version>")`
     which handles code generation sbt hooks
   - Scala.js runtime - `"com.dispalt.relay" %%% "relay-macro" % "<version>"` which 
-    handles the runtime, which is very small.
+    handles the runtime, which is very small (intentionally).
 
 
 ## Changes
 
+### 0.20.1
+ - Simplified the js code considerably by using the language hooks within the `relay-compiler`.
+   There is a couple changes that
+
 ### 0.11.0
  - Upgrade relay to `1.6.2`, most of the changes seem import related
- - Generate a `def newInput(args...): MutationInputType = ...` for all mutaitons, making it a little easier.
+ - Generate a `def newInput(args...): MutationInputType = ...` for all
+  mutations, making it a little easier.
 
 ### 0.10.0
- - Add ability to mix in traits with scalarFields so if value was a string `{ value @scalajs(extends:"Foo") }`
+ - Add ability to mix in traits with scalarFields so if value was 
+ a string `{ value @scalajs(extends:"Foo") }`
   The trait would have a member `val value: String with Foo`
 
 ### 0.9.4

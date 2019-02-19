@@ -16,13 +16,4 @@ relaySchema := (resourceDirectory in Compile).value / "testschema.graphql"
 
 relayDebug := true
 
-relayValidateQuery := false
-
 emitSourceMaps := false
-
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-
-// temporary workaround for https://github.com/scalameta/paradise/issues/10
-scalacOptions in (Compile, console) := Seq() // macroparadise plugin doesn't work in repl yet.
-// temporary workaround for https://github.com/scalameta/paradise/issues/55
-sources in (Compile, doc) := Nil // macroparadise doesn't work with scaladoc yet.
