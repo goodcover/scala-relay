@@ -39,7 +39,7 @@ import _root_.scala.scalajs.js.|
 ${docTextComment}
 
 ${typeText}
-  lazy val query: _root_.relay.gql.${documentType} = _root_.scala.scalajs.js.eval("""${concreteText}""").asInstanceOf[_root_.relay.gql.${documentType}]
+  lazy val query: _root_.relay.gql.${documentType} = _root_.scala.scalajs.js.eval("""(${concreteText})""").asInstanceOf[_root_.relay.gql.${documentType}]
   lazy val sourceHash: String = "${sourceHash}"
 }
 
