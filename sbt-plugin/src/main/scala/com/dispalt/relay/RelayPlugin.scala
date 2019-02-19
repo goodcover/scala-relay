@@ -61,7 +61,7 @@ object RelayBasePlugin extends AutoPlugin {
         relayCompilerPath := {
           "node_modules/relay-compiler/lib/RelayCompilerBin.js"
         },
-        relayScalaJSVersion := "0.1.5-3",
+        relayScalaJSVersion := "0.1.5-5",
         relayVersion := "2.0.0",
     ) ++ inConfig(Compile)(perConfigSettings)
 
