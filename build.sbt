@@ -102,11 +102,11 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
           <url>http://dispalt.com</url>
         </developer>
       </developers>,
-  homepage := Some(url(s"https://github.com/dispalt/relay-modern-helper")),
+  homepage := Some(url(s"https://github.com/dispalt/scala-relay")),
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
-    ScmInfo(url("https://github.com/dispalt/relay-modern-helper"),
-            "scm:git:git@github.com:dispalt/relay-modern-helper.git")
+    ScmInfo(url("https://github.com/dispalt/scala-relay"),
+            "scm:git:git@github.com:dispalt/scala-relay.git")
   )
 )
 
