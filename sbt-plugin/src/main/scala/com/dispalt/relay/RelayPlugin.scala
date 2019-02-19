@@ -29,6 +29,8 @@ object RelayBasePlugin extends AutoPlugin {
     val relayInclude: SettingKey[Seq[File]]  = settingKey[Seq[File]]("extra directories to include")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
+    val relayDependencies: SettingKey[Seq[(String, String)]] =
+      settingKey[Seq[(String, String)]]("The list of key value pairs that correspond to npm versions")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -59,7 +61,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * The version of the node module
           */
-        relayScalaJSVersion := "0.1.5-6",
+        relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
         /**
           * Set the version of the `relay-compiler` module.
           */
@@ -80,8 +82,8 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * Add the NPM Dev Dependency on the scalajs module.
           */
-        npmDevDependencies ++= Seq("relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
-                                   "relay-compiler"                  -> relayVersion.value),
+        relayDependencies := Seq("relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
+                                 "relay-compiler"                  -> relayVersion.value),
         /**
           * Include files in the source directory.
           */

@@ -1,5 +1,6 @@
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
+import scala.sys.process._
 
 val sbtVersions = List("0.13.17", "1.2.8")
 
@@ -105,8 +106,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
   homepage := Some(url(s"https://github.com/dispalt/scala-relay")),
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
-    ScmInfo(url("https://github.com/dispalt/scala-relay"),
-            "scm:git:git@github.com:dispalt/scala-relay.git")
+    ScmInfo(url("https://github.com/dispalt/scala-relay"), "scm:git:git@github.com:dispalt/scala-relay.git")
   )
 )
 
@@ -125,6 +125,23 @@ releaseProcess :=
                    if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
                    else releaseStepCommandAndRemaining("+ publishSigned"),
                    releaseStepCommandAndRemaining("sonatypeReleaseAll"),
+                   doReleaseYarn,
                    setNextVersion,
                    commitNextVersion,
                    pushChanges)
+
+lazy val doReleaseYarn = { st: State =>
+  val v = Project.extract(st)
+  val pl = new ProcessLogger {
+    override def err(s: => String): Unit = st.log.info(s)
+    override def out(s: => String): Unit = st.log.info(s)
+    override def buffer[T](f: => T): T   = st.log.buffer(f)
+  }
+  val versionString = v.get(version)
+  val bd            = v.get(baseDirectory)
+
+  val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
+  cmd.!(pl)
+  st
+
+}
