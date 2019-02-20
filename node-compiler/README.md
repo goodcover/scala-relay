@@ -23,7 +23,7 @@ in sbt parlance.
 ## Example
 
 ```sh
-$ ./bin/scala-relay-compiler.js --src example/src/ --schema example/schema.graphql --out example/out/
+$ ./node_modules/bin/relay-compiler --language scalajs --src example/src/ --schema example/schema.graphql --artifactDirectory example/out
 ```
 
 ## Features
