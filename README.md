@@ -13,7 +13,13 @@ There are three parts to this.
 
 ### 0.20.1
  - Simplified the js code considerably by using the language hooks within the `relay-compiler`.
-   There is a couple changes that
+   There is a couple changes that make this a non-straightforward migration
+   - Naming is more important now, some things accepted might not work now.
+   - `@scalajs` directive is needed schema-side,
+ - Upgraded to relay 2.0
+ - Upgraded to use scalajs-bundler in the generate code step, which makes the whole process much simpler from
+ an install standpoint.
+ - Supports persisted queries, you have to wire everything up yourself though.
 
 ### 0.11.0
  - Upgrade relay to `1.6.2`, most of the changes seem import related
