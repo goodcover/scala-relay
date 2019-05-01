@@ -22,6 +22,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
     val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
+    val relayForceCompile: TaskKey[Seq[File]]   = taskKey[Seq[File]]("Run the relay compiler uncached")
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
@@ -75,6 +76,10 @@ object RelayBasePlugin extends AutoPlugin {
           */
         relayCompile := relayCompileTask.value,
         /**
+          * Run relay-compiler with no caching.
+          */
+        relayForceCompile := relayForceCompileTask.value,
+        /**
           * Output path of the relay compiler.  Necessary this is an empty directory as it will
           * delete files it thinks went away.
           */
@@ -98,6 +103,10 @@ object RelayBasePlugin extends AutoPlugin {
     def quote: String = "\"" + s + "\""
   }
 
+  /***
+    * REAL SIMILAR TO [[relayForceCompileTask]], update both, factor later.
+    * @return
+    */
   def relayCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
@@ -120,7 +129,9 @@ object RelayBasePlugin extends AutoPlugin {
     val scalaFiles =
       (sourceFiles ** "*.scala").get
         .filter(IO.read(_).contains("@graphql"))
-        .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet
+        .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
+        extras.map(file).toSet
+
     val label      = Reference.display(thisProjectRef.value)
     val workingDir = file(sys.props("user.dir"))
     val logger     = streams.value.log
@@ -138,6 +149,40 @@ object RelayBasePlugin extends AutoPlugin {
                      extras = extras,
                      persisted = persisted)
       )(scalaFiles)
+
+    outpath.listFiles()
+  }
+
+  /***
+    * REAL SIMILAR TO [[relayCompileTask]], update both, factor later.
+    * @return
+    */
+  def relayForceCompileTask = Def.task[Seq[File]] {
+    import Path.relativeTo
+
+    val npmDir       = npmInstallDependencies.value
+    val outpath      = relayOutput.value
+    val compilerPath = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val verbose      = relayDebug.value
+    val schemaPath   = relaySchema.value
+    val source       = relayBaseDirectory.value
+    val persisted    = relayPersistedPath.value
+    val extras       = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+
+    val workingDir = file(sys.props("user.dir"))
+    val logger     = streams.value.log
+
+    IO.createDirectory(outpath)
+
+    runCompiler(workingDir = workingDir,
+                compilerPath = compilerPath,
+                schemaPath = schemaPath,
+                sourceDirectory = source,
+                outputPath = outpath,
+                logger = logger,
+                verbose = verbose,
+                extras = extras,
+                persisted = persisted)
 
     outpath.listFiles()
   }
