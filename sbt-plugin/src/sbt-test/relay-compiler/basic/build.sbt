@@ -19,3 +19,5 @@ relayDebug := true
 emitSourceMaps := false
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+npmDevDependencies in Compile ++= Seq("relay-compiler-language-scalajs" -> "0.20.4", "relay-compiler" -> "2.0.0")

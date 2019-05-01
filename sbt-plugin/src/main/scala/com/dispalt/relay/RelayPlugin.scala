@@ -122,6 +122,9 @@ object RelayBasePlugin extends AutoPlugin {
     val persisted     = relayPersistedPath.value
     val extras        = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
 
+    // This could be a lot better, since we naturally include the default sourceFiles thing twice.
+    val extraWatches = relayInclude.value
+
     IO.createDirectory(outpath)
 
     // Filter based on the presence of the annotation. and look for a change
@@ -130,7 +133,9 @@ object RelayBasePlugin extends AutoPlugin {
       (sourceFiles ** "*.scala").get
         .filter(IO.read(_).contains("@graphql"))
         .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
-        extras.map(file).toSet
+        (extraWatches ** "*.gql").get.toSet
+
+    println((extraWatches ** "*.gql").get.toSet)
 
     val label      = Reference.display(thisProjectRef.value)
     val workingDir = file(sys.props("user.dir"))
