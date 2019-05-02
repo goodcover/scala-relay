@@ -1,13 +1,13 @@
 package com.dispalt.relay
 
+import java.io.InputStream
+
 import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
-
 import sbt.Keys._
 import sbt._
-
 import scalajsbundler.util.Commands
 
 object RelayBasePlugin extends AutoPlugin {
@@ -135,8 +135,6 @@ object RelayBasePlugin extends AutoPlugin {
         .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 
-    println((extraWatches ** "*.gql").get.toSet)
-
     val label      = Reference.display(thisProjectRef.value)
     val workingDir = file(sys.props("user.dir"))
     val logger     = streams.value.log
@@ -227,8 +225,10 @@ object RelayBasePlugin extends AutoPlugin {
                              outputPath.getAbsolutePath.quote) ::: verboseList ::: extrasList ::: persistedList)
       .mkString(" ")
 
-    println(cmd)
-    Commands.run(cmd, workingDir, logger)
+//    println(cmd)
+    val toInfoLog = (is: InputStream) => scala.io.Source.fromInputStream(is).getLines.foreach(msg => logger.info(msg))
+
+    Commands.run(cmd, workingDir, logger, toInfoLog)
   }
 
   def handleUpdate(label: String,
