@@ -543,8 +543,7 @@ class ClassTracker {
     } else if (type instanceof GraphQLEnumType) {
       return [{name: "String", mods: []}];
     } else {
-      console.log(type.prototype);
-      throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
+      throw new Error(`Could not convert from GraphQL type ${type.toString()}, ${type.prototype}`);
     }
   }
 
@@ -945,7 +944,7 @@ function createVisitor(ct: ClassTracker) {
     },
     leave: {
       Root(node: ConcreteRoot) {
-        console.log("Root", node);
+        // console.log("Root", node);
         ct.handleQuery(node);
         ct.closeField(node, false, true);
         // // $FlowFixMe
