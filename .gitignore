@@ -8,3 +8,4 @@ target/
 .idea/
 node-compiler/lib/
 node-compiler/realex/
+.metals

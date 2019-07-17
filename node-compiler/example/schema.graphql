@@ -16,3 +16,5 @@ type WordDefinition {
   text: String
   image: String
 }
+
+scalar ID

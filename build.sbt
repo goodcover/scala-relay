@@ -72,7 +72,7 @@ lazy val `relay-macro` = project
               else Some("releases" at nexus + "service/local/staging/deploy/maven2")
             },
             crossScalaVersions := Seq(Version.Scala212),
-            addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.0" cross CrossVersion.full),
+            addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.1" cross CrossVersion.full),
             libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest))
 
 lazy val bintraySettings: Seq[Setting[_]] =

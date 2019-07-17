@@ -43,7 +43,7 @@ function parseFile(text, file): [] {
         const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
 
         astDefinitions.push({
-            // keyName,
+            keyName,
             template,
         });
     }
@@ -58,7 +58,7 @@ function parseFile(text, file): [] {
     const template = text;
 
     astDefinitions.push({
-    //   keyName,
+      keyName,
       template,
       sourceLocationOffset: {
         line: 1,

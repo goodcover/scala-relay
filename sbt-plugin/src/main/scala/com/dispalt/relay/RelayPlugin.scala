@@ -66,7 +66,7 @@ object RelayBasePlugin extends AutoPlugin {
         /**
           * Set the version of the `relay-compiler` module.
           */
-        relayVersion := "2.0.0",
+        relayVersion := "5.0.0",
     ) ++ inConfig(Compile)(perConfigSettings)
 
   def perConfigSettings: Seq[Setting[_]] =

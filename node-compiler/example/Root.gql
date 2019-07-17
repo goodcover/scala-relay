@@ -1,3 +1,4 @@
+# graphql
 query Root_foo {
   dictionary {
     id

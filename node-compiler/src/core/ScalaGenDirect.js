@@ -13,13 +13,15 @@
 
 // const t = require('babel-types');
 
-const FlattenTransform = require('relay-compiler/lib/FlattenTransform');
 const IRVisitor = require('relay-compiler/lib/GraphQLIRVisitor');
 const Profiler = require('relay-compiler/lib/GraphQLCompilerProfiler');
 
 
-const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
 const RelayRelayDirectiveTransform = require('relay-compiler/lib/RelayRelayDirectiveTransform');
+const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
+const RelayMatchTransform = require('relay-compiler/lib/RelayMatchTransform');
+// const FlattenTransform = require('relay-compiler/lib/FlattenTransform');
+const RelayRefetchableFragmentTransform = require('relay-compiler/lib/RelayRefetchableFragmentTransform');
 
 import type {
   IRTransform,
@@ -541,6 +543,7 @@ class ClassTracker {
     } else if (type instanceof GraphQLEnumType) {
       return [{name: "String", mods: []}];
     } else {
+      console.log(type.prototype);
       throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
     }
   }
@@ -936,10 +939,13 @@ function createVisitor(ct: ClassTracker) {
       Condition(node: ConcreteCondition) {
         return node;
       },
+      ModuleImport(node: any) {
+        return node;
+      },
     },
     leave: {
       Root(node: ConcreteRoot) {
-        // console.log("Root", node);
+        console.log("Root", node);
         ct.handleQuery(node);
         ct.closeField(node, false, true);
         // // $FlowFixMe
@@ -991,6 +997,9 @@ function createVisitor(ct: ClassTracker) {
         // console.log("Condition", node);
         return node;
       },
+      ModuleImport(node: any) {
+        return node;
+      },
     }
   }
 }
@@ -1009,10 +1018,12 @@ function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
 const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayRelayDirectiveTransform.transform,
   RelayMaskTransform.transform,
+  RelayMatchTransform.transform,
+  RelayRefetchableFragmentTransform.transform,
   SJSTransform.transform,
 ];
 
 module.exports = {
-  generate: Profiler.instrument(generate, 'RelayFlowGenerator.generate'),
+  generate: Profiler.instrument(generate, 'RelayScalaGenerator.generate'),
   transforms: FLOW_TRANSFORMS,
 };
