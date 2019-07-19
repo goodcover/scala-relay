@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "graphql": "^14.2.0",
+    "relay-compiler": "^5.0.0",
+    "relay-compiler-language-scalajs": "file:../node-compiler"
+  }
+}

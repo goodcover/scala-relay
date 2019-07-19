@@ -1,0 +1,20 @@
+schema {
+  query: Root
+}
+
+type Root {
+  dictionary: [Word]
+}
+
+type Word {
+  id: String!
+  definition: WordDefinition
+}
+
+type WordDefinition {
+  id: String
+  text: String
+  image: String
+}
+
+scalar ID

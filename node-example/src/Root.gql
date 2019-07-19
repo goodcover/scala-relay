@@ -1,0 +1,6 @@
+# graphql
+query RootQuery {
+  dictionary {
+    id
+  }
+}
