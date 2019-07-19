@@ -6,6 +6,7 @@
   "main": "lib/index.js",
   "dependencies": {
     "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/runtime": "^7.0.0",
@@ -14,7 +15,8 @@
     "invariant": "^2.2.4",
     "relay-compiler": "5.0.0",
     "relay-runtime": "^5.0.0",
-    "signedsource": "^1.0.0"
+    "signedsource": "^1.0.0",
+    "terser": "^4.1.2"
   },
   "scripts": {
     "build": "babel src/ -d lib/",

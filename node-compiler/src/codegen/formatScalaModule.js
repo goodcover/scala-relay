@@ -11,6 +11,8 @@
 
 'use strict';
 
+var Terser = require("terser");
+
 const formatGeneratedModule: FormatModule = ({
   moduleName,
   documentType,
@@ -25,11 +27,15 @@ const formatGeneratedModule: FormatModule = ({
   const objectName = documentType === 'ConcreteBatch' ? 'batch' : 'fragment';
   const docTextComment = docText ? '\n/*\n' + docText.trim() + '\n*/\n' : '';
   const hashText = hash ? `\n * ${hash}` : '';
+
+  const result = Terser.minify(concreteText, {compress: {defaults: false}}).code || concreteText;
+
   return `/**
  * relay-compiler-language-scalajs: ${hashText}
  * GENERATED, DON'T MANUALLY EDIT.
  * objName:      ${objectName}
  * docType:      ${documentType}
+ * module:       ${moduleName}
  */
 package relay.generated
 
@@ -39,7 +45,7 @@ import _root_.scala.scalajs.js.|
 ${docTextComment}
 
 ${typeText}
-  lazy val query: _root_.relay.gql.${documentType} = _root_.scala.scalajs.js.eval("""(${concreteText})""").asInstanceOf[_root_.relay.gql.${documentType}]
+  lazy val query: _root_.relay.gql.${documentType} = _root_.scala.scalajs.js.eval("""(${result})""").asInstanceOf[_root_.relay.gql.${documentType}]
   lazy val sourceHash: String = "${sourceHash}"
 }
 

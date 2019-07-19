@@ -6,9 +6,6 @@
 const find  = require("./FindGraphQLTags").find;
 const formatGeneratedModule  = require("./codegen/formatScalaModule");
 const typeGen  = require("./core/ScalaGenDirect");
-// import { formatterFactory } from "./formatGeneratedModule";
-// import { loadCompilerOptions } from "./loadCompilerOptions";
-// import * as TypeScriptGenerator from "./TypeScriptGenerator";
 
 function plugin() {
     return {
