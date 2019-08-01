@@ -32,6 +32,7 @@ object RelayBasePlugin extends AutoPlugin {
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
       settingKey[Seq[(String, String)]]("The list of key value pairs that correspond to npm versions")
+    val relayDisplayOnlyOnFailure: SettingKey[Boolean] = settingKey("Display output only on failure")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -97,6 +98,11 @@ object RelayBasePlugin extends AutoPlugin {
           * Set no use of persistence.
           */
         relayPersistedPath := None,
+        /**
+          * Display output only on a failure, this works well with persisted queries because they delete all the files
+          * before outputting them.
+          */
+        relayDisplayOnlyOnFailure := false,
     )
 
   implicit class QuoteStr(s: String) {
@@ -110,17 +116,18 @@ object RelayBasePlugin extends AutoPlugin {
   def relayCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir        = npmInstallDependencies.value
-    val cache         = streams.value.cacheDirectory / "relay-compile"
-    val sourceFiles   = unmanagedSourceDirectories.value
-    val resourceFiles = resourceDirectories.value
-    val outpath       = relayOutput.value
-    val compilerPath  = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose       = relayDebug.value
-    val schemaPath    = relaySchema.value
-    val source        = relayBaseDirectory.value
-    val persisted     = relayPersistedPath.value
-    val extras        = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val npmDir           = npmInstallDependencies.value
+    val cache            = streams.value.cacheDirectory / "relay-compile"
+    val sourceFiles      = unmanagedSourceDirectories.value
+    val resourceFiles    = resourceDirectories.value
+    val outpath          = relayOutput.value
+    val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val verbose          = relayDebug.value
+    val schemaPath       = relaySchema.value
+    val source           = relayBaseDirectory.value
+    val persisted        = relayPersistedPath.value
+    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
     val extraWatches = relayInclude.value
@@ -150,7 +157,8 @@ object RelayBasePlugin extends AutoPlugin {
                      logger = logger,
                      verbose = verbose,
                      extras = extras,
-                     persisted = persisted)
+                     persisted = persisted,
+                     displayOnFailure = displayOnFailure)
       )(scalaFiles)
 
     outpath.listFiles()
@@ -163,14 +171,15 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir       = npmInstallDependencies.value
-    val outpath      = relayOutput.value
-    val compilerPath = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose      = relayDebug.value
-    val schemaPath   = relaySchema.value
-    val source       = relayBaseDirectory.value
-    val persisted    = relayPersistedPath.value
-    val extras       = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val npmDir           = npmInstallDependencies.value
+    val outpath          = relayOutput.value
+    val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val verbose          = relayDebug.value
+    val schemaPath       = relaySchema.value
+    val source           = relayBaseDirectory.value
+    val persisted        = relayPersistedPath.value
+    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     val workingDir = file(sys.props("user.dir"))
     val logger     = streams.value.log
@@ -185,9 +194,12 @@ object RelayBasePlugin extends AutoPlugin {
                 logger = logger,
                 verbose = verbose,
                 extras = extras,
-                persisted = persisted)
+                persisted = persisted,
+                displayOnFailure = displayOnFailure)
 
-    outpath.listFiles()
+    val outputFiles = outpath.listFiles()
+    logger.info(s"relayForceCompile produced ${outputFiles.size} files.")
+    outputFiles
   }
 
   def runCompiler(workingDir: File,
@@ -198,7 +210,8 @@ object RelayBasePlugin extends AutoPlugin {
                   logger: Logger,
                   verbose: Boolean,
                   extras: List[String],
-                  persisted: Option[File]): Unit = {
+                  persisted: Option[File],
+                  displayOnFailure: Boolean): Unit = {
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -210,6 +223,11 @@ object RelayBasePlugin extends AutoPlugin {
     val persistedList = persisted match {
       case Some(value) => List("--persist-output", value.getPath)
       case None        => Nil
+    }
+
+    // @note: Workaround for https://github.com/facebook/relay/issues/2625
+    if (persisted.nonEmpty) {
+      IO.delete(outputPath.getAbsoluteFile)
     }
 
     val cmd = shell :+ (List(compilerPath,
@@ -226,9 +244,19 @@ object RelayBasePlugin extends AutoPlugin {
       .mkString(" ")
 
 //    println(cmd)
-    val toInfoLog = (is: InputStream) => scala.io.Source.fromInputStream(is).getLines.foreach(msg => logger.info(msg))
+    var output = Vector.empty[String]
 
-    Commands.run(cmd, workingDir, logger, toInfoLog)
+    Commands.run(cmd,
+                 workingDir,
+                 logger,
+                 (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector) match {
+      case Left(value) =>
+        output.foreach(logger.error(_))
+        sys.error("Relay compiler failed")
+      case Right(value) if displayOnFailure => ()
+      case Right(_) =>
+        output.foreach(logger.info(_))
+    }
   }
 
   def handleUpdate(label: String,
@@ -240,7 +268,8 @@ object RelayBasePlugin extends AutoPlugin {
                    logger: Logger,
                    verbose: Boolean,
                    extras: List[String],
-                   persisted: Option[File])(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+                   persisted: Option[File],
+                   displayOnFailure: Boolean)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
       .counted("Scala source", "", "s", files.size)
@@ -254,7 +283,8 @@ object RelayBasePlugin extends AutoPlugin {
                     logger = logger,
                     verbose = verbose,
                     extras = extras,
-                    persisted = persisted)
+                    persisted = persisted,
+                    displayOnFailure = displayOnFailure)
         logger.info(s"Finished relayCompile.")
       }
     files
