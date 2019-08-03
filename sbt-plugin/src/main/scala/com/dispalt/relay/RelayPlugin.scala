@@ -5,6 +5,7 @@ import java.io.InputStream
 import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import play.api.libs.json.{JsObject, Json}
 import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -125,9 +126,9 @@ object RelayBasePlugin extends AutoPlugin {
     val verbose          = relayDebug.value
     val schemaPath       = relaySchema.value
     val source           = relayBaseDirectory.value
-    val persisted        = relayPersistedPath.value
     val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
+    val persisted        = relayPersistedPath.value
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
     val extraWatches = relayInclude.value
@@ -171,18 +172,25 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir           = npmInstallDependencies.value
-    val outpath          = relayOutput.value
-    val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose          = relayDebug.value
-    val schemaPath       = relaySchema.value
-    val source           = relayBaseDirectory.value
-    val persisted        = relayPersistedPath.value
+    val npmDir       = npmInstallDependencies.value
+    val outpath      = relayOutput.value
+    val compilerPath = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val verbose      = relayDebug.value
+    val schemaPath   = relaySchema.value
+    val source       = relayBaseDirectory.value
+
     val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
 
+    val persisted = relayPersistedPath.value
+
     val workingDir = file(sys.props("user.dir"))
     val logger     = streams.value.log
+
+    // @note: Workaround for https://github.com/facebook/relay/issues/2625
+    if (persisted.nonEmpty) {
+      IO.delete(outpath.getAbsoluteFile)
+    }
 
     IO.createDirectory(outpath)
 
@@ -221,13 +229,8 @@ object RelayBasePlugin extends AutoPlugin {
     val verboseList = if (verbose) "--verbose" :: Nil else Nil
     val extrasList  = extras flatMap (e => "--include" :: e.quote :: Nil)
     val persistedList = persisted match {
-      case Some(value) => List("--persist-output", value.getPath)
+      case Some(value) => List("--persist-output", value.getPath.quote)
       case None        => Nil
-    }
-
-    // @note: Workaround for https://github.com/facebook/relay/issues/2625
-    if (persisted.nonEmpty) {
-      IO.delete(outputPath.getAbsoluteFile)
     }
 
     val cmd = shell :+ (List(compilerPath,
@@ -243,7 +246,6 @@ object RelayBasePlugin extends AutoPlugin {
                              outputPath.getAbsolutePath.quote) ::: verboseList ::: extrasList ::: persistedList)
       .mkString(" ")
 
-//    println(cmd)
     var output = Vector.empty[String]
 
     Commands.run(cmd,
@@ -252,10 +254,22 @@ object RelayBasePlugin extends AutoPlugin {
                  (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector) match {
       case Left(value) =>
         output.foreach(logger.error(_))
-        sys.error("Relay compiler failed")
-      case Right(value) if displayOnFailure => ()
+        sys.error(s"Relay compiler failed, ${value}")
+
       case Right(_) =>
-        output.foreach(logger.info(_))
+        if (!displayOnFailure) {
+          output.foreach(logger.info(_))
+        }
+
+        persisted match {
+          case Some(value) =>
+            val modified = IO.getModifiedTimeOrZero(value)
+            IO.write(value, Json.prettyPrint(Json.parse(IO.read(value))))
+            IO.setModifiedTimeOrFalse(value, modified)
+            ()
+          case _ => ()
+        }
+
     }
   }
 
@@ -270,22 +284,52 @@ object RelayBasePlugin extends AutoPlugin {
                    extras: List[String],
                    persisted: Option[File],
                    displayOnFailure: Boolean)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
       .counted("Scala source", "", "s", files.size)
       .foreach { count =>
         logger.info(s"Executing relayCompile on $count $label...")
-        runCompiler(workingDir = workingDir,
-                    compilerPath = compilerPath,
-                    schemaPath = schemaPath,
-                    sourceDirectory = sourceDirectory,
-                    outputPath = outputPath,
-                    logger = logger,
-                    verbose = verbose,
-                    extras = extras,
-                    persisted = persisted,
-                    displayOnFailure = displayOnFailure)
-        logger.info(s"Finished relayCompile.")
+
+        IO.withTemporaryFile("handleUpdate", "map") { tempFile =>
+          // @note: Workaround for https://github.com/facebook/relay/issues/2625
+          val (persistedFile, previousPersistedFile) = persisted match {
+            case Some(realFile) if realFile.exists() =>
+              val persistJson  = Json.parse(IO.read(realFile))
+              val lastModified = IO.getModifiedTimeOrZero(realFile)
+              (Some(tempFile), Some((persistJson, lastModified, realFile)))
+
+            case Some(realFile) => (Some(realFile), None)
+            case None           => (None, None)
+          }
+
+          runCompiler(workingDir = workingDir,
+                      compilerPath = compilerPath,
+                      schemaPath = schemaPath,
+                      sourceDirectory = sourceDirectory,
+                      outputPath = outputPath,
+                      logger = logger,
+                      verbose = verbose,
+                      extras = extras,
+                      persisted = persistedFile,
+                      displayOnFailure = displayOnFailure)
+
+          previousPersistedFile match {
+            case Some((prevJson, lastModifiedOrZero, realFile)) =>
+              val newJson = Json.parse(IO.read(tempFile)).asInstanceOf[JsObject]
+              if (newJson.value.isEmpty) {
+                // No new files
+                IO.write(realFile, Json.prettyPrint(prevJson.asInstanceOf[JsObject] ++ newJson))
+                IO.setModifiedTimeOrFalse(realFile, lastModifiedOrZero)
+              } else {
+                IO.write(realFile, Json.prettyPrint(prevJson.asInstanceOf[JsObject] ++ newJson))
+              }
+
+            // This case means no switching is necessary
+            case _ => ()
+          }
+          logger.info(s"Finished relayCompile.")
+        }
       }
     files
   }
