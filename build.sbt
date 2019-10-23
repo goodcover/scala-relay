@@ -98,6 +98,7 @@ lazy val `slinky-relay` = project
     ),
     Library.slinky
   )
+  .dependsOn(`relay-macro`)
 
 lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .enablePlugins(SbtIdeaPlugin)
