@@ -1,0 +1,12 @@
+<intellij-compat>
+  <name>Slinky Relay IntelliJ support</name>
+  <description>This provides type inference for Slinky macros</description>
+  <vendor>Goodcover</vendor>
+  <ideaVersion since-build="2019.2.0" until-build="2020.0.0">
+    <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
+               implementation="slinkyrelay.SlinkyRelayInjector">
+      <name>Slinky IntelliJ Support</name>
+      <description>Support for the @reactRelay macro annotation</description>
+    </extension>
+  </ideaVersion>
+</intellij-compat>
