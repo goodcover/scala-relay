@@ -2,6 +2,11 @@
   * Modified from slinky.core.SlinkyInjector
   *
   * Taken from https://github.com/shadaj/slinky/commit/14095e3345c658ccbd65bc97fdecd21c69d61b71
+  *
+  *  `git remote add -f b git@github.com:shadaj/slinky.git`
+  *  `git remote update`
+  *  `git diff master:slinky-relay-ijext/src/main/scala/slinkyrelay/SlinkyRelayInjector.scala 14095e3345c658ccbd65bc97fdecd21c69d61b71:coreIntellijSupport/src/main/scala/slinky/core/SlinkyInjector.scala`
+  *  `git remote rm b`
   */
 package slinkyrelay
 
