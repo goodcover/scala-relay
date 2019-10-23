@@ -211,6 +211,7 @@ lazy val doReleaseYarn = { st: State =>
   val versionString = v.get(version)
   val bd            = v.get(baseDirectory)
 
+  Process(s"yarn", bd / "node-compiler").!
   val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
   cmd.!(pl)
   st
