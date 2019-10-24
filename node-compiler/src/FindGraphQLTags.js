@@ -12,9 +12,6 @@ const GraphQL = require('graphql');
 const fs = require('fs');
 const invariant = require('invariant');
 
-const ASTCache = require('relay-compiler/lib/ASTCache');
-const Profiler = require('relay-compiler/lib/GraphQLCompilerProfiler');
-
 import type {DocumentNode} from 'graphql';
 import type {PluginInterface} from 'relay-compiler';
 
@@ -84,5 +81,5 @@ function find (text, filePath) : Array<GraphQLTag> {
   };
 
 module.exports = {
-    find: Profiler.instrument(find, 'FindGraphQLTags.find'),
+    find,
 };

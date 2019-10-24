@@ -19,7 +19,7 @@ lazy val root =
       crossScalaVersions := Nil,
       publish / skip := true
     )
-    .aggregate(`sbt-relay-compiler`, `relay-macro`)
+    .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`, `slinky-relay-ijext`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
 def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
@@ -96,7 +96,8 @@ lazy val `slinky-relay` = project
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion
     ),
-    Library.slinky
+    Library.slinky,
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
   )
   .dependsOn(`relay-macro`)
 
@@ -161,6 +162,11 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
+    "-language:_",
+    "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
+    "-language:experimental.macros", // Allow macro definition (besides implementation and application)
+    "-language:higherKinds",         // Allow higher-kinded types
+    "-language:implicitConversions", // Allow definition of implicit functions called views
     "-Xfuture"
   ),
   organization := "com.dispalt.relay",  // TODO - Coordinates

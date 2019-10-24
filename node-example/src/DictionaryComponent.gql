@@ -1,4 +1,4 @@
-# graphql
+# graphq
 fragment DictionaryComponent_word on Word {
     id
     definition {
