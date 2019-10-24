@@ -5,11 +5,17 @@ There are three parts to this.
   - Relay Compiler Language for SJS - `relay-compiler-language-scalajs` [details](./node-compiler/)
   - Sbt plugin - `addSbtPlugin("com.dispalt.relay" % "sbt-relay-compiler" % "<version>")`
     which handles code generation sbt hooks
-  - Scala.js runtime - `"com.dispalt.relay" %%% "relay-macro" % "<version>"` which 
+  - Scala.js runtime (plain scalajs) - `"com.dispalt.relay" %%% "relay-macro" % "<version>"` which 
     handles the runtime, which is very small (intentionally).
+  - Slinky relay module - `"com.dispalt.relay" %%% "slinky-relay" % "<version>"`
 
 
 ## Changes
+
+### 0.22.3
+ - Added a really rough slinky module, with the idea it handles some of the gluing by overloading the annotation
+   from slinky core.
+ - Added an even rougher version of the intellij extension.
 
 ### 0.20.1
  - Simplified the js code considerably by using the language hooks within the `relay-compiler`.
