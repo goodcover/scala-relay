@@ -13,15 +13,16 @@
 
 // const t = require('babel-types');
 
-const IRVisitor = require('relay-compiler/lib/GraphQLIRVisitor');
-const Profiler = require('relay-compiler/lib/GraphQLCompilerProfiler');
+const IRVisitor = require('relay-compiler').IRVisitor;
+const Profiler = require('relay-compiler').Profiler;
+// console.log(Profiler);
 
 
-const RelayRelayDirectiveTransform = require('relay-compiler/lib/RelayRelayDirectiveTransform');
-const RelayMaskTransform = require('relay-compiler/lib/RelayMaskTransform');
-const RelayMatchTransform = require('relay-compiler/lib/RelayMatchTransform');
+const RelayRelayDirectiveTransform = require('relay-compiler/lib/transforms/RelayRelayDirectiveTransform');
+const RelayMaskTransform = require('relay-compiler/lib/transforms/RelayMaskTransform');
+const RelayMatchTransform = require('relay-compiler/lib/transforms/RelayMatchTransform');
 // const FlattenTransform = require('relay-compiler/lib/FlattenTransform');
-const RelayRefetchableFragmentTransform = require('relay-compiler/lib/RelayRefetchableFragmentTransform');
+const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RelayRefetchableFragmentTransform');
 
 import type {
   IRTransform,

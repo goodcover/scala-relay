@@ -42,68 +42,70 @@ object RelayBasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-        /**
-          * Runtime dependency on the macro
-          */
-        libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
-        /**
-          * Set this if you'd like to see timing and larger stack traces.
-          */
-        relayDebug := false,
-        /**
-          * So this should normally default to the base directory, but in some cases if you want to include stuff
-          * outside the directory, changing this should be considered.
-          */
-        relayBaseDirectory := baseDirectory.value,
-        /**
-          * Get the compiler path from the installed dependencies.
-          */
-        relayCompilerPath := {
-          "node_modules/relay-compiler/lib/RelayCompilerBin.js"
-        },
-        /**
-          * The version of the node module
-          */
-        relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
-        /**
-          * Set the version of the `relay-compiler` module.
-          */
-        relayVersion := "5.0.0",
+      /**
+        * Runtime dependency on the macro
+        */
+      libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
+      /**
+        * Set this if you'd like to see timing and larger stack traces.
+        */
+      relayDebug := false,
+      /**
+        * So this should normally default to the base directory, but in some cases if you want to include stuff
+        * outside the directory, changing this should be considered.
+        */
+      relayBaseDirectory := baseDirectory.value,
+      /**
+        * Get the compiler path from the installed dependencies.
+        */
+      relayCompilerPath := {
+        "node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
+      },
+      /**
+        * The version of the node module
+        */
+      relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
+      /**
+        * Set the version of the `relay-compiler` module.
+        */
+      relayVersion := "6.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
   def perConfigSettings: Seq[Setting[_]] =
     Seq(
-        /**
-          * The big task that performs all the magic.
-          */
-        relayCompile := relayCompileTask.value,
-        /**
-          * Run relay-compiler with no caching.
-          */
-        relayForceCompile := relayForceCompileTask.value,
-        /**
-          * Output path of the relay compiler.  Necessary this is an empty directory as it will
-          * delete files it thinks went away.
-          */
-        relayOutput := sourceManaged.value / relayFolder,
-        /**
-          * Add the NPM Dev Dependency on the scalajs module.
-          */
-        relayDependencies := Seq("relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
-                                 "relay-compiler"                  -> relayVersion.value),
-        /**
-          * Include files in the source directory.
-          */
-        relayInclude := Seq(sourceDirectory.value),
-        /**
-          * Set no use of persistence.
-          */
-        relayPersistedPath := None,
-        /**
-          * Display output only on a failure, this works well with persisted queries because they delete all the files
-          * before outputting them.
-          */
-        relayDisplayOnlyOnFailure := false,
+      /**
+        * The big task that performs all the magic.
+        */
+      relayCompile := relayCompileTask.value,
+      /**
+        * Run relay-compiler with no caching.
+        */
+      relayForceCompile := relayForceCompileTask.value,
+      /**
+        * Output path of the relay compiler.  Necessary this is an empty directory as it will
+        * delete files it thinks went away.
+        */
+      relayOutput := sourceManaged.value / relayFolder,
+      /**
+        * Add the NPM Dev Dependency on the scalajs module.
+        */
+      relayDependencies := Seq(
+        "relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
+        "relay-compiler"                  -> relayVersion.value
+      ),
+      /**
+        * Include files in the source directory.
+        */
+      relayInclude := Seq(sourceDirectory.value),
+      /**
+        * Set no use of persistence.
+        */
+      relayPersistedPath := None,
+      /**
+        * Display output only on a failure, this works well with persisted queries because they delete all the files
+        * before outputting them.
+        */
+      relayDisplayOnlyOnFailure := false
     )
 
   implicit class QuoteStr(s: String) {
@@ -149,17 +151,19 @@ object RelayBasePlugin extends AutoPlugin {
 
     sbt.shim.SbtCompat.FileFunction
       .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
-        handleUpdate(label = label,
-                     workingDir = workingDir,
-                     compilerPath = compilerPath,
-                     schemaPath = schemaPath,
-                     sourceDirectory = source,
-                     outputPath = outpath,
-                     logger = logger,
-                     verbose = verbose,
-                     extras = extras,
-                     persisted = persisted,
-                     displayOnFailure = displayOnFailure)
+        handleUpdate(
+          label = label,
+          workingDir = workingDir,
+          compilerPath = compilerPath,
+          schemaPath = schemaPath,
+          sourceDirectory = source,
+          outputPath = outpath,
+          logger = logger,
+          verbose = verbose,
+          extras = extras,
+          persisted = persisted,
+          displayOnFailure = displayOnFailure
+        )
       )(scalaFiles)
 
     outpath.listFiles()
@@ -194,32 +198,36 @@ object RelayBasePlugin extends AutoPlugin {
 
     IO.createDirectory(outpath)
 
-    runCompiler(workingDir = workingDir,
-                compilerPath = compilerPath,
-                schemaPath = schemaPath,
-                sourceDirectory = source,
-                outputPath = outpath,
-                logger = logger,
-                verbose = verbose,
-                extras = extras,
-                persisted = persisted,
-                displayOnFailure = displayOnFailure)
+    runCompiler(
+      workingDir = workingDir,
+      compilerPath = compilerPath,
+      schemaPath = schemaPath,
+      sourceDirectory = source,
+      outputPath = outpath,
+      logger = logger,
+      verbose = verbose,
+      extras = extras,
+      persisted = persisted,
+      displayOnFailure = displayOnFailure
+    )
 
     val outputFiles = outpath.listFiles()
     logger.info(s"relayForceCompile produced ${outputFiles.size} files.")
     outputFiles
   }
 
-  def runCompiler(workingDir: File,
-                  compilerPath: String,
-                  schemaPath: File,
-                  sourceDirectory: File,
-                  outputPath: File,
-                  logger: Logger,
-                  verbose: Boolean,
-                  extras: List[String],
-                  persisted: Option[File],
-                  displayOnFailure: Boolean): Unit = {
+  def runCompiler(
+    workingDir: File,
+    compilerPath: String,
+    schemaPath: File,
+    sourceDirectory: File,
+    outputPath: File,
+    logger: Logger,
+    verbose: Boolean,
+    extras: List[String],
+    persisted: Option[File],
+    displayOnFailure: Boolean
+  ): Unit = {
 
     // TODO: this sucks not sure how to get npm scripts to work from java PB.
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -233,25 +241,29 @@ object RelayBasePlugin extends AutoPlugin {
       case None        => Nil
     }
 
-    val cmd = shell :+ (List(compilerPath,
-                             "--language",
-                             "scalajs",
-                             "--watchman",
-                             "false",
-                             "--schema",
-                             schemaPath.getAbsolutePath.quote,
-                             "--src",
-                             sourceDirectory.getAbsolutePath.quote,
-                             "--artifactDirectory",
-                             outputPath.getAbsolutePath.quote) ::: verboseList ::: extrasList ::: persistedList)
+    val cmd = shell :+ (List(
+      compilerPath,
+      "--language",
+      "scalajs",
+      "--watchman",
+      "false",
+      "--schema",
+      schemaPath.getAbsolutePath.quote,
+      "--src",
+      sourceDirectory.getAbsolutePath.quote,
+      "--artifactDirectory",
+      outputPath.getAbsolutePath.quote
+    ) ::: verboseList ::: extrasList ::: persistedList)
       .mkString(" ")
 
     var output = Vector.empty[String]
 
-    Commands.run(cmd,
-                 workingDir,
-                 logger,
-                 (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector) match {
+    Commands.run(
+      cmd,
+      workingDir,
+      logger,
+      (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector
+    ) match {
       case Left(value) =>
         output.foreach(logger.error(_))
         sys.error(s"Relay compiler failed, ${value}")
@@ -273,17 +285,19 @@ object RelayBasePlugin extends AutoPlugin {
     }
   }
 
-  def handleUpdate(label: String,
-                   workingDir: File,
-                   compilerPath: String,
-                   schemaPath: File,
-                   sourceDirectory: File,
-                   outputPath: File,
-                   logger: Logger,
-                   verbose: Boolean,
-                   extras: List[String],
-                   persisted: Option[File],
-                   displayOnFailure: Boolean)(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+  def handleUpdate(
+    label: String,
+    workingDir: File,
+    compilerPath: String,
+    schemaPath: File,
+    sourceDirectory: File,
+    outputPath: File,
+    logger: Logger,
+    verbose: Boolean,
+    extras: List[String],
+    persisted: Option[File],
+    displayOnFailure: Boolean
+  )(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
 
     val files = in.modified -- in.removed
     sbt.shim.SbtCompat.Analysis
@@ -303,16 +317,18 @@ object RelayBasePlugin extends AutoPlugin {
             case None           => (None, None)
           }
 
-          runCompiler(workingDir = workingDir,
-                      compilerPath = compilerPath,
-                      schemaPath = schemaPath,
-                      sourceDirectory = sourceDirectory,
-                      outputPath = outputPath,
-                      logger = logger,
-                      verbose = verbose,
-                      extras = extras,
-                      persisted = persistedFile,
-                      displayOnFailure = displayOnFailure)
+          runCompiler(
+            workingDir = workingDir,
+            compilerPath = compilerPath,
+            schemaPath = schemaPath,
+            sourceDirectory = sourceDirectory,
+            outputPath = outputPath,
+            logger = logger,
+            verbose = verbose,
+            extras = extras,
+            persisted = persistedFile,
+            displayOnFailure = displayOnFailure
+          )
 
           previousPersistedFile match {
             case Some((prevJson, lastModifiedOrZero, realFile)) =>
