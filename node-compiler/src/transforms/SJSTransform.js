@@ -2,8 +2,8 @@
  *  @flow
  */
 
-const GraphQLCompilerContext = require('relay-compiler/lib/GraphQLCompilerContext');
-const GraphQLIRTransformer = require('relay-compiler/lib/GraphQLIRTransformer');
+const GraphQLCompilerContext = require('relay-compiler').CompilerContext;
+const GraphQLIRTransformer = require('relay-compiler').IRTransformer;
 
 const invariant = require('invariant');
 

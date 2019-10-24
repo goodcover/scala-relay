@@ -15,6 +15,7 @@ Typically `(resourceManaged in Compile).value / "relay-compiler-out"` is where i
 in sbt parlance.
 
 ### Versions
+- `0.22.2` - Relay `6.0.0`
 - `0.20.1` - Relay `2,0,0`
 - `0.11.0` - Relay `1.6.2`
 - `0.9.0` - Relay `1.5.0`
