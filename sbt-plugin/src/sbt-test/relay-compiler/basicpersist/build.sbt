@@ -22,8 +22,10 @@ emitSourceMaps := false
 
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-npmDevDependencies in Compile ++= Seq("relay-compiler-language-scalajs" -> "0.21.3",
-                                      "relay-compiler"                  -> "5.0.0",
-                                      "graphql"                         -> "^14.1.0")
+npmDevDependencies in Compile ++= Seq(
+  "relay-compiler-language-scalajs" -> "0.22.2",
+  "relay-compiler"                  -> "6.0.0",
+  "graphql"                         -> "^14.1.0"
+)
 
 relayDisplayOnlyOnFailure in Compile := true
