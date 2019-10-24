@@ -57,29 +57,22 @@ lazy val `sbt-relay-compiler` = project
 lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
-  .settings(commonSettings)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
-    publishMavenStyle := true,
     crossSbtVersions := Nil,
     scalaVersion := Version.Scala212,
     scalacOptions ++= {
       if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
       else Nil
     },
-    publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-      if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    },
-    crossScalaVersions := Seq(Version.Scala212),
     addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.1" cross CrossVersion.full),
     libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest)
   )
 
 lazy val `slinky-relay` = project
   .in(file("slinky-relay"))
-  .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
+  .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
     resourceGenerators in Compile += Def.task {
       val rootFolder = (resourceManaged in Compile).value / "META-INF"
@@ -102,8 +95,8 @@ lazy val `slinky-relay` = project
   .dependsOn(`relay-macro`)
 
 lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
-  .enablePlugins(SbtIdeaPlugin)
-  .settings(commonSettings)
+  .enablePlugins(RuntimeLibPlugins && SbtIdeaPlugin)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
@@ -149,6 +142,12 @@ lazy val bintraySettings: Seq[Setting[_]] =
     bintrayPackage := "sbt-relay-compiler",
     bintrayReleaseOnPublish := true
   )
+
+lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}, crossScalaVersions := Seq(Version.Scala212))
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalacOptions ++= Seq(
