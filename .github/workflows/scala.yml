@@ -13,5 +13,11 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - name: import gpg
+      env:
+        PGP_SECRET: ${{ secrets.gpg_key_priv }}
+        PGP_PUBLIC: ${{ secrets.gpg_key_pub }}
+      run: echo $PGP_SECRET | gpg --import && echo $PGP_PUBLIC | gpg --import
+             
     - name: Run tests
       run: sbt test
