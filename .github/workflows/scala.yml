@@ -17,7 +17,7 @@ jobs:
       env:
         PGP_SECRET: ${{ secrets.gpg_key_priv }}
         PGP_PUBLIC: ${{ secrets.gpg_key_pub }}
-      run: echo $PGP_SECRET | gpg --import && echo $PGP_PUBLIC | gpg --import
-             
+      run: scripts/import-gpg.sh
+
     - name: Run tests
       run: sbt test
