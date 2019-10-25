@@ -6,8 +6,6 @@ val sbtVersions = List("0.13.17", "1.3.3")
 
 crossSbtVersions := sbtVersions
 
-ThisBuild / intellijPluginName := "slinky-relay-ijext"
-ThisBuild / intellijBuild := "192.6817.14"
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
 
@@ -21,7 +19,7 @@ lazy val root =
       crossScalaVersions := Nil,
       publish / skip := true
     )
-    .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`, `slinky-relay-ijext`)
+    .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`)
 
 def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
 def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
@@ -98,11 +96,13 @@ lazy val `slinky-relay` = project
 
 lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .enablePlugins(RuntimeLibPlugins && SbtIdeaPlugin)
+  .settings(org.jetbrains.sbtidea.Keys.buildSettings)
   .settings(commonSettings ++ mavenSettings)
   .settings(
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
+    intellijBuild := "192.6817.14",
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
@@ -196,12 +196,14 @@ releaseProcess :=
     checkSnapshotDependencies,
     inquireVersions,
     runClean,
-    releaseStepCommandAndRemaining("+test"),
+    releaseStepCommandAndRemaining("+ test"),
+    releaseStepCommandAndRemaining(";+ slinky-relay-ijext/updateIntellij ;+ slinky-relay-ijext/test"),
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
     if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
     else releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
     doReleaseYarn,
     setNextVersion,
@@ -223,5 +225,6 @@ lazy val doReleaseYarn = { st: State =>
   val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
   cmd.!(pl)
   st
-
 }
+
+addCommandAlias("publishLocalAll", ";publishLocal ;slinky-relay-ijext/publishLocal")
