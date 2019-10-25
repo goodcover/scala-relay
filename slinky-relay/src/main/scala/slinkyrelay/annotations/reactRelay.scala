@@ -1,14 +1,13 @@
 /**
   * Modified from slinky.core.annotations.react
   */
-
 package slinkyrelay.annotations
 
 import scala.annotation.compileTimeOnly
 import scala.reflect.macros.whitebox
 import scala.scalajs.js
-
 import slinky.core._
+import slinkyrelay.HasRefetch
 
 @compileTimeOnly("Enable macro paradise to expand the @react macro annotation")
 class reactRelay extends scala.annotation.StaticAnnotation {
@@ -36,6 +35,9 @@ object ReactRelayMacrosImpl {
   def createComponentBody(c: whitebox.Context)(cls: c.Tree): (c.Tree, List[c.Tree]) = {
     import c.universe._
     val q"..$_ class ${className: Name} extends ..$parents { $self => ..$stats}" = cls
+
+    val hasRefetch: Boolean = parentsContainsType(c)(parents.asInstanceOf[Seq[c.Tree]], typeOf[HasRefetch])
+
     val (propsDefinition, applyMethods) = stats
       .flatMap {
         case defn @ q"..$_ type Props = ${_}" =>
@@ -60,7 +62,7 @@ object ReactRelayMacrosImpl {
                       if (ps == childrenParam.get) {
                         q"${ps.name}: _*"
                       } else q"${ps.name}"
-                  }
+                    }
                 )
 
                 q"this.apply(Props.apply[..$tparams](...$applyValuesChildrenVararg))"
@@ -109,9 +111,24 @@ object ReactRelayMacrosImpl {
       case _ => None
     }.headOption
 
-    val overrides = Seq(
-      q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.FragmentContainer.build(props, this, fragmentSpec)"
-    )
+    val refetchQueryDefinition = stats.flatMap {
+      case defn @ q"..$_ val refetchQuery: $_ = ${_}" if hasRefetch => Some(defn)
+      case _                                                        => None
+    }.headOption
+
+    val overrides =
+      refetchQueryDefinition.map { case q"..$_ val refetchQuery: $_ = $rhs" => rhs } match {
+        case Some(refetchQueryDefinitionRhs) => {
+          Seq(
+            q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.Containers.buildRefetchContainer(props, this, fragmentSpec, ..$refetchQueryDefinitionRhs)"
+          )
+        }
+        case None => {
+          Seq(
+            q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.Containers.buildFragmentContainer(props, this, fragmentSpec)"
+          )
+        }
+      }
 
     val clazz     = TypeName(className.asInstanceOf[Name].toString)
     val companion = TermName(className.asInstanceOf[Name].toString)
@@ -128,7 +145,8 @@ object ReactRelayMacrosImpl {
                 ()
               })
               ..${stats.filterNot(
-        s => s == propsDefinition || s == stateDefinition.orNull || s == snapshotDefinition.orNull
+        s =>
+          s == propsDefinition || s == stateDefinition.orNull || s == snapshotDefinition.orNull || s == refetchQueryDefinition.orNull
       )}
             }"""
 
@@ -280,7 +298,7 @@ object ReactRelayMacrosImpl {
                           if (ps == childrenParam.get) {
                             q"${ps.name}: _*"
                           } else q"${ps.name}"
-                      }
+                        }
                     )
 
                     q"component.apply(Props.apply(...$applyValuesChildrenVararg))"
