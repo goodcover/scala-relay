@@ -6,8 +6,10 @@ val sbtVersions = List("0.13.17", "1.3.3")
 
 crossSbtVersions := sbtVersions
 
-ThisBuild / intellijPluginName := "relay-slinky-ijext"
+ThisBuild / intellijPluginName := "slinky-relay-ijext"
 ThisBuild / intellijBuild := "192.6817.14"
+// Run slinky-relay-ijext/updateIntellij
+ThisBuild / updateIntellij := {}
 
 lazy val root =
   project
