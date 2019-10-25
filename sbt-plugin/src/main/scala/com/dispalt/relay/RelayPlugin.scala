@@ -296,6 +296,8 @@ object RelayBasePlugin extends AutoPlugin {
       .foreach { count =>
         logger.info(s"Executing relayCompile on $count $label...")
 
+        val lastModified = persisted.map(IO.getModifiedTimeOrZero)
+
         runCompiler(
           workingDir = workingDir,
           compilerPath = compilerPath,
@@ -309,6 +311,7 @@ object RelayBasePlugin extends AutoPlugin {
           displayOnFailure = displayOnFailure
         )
 
+        lastModified.foreach(mtime => IO.setModifiedTimeOrFalse(persisted.get, mtime))
         logger.info(s"Finished relayCompile.")
       }
     files ++ persisted

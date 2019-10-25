@@ -12,6 +12,10 @@ There are three parts to this.
 
 ## Changes
 
+### 0.22.4
+ - Fixed timestamps if you generate to resources directory it won't cause things to reload with 
+   artifactOutput set.
+
 ### 0.22.3
  - Added a really rough slinky module, with the idea it handles some of the gluing by overloading the annotation
    from slinky core.
