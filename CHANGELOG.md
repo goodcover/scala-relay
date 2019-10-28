@@ -1,6 +1,8 @@
 ## Changes
 
 ### Next
+
+### 0.22.5
  - Support relay refetch through a HasRefetch trait that gets mixed in.
 
 
