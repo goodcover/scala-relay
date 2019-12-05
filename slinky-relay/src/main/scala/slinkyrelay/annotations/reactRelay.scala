@@ -110,14 +110,14 @@ object ReactRelayMacrosImpl {
         refetchQueryDefinitionRhs match {
           case Some(someRefetchQueryDefinitionRhs) => {
             Seq(q"""
-              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = 
-                _root_.slinkyrelay.Containers.buildRefetchContainer(props, $liftToReact, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def]  = 
+                _root_.slinkyrelay.Containers.buildRefetchContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)
               """)
           }
           case None => {
             Seq(q"""
-              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = 
-                _root_.slinkyrelay.Containers.buildFragmentContainer(props, $liftToReact, Map(..$fragmentSpecEntries))
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def] = 
+                _root_.slinkyrelay.Containers.buildFragmentContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries))
               """)
           }
         }
