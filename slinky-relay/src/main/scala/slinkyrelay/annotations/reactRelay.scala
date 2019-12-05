@@ -106,16 +106,19 @@ object ReactRelayMacrosImpl {
 
     val overrides = {
       if (fragmentSpecEntries.nonEmpty) {
+        val liftToReact = q"_root_.slinky.core.ReactComponentClass.wrapperToClass(this)"
         refetchQueryDefinitionRhs match {
           case Some(someRefetchQueryDefinitionRhs) => {
-            Seq(
-              q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.Containers.buildRefetchContainer(props, this, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)"
-            )
+            Seq(q"""
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = 
+                _root_.slinkyrelay.Containers.buildRefetchContainer(props, $liftToReact, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)
+              """)
           }
           case None => {
-            Seq(
-              q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.Containers.buildFragmentContainer(props, this, Map(..$fragmentSpecEntries))"
-            )
+            Seq(q"""
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = 
+                _root_.slinkyrelay.Containers.buildFragmentContainer(props, $liftToReact, Map(..$fragmentSpecEntries))
+              """)
           }
         }
       } else {
