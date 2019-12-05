@@ -194,6 +194,7 @@ object RelayBasePlugin extends AutoPlugin {
     // @note: Workaround for https://github.com/facebook/relay/issues/2625
     if (persisted.nonEmpty) {
       IO.delete(outpath.getAbsoluteFile)
+      IO.delete(persisted.get)
     }
 
     IO.createDirectory(outpath)
@@ -296,7 +297,9 @@ object RelayBasePlugin extends AutoPlugin {
       .foreach { count =>
         logger.info(s"Executing relayCompile on $count $label...")
 
-        val lastModified = persisted.map(IO.getModifiedTimeOrZero)
+        val lastModified = persisted.map { file =>
+          IO.getModifiedTimeOrZero(file)
+        }
 
         runCompiler(
           workingDir = workingDir,
