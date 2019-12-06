@@ -179,6 +179,11 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
           <name>Dan Di Spaltro</name>
           <url>http://dispalt.com</url>
         </developer>
+        <developer>
+          <id>kolarm</id>
+          <name>Marko Kolar</name>
+          <url>https://github.com/kolarm</url>
+        </developer>
       </developers>,
   homepage := Some(url(s"https://github.com/goodcover/scala-relay")),
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
