@@ -21,7 +21,9 @@ const Profiler = require('relay-compiler').Profiler;
 const RelayRelayDirectiveTransform = require('relay-compiler/lib/transforms/RelayRelayDirectiveTransform');
 const RelayMaskTransform = require('relay-compiler/lib/transforms/RelayMaskTransform');
 const RelayMatchTransform = require('relay-compiler/lib/transforms/RelayMatchTransform');
-// const FlattenTransform = require('relay-compiler/lib/FlattenTransform');
+// TODO: Look at adding these
+// const FlattenTransform = require("relay-compiler/lib/transforms/FlattenTransform");
+// const ConnectionFieldTransform = require("relay-compiler/lib/transforms/ConnectionFieldTransform");
 const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RelayRefetchableFragmentTransform');
 
 import type {
@@ -998,6 +1000,7 @@ function createVisitor(ct: ClassTracker) {
         return node;
       },
       ModuleImport(node: any) {
+        // console.log("ModuleImport", node);
         return node;
       },
     }
@@ -1018,7 +1021,9 @@ function flattenArray<T>(arrayOfArrays: Array<Array<T>>): Array<T> {
 const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayRelayDirectiveTransform.transform,
   RelayMaskTransform.transform,
+  // ConnectionFieldTransform.transform,
   RelayMatchTransform.transform,
+  // FlattenTransform.transformWithOptions({}),
   RelayRefetchableFragmentTransform.transform,
   SJSTransform.transform,
 ];

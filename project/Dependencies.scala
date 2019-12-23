@@ -7,12 +7,13 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 object Version {
   final val Scala211 = "2.11.11"
   final val Scala212 = "2.12.10"
+  final val Scala213 = "2.13.1"
 
   final val Slinky         = "0.6.3"
   final val Scalajs        = org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.scalaJSVersion
   final val ScalajsBundler = "0.15.0-0.6"
-  final val ScalaTest      = "3.1.0"
-  final val Sangria        = "1.4.2"
+  final val ScalaTest      = "3.0.8"
+  final val Sangria        = "2.0.0-M1"
 
 }
 
