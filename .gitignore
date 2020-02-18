@@ -8,4 +8,8 @@ target/
 .idea/
 node-compiler/lib/
 node-compiler/realex/
-.metals
+
+# Metals
+.metals/
+.bloop/
+project/metals.sbt
