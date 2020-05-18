@@ -1,14 +1,13 @@
 /**
   * Modified from slinky.core.annotations.react
   */
-
 package slinkyrelay.annotations
 
 import scala.annotation.compileTimeOnly
 import scala.reflect.macros.whitebox
 import scala.scalajs.js
-
 import slinky.core._
+import slinkyrelay.HasRefetch
 
 @compileTimeOnly("Enable macro paradise to expand the @react macro annotation")
 class reactRelay extends scala.annotation.StaticAnnotation {
@@ -36,10 +35,12 @@ object ReactRelayMacrosImpl {
   def createComponentBody(c: whitebox.Context)(cls: c.Tree): (c.Tree, List[c.Tree]) = {
     import c.universe._
     val q"..$_ class ${className: Name} extends ..$parents { $self => ..$stats}" = cls
-    val (propsDefinition, applyMethods) = stats
-      .flatMap {
-        case defn @ q"..$_ type Props = ${_}" =>
-          Some((defn, Seq()))
+
+    val hasRefetch: Boolean = parentsContainsType(c)(parents.asInstanceOf[Seq[c.Tree]], typeOf[HasRefetch])
+
+    val (propsDefinition, applyMethods, fragmentSpecEntries) = stats
+      .collectFirst {
+        case defn @ q"..$_ type Props = ${_}" => (defn, Seq(), Seq())
 
         case defn @ q"case class Props[..$tparams](...${caseClassparamssRaw}) extends ..$_ { $_ => ..$_ }" =>
           val caseClassparamss = caseClassparamssRaw.asInstanceOf[Seq[Seq[ValDef]]]
@@ -60,7 +61,7 @@ object ReactRelayMacrosImpl {
                       if (ps == childrenParam.get) {
                         q"${ps.name}: _*"
                       } else q"${ps.name}"
-                  }
+                    }
                 )
 
                 q"this.apply(Props.apply[..$tparams](...$applyValuesChildrenVararg))"
@@ -83,35 +84,47 @@ object ReactRelayMacrosImpl {
             (param.name.toString, companion.typeSymbol.name.asInstanceOf[TypeName].toTermName)
           }
 
-          val fragmentSpec =
-            q"""def fragmentSpec: Map[String, _root_.relay.gql.TaggedNode] = Map(..$fragmentSpecEntries)"""
-
-          Some((defn, Seq(caseClassApply, fragmentSpec)))
-
-        case _ => None
+          (defn, Seq(caseClassApply), fragmentSpecEntries)
       }
-      .headOption
       .getOrElse(c.abort(c.enclosingPosition, "Components must define a Props type or case class, but none was found."))
 
-    val stateDefinition = stats.flatMap {
-      case defn @ q"..$_ type State = ${_}" =>
-        Some(defn)
-      case defn @ q"case class State[..$_](...$_) extends ..$_ { $_ => ..$_ }" =>
-        Some(defn)
-      case _ => None
-    }.headOption
+    val stateDefinition = stats.collectFirst {
+      case defn @ q"..$_ type State = ${_}"                                    => defn
+      case defn @ q"case class State[..$_](...$_) extends ..$_ { $_ => ..$_ }" => defn
+    }
 
-    val snapshotDefinition = stats.flatMap {
-      case defn @ q"type Snapshot = ${_}" =>
-        Some(defn)
-      case defn @ q"case class Snapshot[..$_](...$_) extends ..$_ { $_ => ..$_ }" =>
-        Some(defn)
-      case _ => None
-    }.headOption
+    val snapshotDefinition = stats.collectFirst {
+      case defn @ q"type Snapshot = ${_}"                                         => defn
+      case defn @ q"case class Snapshot[..$_](...$_) extends ..$_ { $_ => ..$_ }" => defn
+    }
 
-    val overrides = Seq(
-      q"override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]) = _root_.slinkyrelay.FragmentContainer.build(props, this, fragmentSpec)"
-    )
+    val (refetchQueryDefinition, refetchQueryDefinitionRhs) = stats
+      .collectFirst {
+        case defn @ q"..$_ val refetchQuery: $_ = $defnRhs" if hasRefetch => (Some(defn), Some(defnRhs))
+      }
+      .getOrElse((None, None))
+
+    val overrides = {
+      if (fragmentSpecEntries.nonEmpty) {
+        val liftToReact = q"_root_.slinky.core.ReactComponentClass.wrapperToClass(this)"
+        refetchQueryDefinitionRhs match {
+          case Some(someRefetchQueryDefinitionRhs) => {
+            Seq(q"""
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def]  = 
+                _root_.slinkyrelay.Containers.buildRefetchContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)
+              """)
+          }
+          case None => {
+            Seq(q"""
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def] = 
+                _root_.slinkyrelay.Containers.buildFragmentContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries))
+              """)
+          }
+        }
+      } else {
+        Seq()
+      }
+    }
 
     val clazz     = TypeName(className.asInstanceOf[Name].toString)
     val companion = TermName(className.asInstanceOf[Name].toString)
@@ -128,7 +141,8 @@ object ReactRelayMacrosImpl {
                 ()
               })
               ..${stats.filterNot(
-        s => s == propsDefinition || s == stateDefinition.orNull || s == snapshotDefinition.orNull
+        s =>
+          s == propsDefinition || s == stateDefinition.orNull || s == snapshotDefinition.orNull || s == refetchQueryDefinition.orNull
       )}
             }"""
 
@@ -260,7 +274,7 @@ object ReactRelayMacrosImpl {
             case _                            => false
           }) =>
         val applyMethods = objStats
-          .flatMap {
+          .collectFirst {
             case defn @ q"case class Props[..$tparams](...${caseClassparamssRaw}) extends ..$_ { $_ => ..$_ }" =>
               val caseClassparamss = caseClassparamssRaw.asInstanceOf[Seq[Seq[ValDef]]]
               val childrenParam    = caseClassparamss.flatten.find(_.name.toString == "children")
@@ -280,7 +294,7 @@ object ReactRelayMacrosImpl {
                           if (ps == childrenParam.get) {
                             q"${ps.name}: _*"
                           } else q"${ps.name}"
-                      }
+                        }
                     )
 
                     q"component.apply(Props.apply(...$applyValuesChildrenVararg))"
@@ -289,24 +303,21 @@ object ReactRelayMacrosImpl {
                 }
 
                 q"""def apply[..$tparams](...$paramssWithoutChildren)(${childrenParam.get}) =
-                    $body"""
+                  $body"""
               } else {
                 if (paramssWithoutChildren.flatten.isEmpty) {
                   q"def apply() = component.apply(Props.apply())"
                 } else {
                   q"""def apply[..$tparams](...$paramssWithoutChildren) =
-                      component.apply(Props.apply(...$applyValues))"""
+                    component.apply(Props.apply(...$applyValues))"""
                 }
               }
 
-              Some(Seq(caseClassApply, q"def apply(props: component.Props) = component.apply(props)"))
+              Seq(caseClassApply, q"def apply(props: component.Props) = component.apply(props)")
 
             case q"type Props = Unit" =>
-              Some(Seq(q"def apply() = component.apply(())"))
-
-            case _ => None
+              Seq(q"def apply() = component.apply(())")
           }
-          .headOption
           .getOrElse[Seq[Tree]] {
             Seq(q"def apply(props: component.Props) = component.apply(props)")
           }
@@ -314,7 +325,7 @@ object ReactRelayMacrosImpl {
         List(q"$pre object $objName extends ..$parents { $self => ..${objStats ++ applyMethods} }")
 
       case defn =>
-        c.abort(c.enclosingPosition, """@react must annotate:
+        c.abort(c.enclosingPosition, """@reactRelay must annotate:
             |  - a class that extends (Stateless)Component,
             |  - an object that extends ExternalComponent(WithAttributes)(WithRefType)
             |  - an object defining a `val component = FunctionalComponent(...)`""".stripMargin)

@@ -34,6 +34,8 @@ object RelayBasePlugin extends AutoPlugin {
     val relayDependencies: SettingKey[Seq[(String, String)]] =
       settingKey[Seq[(String, String)]]("The list of key value pairs that correspond to npm versions")
     val relayDisplayOnlyOnFailure: SettingKey[Boolean] = settingKey("Display output only on failure")
+
+    val relayCompilePersist: TaskKey[Option[File]] = taskKey[Option[File]]("Compile with persisted queries")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -105,11 +107,27 @@ object RelayBasePlugin extends AutoPlugin {
         * Display output only on a failure, this works well with persisted queries because they delete all the files
         * before outputting them.
         */
-      relayDisplayOnlyOnFailure := false
+      relayDisplayOnlyOnFailure := false,
+      /**
+        * Compile conditionally based on persisting a file or not.
+        */
+      relayCompilePersist := relayCompilePersistTask.value
     )
 
   implicit class QuoteStr(s: String) {
     def quote: String = "\"" + s + "\""
+  }
+
+  def relayCompilePersistTask = Def.taskDyn[Option[File]] {
+    if (relayPersistedPath.value.nonEmpty) {
+      relayForceCompile.map { _ =>
+        relayPersistedPath.value
+      }
+    } else {
+      relayCompile.map { _ =>
+        relayPersistedPath.value
+      }
+    }
   }
 
   /***
@@ -166,6 +184,7 @@ object RelayBasePlugin extends AutoPlugin {
         )
       )(scalaFiles)
 
+    // We can't add persisted file here because it would get wrapped up with the computation
     outpath.listFiles()
   }
 
@@ -194,6 +213,7 @@ object RelayBasePlugin extends AutoPlugin {
     // @note: Workaround for https://github.com/facebook/relay/issues/2625
     if (persisted.nonEmpty) {
       IO.delete(outpath.getAbsoluteFile)
+      IO.delete(persisted.get)
     }
 
     IO.createDirectory(outpath)
@@ -273,15 +293,6 @@ object RelayBasePlugin extends AutoPlugin {
           output.foreach(logger.info(_))
         }
 
-        persisted match {
-          case Some(value) =>
-            val modified = IO.getModifiedTimeOrZero(value)
-            IO.write(value, Json.prettyPrint(Json.parse(IO.read(value))))
-            IO.setModifiedTimeOrFalse(value, modified)
-            ()
-          case _ => ()
-        }
-
     }
   }
 
@@ -305,49 +316,27 @@ object RelayBasePlugin extends AutoPlugin {
       .foreach { count =>
         logger.info(s"Executing relayCompile on $count $label...")
 
-        IO.withTemporaryFile("handleUpdate", "map") { tempFile =>
-          // @note: Workaround for https://github.com/facebook/relay/issues/2625
-          val (persistedFile, previousPersistedFile) = persisted match {
-            case Some(realFile) if realFile.exists() =>
-              val persistJson  = Json.parse(IO.read(realFile))
-              val lastModified = IO.getModifiedTimeOrZero(realFile)
-              (Some(tempFile), Some((persistJson, lastModified, realFile)))
-
-            case Some(realFile) => (Some(realFile), None)
-            case None           => (None, None)
-          }
-
-          runCompiler(
-            workingDir = workingDir,
-            compilerPath = compilerPath,
-            schemaPath = schemaPath,
-            sourceDirectory = sourceDirectory,
-            outputPath = outputPath,
-            logger = logger,
-            verbose = verbose,
-            extras = extras,
-            persisted = persistedFile,
-            displayOnFailure = displayOnFailure
-          )
-
-          previousPersistedFile match {
-            case Some((prevJson, lastModifiedOrZero, realFile)) =>
-              val newJson = Json.parse(IO.read(tempFile)).asInstanceOf[JsObject]
-              if (newJson.value.isEmpty) {
-                // No new files
-                IO.write(realFile, Json.prettyPrint(prevJson.asInstanceOf[JsObject] ++ newJson))
-                IO.setModifiedTimeOrFalse(realFile, lastModifiedOrZero)
-              } else {
-                IO.write(realFile, Json.prettyPrint(prevJson.asInstanceOf[JsObject] ++ newJson))
-              }
-
-            // This case means no switching is necessary
-            case _ => ()
-          }
-          logger.info(s"Finished relayCompile.")
+        val lastModified = persisted.map { file =>
+          IO.getModifiedTimeOrZero(file)
         }
+
+        runCompiler(
+          workingDir = workingDir,
+          compilerPath = compilerPath,
+          schemaPath = schemaPath,
+          sourceDirectory = sourceDirectory,
+          outputPath = outputPath,
+          logger = logger,
+          verbose = verbose,
+          extras = extras,
+          persisted = persisted,
+          displayOnFailure = displayOnFailure
+        )
+
+        lastModified.foreach(mtime => IO.setModifiedTimeOrFalse(persisted.get, mtime))
+        logger.info(s"Finished relayCompile.")
       }
-    files
+    files ++ persisted
   }
 }
 

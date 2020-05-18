@@ -1,0 +1,5 @@
+# graphql
+fragment Friend_word on WordDefinition @inline {
+    id text image
+
+}

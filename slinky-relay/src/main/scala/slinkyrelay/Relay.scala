@@ -16,4 +16,11 @@ private object Relay extends js.Object {
     fragmentSpec: js.Dictionary[TaggedNode]
   ): ReactComponentClass[P] =
     js.native
+
+  def createRefetchContainer[P](
+    component: ReactComponentClass[P],
+    fragmentSpec: js.Dictionary[TaggedNode],
+    refetchQuery: TaggedNode
+  ): ReactComponentClass[P] =
+    js.native
 }
