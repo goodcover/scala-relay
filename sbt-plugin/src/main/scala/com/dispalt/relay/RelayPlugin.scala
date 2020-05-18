@@ -34,6 +34,8 @@ object RelayBasePlugin extends AutoPlugin {
     val relayDependencies: SettingKey[Seq[(String, String)]] =
       settingKey[Seq[(String, String)]]("The list of key value pairs that correspond to npm versions")
     val relayDisplayOnlyOnFailure: SettingKey[Boolean] = settingKey("Display output only on failure")
+
+    val relayCompilePersist: TaskKey[Option[File]] = taskKey[Option[File]]("Compile with persisted queries")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -105,11 +107,27 @@ object RelayBasePlugin extends AutoPlugin {
         * Display output only on a failure, this works well with persisted queries because they delete all the files
         * before outputting them.
         */
-      relayDisplayOnlyOnFailure := false
+      relayDisplayOnlyOnFailure := false,
+      /**
+        * Compile conditionally based on persisting a file or not.
+        */
+      relayCompilePersist := relayCompilePersistTask.value
     )
 
   implicit class QuoteStr(s: String) {
     def quote: String = "\"" + s + "\""
+  }
+
+  def relayCompilePersistTask = Def.taskDyn[Option[File]] {
+    if (relayPersistedPath.value.nonEmpty) {
+      relayForceCompile.map { _ =>
+        relayPersistedPath.value
+      }
+    } else {
+      relayCompile.map { _ =>
+        relayPersistedPath.value
+      }
+    }
   }
 
   /***
@@ -166,6 +184,7 @@ object RelayBasePlugin extends AutoPlugin {
         )
       )(scalaFiles)
 
+    // We can't add persisted file here because it would get wrapped up with the computation
     outpath.listFiles()
   }
 
