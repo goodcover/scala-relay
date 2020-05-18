@@ -9,6 +9,7 @@ There are three parts to this.
     handles the runtime, which is very small (intentionally).
   - Slinky relay module - `"com.dispalt.relay" %%% "slinky-relay" % "<version>"`
 
+### [Change log](./CHANGELOG.md)
 
 ## Dev Notes
 

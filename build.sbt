@@ -2,7 +2,7 @@ import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 import scala.sys.process._
 
-val sbtVersions = List("0.13.17", "1.3.3")
+val sbtVersions = List("0.13.17", "1.3.5")
 
 crossSbtVersions := sbtVersions
 
@@ -48,6 +48,7 @@ lazy val `sbt-relay-compiler` = project
         case _      => Version.Scala212
       }
     },
+    crossScalaVersions := Nil,
     publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)
@@ -58,16 +59,10 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
-  .settings(
-    crossSbtVersions := Nil,
-    scalaVersion := Version.Scala212,
-    scalacOptions ++= {
-      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
-      else Nil
-    },
-    addCompilerPlugin("org.scalamacros"         % "paradise" % "2.1.1" cross CrossVersion.full),
-    libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest)
-  )
+  .settings(crossSbtVersions := Nil, scalacOptions ++= {
+    if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
+    else Nil
+  }, libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest) ++ paradisePlugin.value)
 
 lazy val `slinky-relay` = project
   .in(file("slinky-relay"))
@@ -84,13 +79,15 @@ lazy val `slinky-relay` = project
 
       Seq(rootFolder / "intellij-compat.json")
     },
-    scalacOptions += "-Xplugin-require:macroparadise",
+//    scalacOptions ++= {
+//      if ()
+//      "-Xplugin-require:macroparadise"
+//    },
     libraryDependencies ++= Vector(
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion
-    ),
-    Library.slinky,
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
+    ) ++ paradisePlugin.value,
+    Library.slinky
   )
   .dependsOn(`relay-macro`)
 
@@ -123,7 +120,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2019.2.0" until-build="2019.4.0">
+          |    <ideaVersion since-build="2019.2.0" until-build="2020.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
           |                   implementation="slinkyrelay.SlinkyRelayInjector">
           |            <name>Slinky Relay Intellij Support</name>
@@ -149,9 +146,22 @@ lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publish
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}, crossScalaVersions := Seq(Version.Scala212))
+})
+
+lazy val paradisePlugin = Def.setting {
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, v)) if v <= 12 =>
+      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
+    case _ =>
+      // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
+      // https://github.com/scala/scala/pull/6606
+      Nil
+  }
+}
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
+  scalaVersion := Version.Scala212,
+  crossScalaVersions := Seq(Version.Scala212, Version.Scala213),
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -159,7 +169,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "UTF-8",
     "-unchecked",
     "-Xlint",
-    "-Yno-adapted-args",
+//    "-Yno-adapted-args",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
@@ -178,6 +188,11 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
           <id>dispalt</id>
           <name>Dan Di Spaltro</name>
           <url>http://dispalt.com</url>
+        </developer>
+        <developer>
+          <id>kolarm</id>
+          <name>Marko Kolar</name>
+          <url>https://github.com/kolarm</url>
         </developer>
       </developers>,
   homepage := Some(url(s"https://github.com/goodcover/scala-relay")),
