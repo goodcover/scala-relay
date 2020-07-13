@@ -30,7 +30,7 @@ function parseFile(text, file): [] {
       file
     )
 
-    var regex = /@graphql\("""([\s\S]*?)"""\)/g;
+    var regex = /@graphql\([\s]*"""([\s\S]*?)"""\)/g;
 
     const astDefinitions = [];
 
