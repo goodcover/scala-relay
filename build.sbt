@@ -62,7 +62,7 @@ lazy val `relay-macro` = project
   .settings(crossSbtVersions := Nil, scalacOptions ++= {
     if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
     else Nil
-  }, libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest) ++ paradisePlugin.value)
+  }, libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest), macroAnnotationSettings)
 
 lazy val `slinky-relay` = project
   .in(file("slinky-relay"))
@@ -86,7 +86,8 @@ lazy val `slinky-relay` = project
     libraryDependencies ++= Vector(
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion
-    ) ++ paradisePlugin.value,
+    ),
+    macroAnnotationSettings,
     Library.slinky
   )
   .dependsOn(`relay-macro`)
@@ -148,19 +149,20 @@ lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publish
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 })
 
-lazy val paradisePlugin = Def.setting {
-  CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, v)) if v <= 12 =>
-      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
-    case _ =>
-      // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
-      // https://github.com/scala/scala/pull/6606
-      Nil
+lazy val macroAnnotationSettings = Seq(
+  resolvers += Resolver.sonatypeRepo("releases"),
+  scalacOptions ++= {
+    if (scalaVersion.value == Version.Scala213) Seq("-Ymacro-annotations")
+    else Seq("-Xfuture")
+  },
+  libraryDependencies ++= {
+    if (scalaVersion.value == Version.Scala213) Seq.empty
+    else Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
   }
-}
+)
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := Version.Scala212,
+  scalaVersion := Version.Scala213,
   crossScalaVersions := Seq(Version.Scala212, Version.Scala213),
   scalacOptions ++= Seq(
     "-feature",
@@ -177,8 +179,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
     "-language:experimental.macros", // Allow macro definition (besides implementation and application)
     "-language:higherKinds",         // Allow higher-kinded types
-    "-language:implicitConversions", // Allow definition of implicit functions called views
-    "-Xfuture"
+    "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
   organization := "com.dispalt.relay",  // TODO - Coordinates
   sonatypeProfileName := "com.dispalt", // TODO - Coordinates
