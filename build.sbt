@@ -101,13 +101,13 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
-    intellijBuild := "203",
+    intellijBuild := "203.5981.155",
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
       xml.version = version.value
       xml.sinceBuild = (intellijBuild in ThisBuild).value
-      xml.untilBuild = "193.*"
+      xml.untilBuild = "203.*"
     },
     resourceGenerators in Compile += Def.task {
       val rootFolder = (resourceManaged in Compile).value / "META-INF"
