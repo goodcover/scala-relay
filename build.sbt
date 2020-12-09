@@ -2,7 +2,7 @@ import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 import scala.sys.process._
 
-val sbtVersions = List("0.13.17", "1.3.5")
+val sbtVersions = List("1.3.5")
 
 crossSbtVersions := sbtVersions
 
@@ -74,7 +74,7 @@ lazy val `slinky-relay` = project
       rootFolder.mkdirs()
 
       IO.write(rootFolder / "intellij-compat.json", s"""{
-           |  "artifact": "${organization.value} % slinky-relay-ijext_2.12 % ${version.value}"
+           |  "artifact": "${organization.value} % slinky-relay-ijext_2.13 % ${version.value}"
            |}""".stripMargin)
 
       Seq(rootFolder / "intellij-compat.json")
@@ -100,7 +100,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
-    intellijBuild := "192.6817.14",
+    intellijBuild := "203",
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
@@ -121,7 +121,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2019.2.0" until-build="2020.4.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2020.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
           |                   implementation="slinkyrelay.SlinkyRelayInjector">
           |            <name>Slinky Relay Intellij Support</name>
