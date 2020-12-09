@@ -218,8 +218,8 @@ releaseProcess :=
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
-    else releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("^ sbt-relay-compiler/publishSigned"),
     releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
     doReleaseYarn,
