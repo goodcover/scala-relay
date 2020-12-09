@@ -97,6 +97,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
   .settings(commonSettings ++ mavenSettings)
   .settings(
+    crossScalaVersions := Seq(Version.Scala213),
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
