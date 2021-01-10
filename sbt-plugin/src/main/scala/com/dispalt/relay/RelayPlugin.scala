@@ -87,7 +87,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Output path of the relay compiler.  Necessary this is an empty directory as it will
         * delete files it thinks went away.
         */
-      relayOutput := sourceManaged.value / relayFolder,
+      relayOutput := sourceManaged.value / relayFolder / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
