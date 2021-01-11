@@ -5,15 +5,11 @@
 const path = require('path');
 
 const GraphQLTag = require('relay-compiler').GraphQLTag;
-const GraphQLTagFinder = require('relay-compiler').GraphQLTagFinder;
 
 const GraphQL = require('graphql');
 
-const fs = require('fs');
 const invariant = require('invariant');
 
-import type {DocumentNode} from 'graphql';
-import type {PluginInterface} from 'relay-compiler';
 
 /*
   Parse the file scala style but just use regex =(
@@ -39,7 +35,7 @@ function parseFile(text, file): [] {
 
       const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
       const stringHit = matches.input.substring(0, matches.index - 1);
-      const lineNo = stringHit.split("\n");
+      const lineNo = stringHit.split("\n").length;
       const column = matches.index - stringHit.lastIndexOf("\n");
 
 
