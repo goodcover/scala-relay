@@ -18,19 +18,21 @@ const Profiler = require('relay-compiler').Profiler;
 // console.log(Profiler);
 
 
-const RelayRelayDirectiveTransform = require('relay-compiler/lib/transforms/RelayRelayDirectiveTransform');
-const RelayMaskTransform = require('relay-compiler/lib/transforms/RelayMaskTransform');
-const RelayMatchTransform = require('relay-compiler/lib/transforms/RelayMatchTransform');
+const RelayRelayDirectiveTransform = require('relay-compiler/lib/transforms/RelayDirectiveTransform');
+const RelayMaskTransform = require('relay-compiler/lib/transforms/MaskTransform');
+const RelayMatchTransform = require('relay-compiler/lib/transforms/MatchTransform');
 // TODO: Look at adding these
 // const FlattenTransform = require("relay-compiler/lib/transforms/FlattenTransform");
 // const ConnectionFieldTransform = require("relay-compiler/lib/transforms/ConnectionFieldTransform");
-const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RelayRefetchableFragmentTransform');
+const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RefetchableFragmentTransform');
+
+
+import type {Schema, TypeID} from "relay-compiler/core/Schema";
 
 import type {
   IRTransform,
   Fragment,
   Root,
-  CompilerContext,
 } from 'relay-compiler/lib/RelayCompilerPublic';
 
 import type {
@@ -47,22 +49,9 @@ import type {
   ConcreteDirective,
 } from 'react-relay';
 
-const {
-  GraphQLEnumType,
-  GraphQLInputObjectType,
-  GraphQLInterfaceType,
-  GraphQLList,
-  GraphQLNonNull,
-  GraphQLObjectType,
-  GraphQLScalarType,
-  GraphQLUnionType,
-} = require('graphql');
 
-import type {GraphQLInputType, GraphQLType} from 'graphql';
 
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
-
-const babelGenerator = require('@babel/generator').default;
 
 const invariant = require('invariant');
 
@@ -92,15 +81,16 @@ type Options = {|
 |};
 
 function generate(
+  schema: Schema,
   node: Root | Fragment,
   options: Options,
 ): string {
 
-  const newCT = new ClassTracker(options.nodes, options.useNulls || false);
+  const newCT = new ClassTracker(schema, options.nodes, options.useNulls || false);
   try {
     const ast = IRVisitor.visit(
       node,
-      createVisitor(newCT)
+      createVisitor(schema, newCT)
     )
     const code = newCT.out();
 
@@ -186,8 +176,9 @@ class ClassTracker {
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
   factoryMethods:Map<string, Cls>;
+  schema: Schema;
 
-  constructor(nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
+  constructor(schema: Schema, nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
     this.classes = new Map();
     this.topClasses = new Map();
     this.fields = [];
@@ -199,6 +190,7 @@ class ClassTracker {
     this.isMutation = false;
     this._useNulls = useNulls;
     this.factoryMethods = new Map();
+    this.schema = schema;
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -384,7 +376,7 @@ class ClassTracker {
   }
 
   /**
-   * TODO: This needs to severly be cleaned up, wayyyy too much going on.
+   * TODO: This needs to severely be cleaned up, wayyyy too much going on.
    *
    *
    *
@@ -521,38 +513,36 @@ class ClassTracker {
   }
 
   transformNonNullableScalarType(
-    type: GraphQLType,
+    type: TypeID,
     backupType: ?string
   ): Array<ATpe> {
-    debugger;
-    if (type instanceof GraphQLList) {
-      return this.transformScalarType(type.ofType, backupType).map(s => {
+    if (this.schema.isList(type)) {
+      return this.transformScalarType(this.schema.getListItemType(type), backupType).map(s => {
 
         s.mods.push(ARRAY_MOD);
         return s;
       });
     } else if (
-      type instanceof GraphQLObjectType ||
-      type instanceof GraphQLUnionType ||
-      type instanceof GraphQLInterfaceType
+      this.schema.isObject(type) ||
+      this.schema.isUnion(type) ||
+      this.schema.isInterface(type)
     ) {
-      // throw new Error(`Could not convert from GraphQL type ${type.toString()}`);
       if (!backupType) {
         throw new Error(`Could not convert from GraphQL type ${type.toString()}, missing backup type`);
       }
       return [{name: backupType, mods: []}];
-    } else if (type instanceof GraphQLScalarType) {
-      return this.transformGraphQLScalarType(type, backupType);
-    } else if (type instanceof GraphQLEnumType) {
+    } else if (this.schema.isScalar(type)) {
+      return this.transformGraphQLScalarType(this.schema.getTypeString(type), backupType);
+    } else if (this.schema.isEnum(type)) {
       return [{name: "String", mods: []}];
     } else {
       throw new Error(`Could not convert from GraphQL type ${type.toString()}, ${type.prototype}`);
     }
   }
 
-  transformInputType(type: GraphQLInputType, classes: Array<Cls>): Array<ATpe> {
-    if (type instanceof GraphQLNonNull) {
-      return this.transformNonNullableInputType(type.ofType, classes);
+  transformInputType(type: TypeID, classes: Array<Cls>): Array<ATpe> {
+    if (this.schema.isNonNull(type)) {
+      return this.transformNonNullableInputType(this.schema.getNullableType(type), classes);
     } else {
       return this.transformNonNullableInputType(type, classes).map(s => {
         s.mods.push(OPTIONAL_MOD)
@@ -561,27 +551,28 @@ class ClassTracker {
     }
   }
 
-  transformNonNullableInputType(type: GraphQLInputType, classes: Array<Cls>): Array<ATpe> {
-    if (type instanceof GraphQLList) {
-      return this.transformInputType(type.ofType, classes).map(s => {
+  transformNonNullableInputType(type: TypeID, classes: Array<Cls>): Array<ATpe> {
+    if (this.schema.isList(type)) {
+      return this.transformInputType(this.schema.getListItemType(type), classes).map(s => {
         s.mods.push(ARRAY_MOD);
         return s;
       });
-    } else if (type instanceof GraphQLScalarType) {
-      return this.transformGraphQLScalarType(type);
-    } else if (type instanceof GraphQLEnumType) {
+    } else if (this.schema.isScalar(type)) {
+      return this.transformGraphQLScalarType(this.schema.getTypeString(type));
+    } else if (this.schema.isEnum(type)) {
       return [{name: "String", mods: []}];
-    } else if (type instanceof GraphQLInputObjectType) {
-      const fields = type.getFields();
-      const props: Array<Member> = Object.keys(fields)
-        .map(key => fields[key])
-        .map(field => {
-          const property = this.transformInputType(field.type, classes)
-          return {name: field.name,
-            tpe: property,
-            comments: [],
-          };
-        });
+    } else if (this.schema.isInputObject(type)) {
+      const fields = this.schema.getFields(type);
+      const props: Array<Member> = fields.map((fieldID: FieldID) => {
+        const fieldType = this.schema.getFieldType(fieldID);
+        const fieldName = this.schema.getFieldName(fieldID);
+        const property = this.transformInputType(fieldType, classes)
+        return {
+          name: fieldName,
+          tpe: property,
+          comments: [],
+        };
+      });
 
       classes.push({
         name: type.toString(),
@@ -601,8 +592,8 @@ class ClassTracker {
     }
   }
 
-  transformGraphQLScalarType(type: GraphQLScalarType, backupType: ?string): Array<ATpe> {
-    switch (type.name) {
+  transformGraphQLScalarType(type: String, backupType: ?string): Array<ATpe> {
+    switch (type) {
       case 'ID':
       case 'String':
       case 'Url':
@@ -625,11 +616,11 @@ class ClassTracker {
   }
 
   transformScalarType(
-    type: GraphQLType,
+    type: TypeID,
     backupType: ?string,
   ): Array<ATpe> {
-    if (type instanceof GraphQLNonNull) {
-      return this.transformNonNullableScalarType(type.ofType, backupType);
+    if (this.schema.isNonNull(type)) {
+      return this.transformNonNullableScalarType(this.schema.getNullableType(type), backupType);
     } else {
       // $FlowFixMe
       return this.transformNonNullableScalarType(type, backupType).map(s => {
@@ -854,7 +845,7 @@ class ClassTracker {
   }
 }
 
-function createVisitor(ct: ClassTracker) {
+function createVisitor(schema: Schema, ct: ClassTracker) {
   return {
     enter : {
       Root(node: ConcreteRoot) {
@@ -974,7 +965,7 @@ function createVisitor(ct: ClassTracker) {
         const extendsCPresent: ?string  = node.metadata && node.metadata.extends
 
         // $FlowFixMe
-        const tpe = ct.transformScalarType((node.type: GraphQLType));
+        const tpe = ct.transformScalarType((node.type: TypeID));
         if (extendsCPresent) {
           const extendsArray = [{
             name: extendsCPresent,

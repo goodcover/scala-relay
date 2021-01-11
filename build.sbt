@@ -2,7 +2,7 @@ import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 import scala.sys.process._
 
-val sbtVersions = List("1.3.5")
+val sbtVersions = List("1.4.6")
 
 crossSbtVersions := sbtVersions
 

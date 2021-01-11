@@ -4,25 +4,31 @@
   "version": "0.24.3",
   "license": "Apache-2.0",
   "main": "lib/index.js",
-  "dependencies": {
-    "@babel/cli": "^7.0.0",
-    "@babel/core": "^7.0.0",
+  "devDependencies": {
+    "signedsource": "^1.0.0",
+    "@babel/runtime": "^7.0.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
-    "@babel/runtime": "^7.0.0",
-    "flow-bin": "^0.102.0",
-    "invariant": "^2.2.4",
-    "signedsource": "^1.0.0",
-    "terser": "^4.1.2"
+    "@babel/core": "^7.0.0",
+    "@babel/cli": "^7.0.0",
+    "babel-plugin-relay": "^10.1.2",
+    "flow-bin": "^0.140.0",
+    "graphql": "^15.3.0",
+    "relay-compiler": "10.1.2",
+    "relay-runtime": "^10.1.2"
+  },
+  "dependencies": {
+    "terser": "^4.1.2",
+    "invariant": "^2.2.4"
   },
   "scripts": {
     "build": "babel src/ -d lib/",
     "prepublish": "yarn run build"
   },
   "peerDependencies": {
-    "graphql": "^14.2.0",
-    "relay-compiler": "6.0.0",
-    "relay-runtime": "^6.0.0"
+    "graphql": "^15.3.0",
+    "relay-compiler": "10.1.2",
+    "relay-runtime": "^10.1.2"
   },
   "url": "https://github.com/dispalt/relay-modern-helper/",
   "email": "dan@goodcover.com",

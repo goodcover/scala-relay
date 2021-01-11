@@ -13,3 +13,4 @@ node-compiler/realex/
 .metals/
 .bloop/
 project/metals.sbt
+.bsp

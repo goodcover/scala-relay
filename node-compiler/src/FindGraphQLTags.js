@@ -35,14 +35,22 @@ function parseFile(text, file): [] {
     const astDefinitions = [];
 
     while (matches = regex.exec(text)) {
-        const template = matches[1];
+      const template = matches[1];
 
-        const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const stringHit = matches.input.substring(0, matches.index - 1);
+      const lineNo = stringHit.split("\n");
+      const column = matches.index - stringHit.lastIndexOf("\n");
 
-        astDefinitions.push({
-            keyName,
-            template,
-        });
+
+      astDefinitions.push({
+        keyName,
+        template,
+        sourceLocationOffset: {
+          line: lineNo,
+          column: column
+        }
+      });
     }
 
     return astDefinitions;
