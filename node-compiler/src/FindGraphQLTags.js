@@ -20,10 +20,10 @@ function parseFile(text, file): [] {
   if (path.extname(file) === '.scala') {
 
     invariant(
-      text.indexOf('@graphql') >= 0,
+      text.indexOf('@graphql') >= 0 ||
+      text.indexOf("genGraphql\(") >= 0,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
-      'parser, got unfiltered file `%s`.',
-      file
+      'parser.',
     )
 
     var regex = /@graphql\([\s]*"""([\s\S]*?)"""\)/g;
@@ -31,6 +31,27 @@ function parseFile(text, file): [] {
     const astDefinitions = [];
 
     while (matches = regex.exec(text)) {
+      const template = matches[1];
+
+      const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const stringHit = matches.input.substring(0, matches.index - 1);
+      const lineNo = stringHit.split("\n").length;
+      const column = matches.index - stringHit.lastIndexOf("\n");
+
+
+      astDefinitions.push({
+        keyName,
+        template,
+        sourceLocationOffset: {
+          line: lineNo,
+          column: column
+        }
+      });
+    }
+
+    const regex2 = /genGraphql\([\s]*"""([\s\S]*?)"""\)/g;
+
+    while (matches = regex2.exec(text)) {
       const template = matches[1];
 
       const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
@@ -79,11 +100,11 @@ function parseFile(text, file): [] {
   }
 }
 
-function find (text, filePath) : Array<GraphQLTag> {
-    const ast = parseFile(text, filePath);
-    return ast;
-  };
+function find(text, filePath): Array<GraphQLTag> {
+  const ast = parseFile(text, filePath);
+  return ast;
+}
 
 module.exports = {
-    find,
+  find,
 };

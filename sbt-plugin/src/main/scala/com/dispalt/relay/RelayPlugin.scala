@@ -158,9 +158,10 @@ object RelayBasePlugin extends AutoPlugin {
     // Filter based on the presence of the annotation. and look for a change
     // in the schema path
     val scalaFiles =
-      (sourceFiles ** "*.scala").get
-        .filter(IO.read(_).contains("@graphql"))
-        .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
+      (sourceFiles ** "*.scala").get.filter { f =>
+        val wholeFile = IO.read(f)
+        wholeFile.contains("@graphql") || wholeFile.contains("genGraphql(")
+      }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 
     val label      = Reference.display(thisProjectRef.value)

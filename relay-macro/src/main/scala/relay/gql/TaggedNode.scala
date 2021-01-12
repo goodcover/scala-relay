@@ -3,9 +3,13 @@ package relay.gql
 import scala.language.implicitConversions
 import scala.scalajs.js
 
+/** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
 trait GenericGraphQLTaggedNode {
   def query: TaggedNode
 }
+
+/** The typed version */
+trait TypedGraphQLTaggedNode[I <: js.Object, O <: js.Object] extends GenericGraphQLTaggedNode
 
 object GenericGraphQLTaggedNode {
   implicit def ggql2jsObj(ggqltn: GenericGraphQLTaggedNode): TaggedNode = {
@@ -13,7 +17,7 @@ object GenericGraphQLTaggedNode {
   }
 }
 
-trait QueryTaggedNode[I <: js.Object, O <: js.Object] extends GenericGraphQLTaggedNode {
+trait QueryTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
 }
@@ -24,7 +28,7 @@ object QueryTaggedNode {
   }
 }
 
-trait MutationTaggedNode[I <: js.Object, O <: js.Object] extends GenericGraphQLTaggedNode {
+trait MutationTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
 }
@@ -35,6 +39,7 @@ object MutationTaggedNode {
   }
 }
 
+/** This is what all the Relay components request */
 trait TaggedNode extends js.Object
 
 @js.native

@@ -1,25 +1,25 @@
 {
   "name": "relay-compiler-language-scalajs",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.24.3",
+  "version": "0.25.0",
   "license": "Apache-2.0",
   "main": "lib/index.js",
   "devDependencies": {
-    "signedsource": "^1.0.0",
-    "@babel/runtime": "^7.0.0",
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
-    "@babel/core": "^7.0.0",
-    "@babel/cli": "^7.0.0",
+    "@babel/runtime": "^7.0.0",
     "babel-plugin-relay": "^10.1.2",
     "flow-bin": "^0.140.0",
     "graphql": "^15.3.0",
     "relay-compiler": "10.1.2",
-    "relay-runtime": "^10.1.2"
+    "relay-runtime": "^10.1.2",
+    "signedsource": "^1.0.0"
   },
   "dependencies": {
-    "terser": "^4.1.2",
-    "invariant": "^2.2.4"
+    "invariant": "^2.2.4",
+    "terser": "^4.1.2"
   },
   "scripts": {
     "build": "babel src/ -d lib/",
