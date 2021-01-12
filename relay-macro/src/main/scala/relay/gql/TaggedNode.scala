@@ -39,6 +39,16 @@ object MutationTaggedNode {
   }
 }
 
+trait FragmentTaggedNode[O <: js.Object] extends GenericGraphQLTaggedNode {
+  type Out = O
+}
+
+object FragmentTaggedNode {
+  implicit def fragmentTaggedNodeConv[O <: js.Object](ftn: FragmentTaggedNode[O]): TaggedNode = {
+    ftn.query
+  }
+}
+
 /** This is what all the Relay components request */
 trait TaggedNode extends js.Object
 

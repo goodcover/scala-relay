@@ -129,9 +129,9 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |            <description>Library support and expansion for @reactRelay macro</description>
           |        </extension>
           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
-          |             implementation="slinkyrelay.GenGraphQLInjector">
-          |            <name>genGraphql whitebox mac library Support</name>
-          |            <description>Support for genGraphql macro</description>
+          |             implementation="slinkyrelay.GraphQLGenInjector">
+          |            <name>graphqlGen whitebox mac library Support</name>
+          |            <description>Support for graphqlGen macro</description>
           |        </extension>
           |    </ideaVersion>
           |</intellij-compat>

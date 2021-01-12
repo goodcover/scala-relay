@@ -22,12 +22,13 @@ object compiler {
     *     this is because regexes are used on the js side to make this work.  Eventually we could use scala.meta
     *     to make this a lot better.
     *  2) it can't be a final val s = "foo" either. it has to be a plan string.
-    *  2) You cannot use strip margin, strip margin makes it not a literal string.
+    *  3) You cannot use strip margin, strip margin makes it not a literal string.
+    *  4) !IMPORTANT! THE WORD graphql in all lowercase must show up in the file.
     *
     * @param s plan old graphql string.
     * @return Type of the Object generated from the relay-compiler-language-scalajs
     */
-  def genGraphql(s: String): Any = macro genGraphqlMacrosImpl.impl
+  def graphqlGen(s: String): Any = macro genGraphqlMacrosImpl.impl
 
   object genGraphqlMacrosImpl {
     def impl(c: whitebox.Context)(s: c.Expr[String]): c.Expr[Any] = {

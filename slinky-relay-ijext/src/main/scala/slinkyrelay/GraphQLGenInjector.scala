@@ -5,10 +5,10 @@ import org.jetbrains.plugins.scala.lang.psi.api.statements.ScFunction
 import org.jetbrains.plugins.scala.lang.psi.impl.ScalaPsiElementFactory
 import org.jetbrains.plugins.scala.lang.psi.types.ScType
 
-class GenGraphQLInjector extends ScalaMacroTypeable {
+class GraphQLGenInjector extends ScalaMacroTypeable {
   override def checkMacro(macros: ScFunction, context: MacroContext): Option[ScType] = {
 
-    val reg = """genGraphql\([\s]*\"\"\"([\s\S]*?)\"\"\"\)""".r
+    val reg = """graphqlGen\([\s]*\"\"\"([\s\S]*?)\"\"\"\)""".r
 
     reg.findFirstMatchIn(context.place.getText) match {
       case Some(value) =>
@@ -25,5 +25,5 @@ class GenGraphQLInjector extends ScalaMacroTypeable {
 
   }
 
-  override val boundMacro: Seq[MacroImpl] = Seq(MacroImpl("genGraphql", "relay.compiler"))
+  override val boundMacro: Seq[MacroImpl] = Seq(MacroImpl("graphqlGen", "relay.compiler"))
 }

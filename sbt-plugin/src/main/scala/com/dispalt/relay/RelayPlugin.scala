@@ -160,7 +160,7 @@ object RelayBasePlugin extends AutoPlugin {
     val scalaFiles =
       (sourceFiles ** "*.scala").get.filter { f =>
         val wholeFile = IO.read(f)
-        wholeFile.contains("@graphql") || wholeFile.contains("genGraphql(")
+        wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
       }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 

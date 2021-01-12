@@ -21,7 +21,7 @@ function parseFile(text, file): [] {
 
     invariant(
       text.indexOf('@graphql') >= 0 ||
-      text.indexOf("genGraphql\(") >= 0,
+      text.indexOf("graphqlGen") >= 0,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
       'parser.',
     )
@@ -49,7 +49,7 @@ function parseFile(text, file): [] {
       });
     }
 
-    const regex2 = /genGraphql\([\s]*"""([\s\S]*?)"""\)/g;
+    const regex2 = /graphqlGen\([\s]*"""([\s\S]*?)"""\)/g;
 
     while (matches = regex2.exec(text)) {
       const template = matches[1];
@@ -94,7 +94,8 @@ function parseFile(text, file): [] {
       false,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
       'parser, got unfiltered file `%s`. Should either have a .gql extension and be a ' +
-      'single query/fragment/mutation or be embedded in a .scala file as an annotation @gql("""...""")',
+      'single query/fragment/mutation or be embedded in a .scala file as an annotation @graphql("""...""") ' +
+      'or as a function, compiler.graphqlGen("""...""")',
       file
     )
   }

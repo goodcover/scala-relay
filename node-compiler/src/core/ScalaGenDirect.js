@@ -29,26 +29,17 @@ const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms
 
 import type {Schema, TypeID} from "relay-compiler/core/Schema";
 
-import type {
-  IRTransform,
-  Fragment,
-  Root,
-} from 'relay-compiler/lib/RelayCompilerPublic';
+import type {Fragment, IRTransform, Root,} from 'relay-compiler/lib/RelayCompilerPublic';
 
 import type {
-  ConcreteNode,
-  ConcreteRoot,
+  ConcreteCondition,
   ConcreteFragment,
-  ConcreteBatch,
-  ConcreteSelection,
-  ConcreteScalarField,
-  ConcreteLinkedField,
   ConcreteFragmentSpread,
   ConcreteInlineFragment,
-  ConcreteCondition,
-  ConcreteDirective,
+  ConcreteLinkedField,
+  ConcreteNode,
+  ConcreteRoot,
 } from 'react-relay';
-
 
 
 import type {ScalarTypeMapping} from 'relay-compiler/lib/RelayFlowTypeTransformers';
@@ -112,7 +103,7 @@ object ${node.name} extends ${code.objectParent || '_root_.relay.gql.GenericGrap
 
     `;
 
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     throw e;
   }
@@ -173,9 +164,10 @@ class ClassTracker {
   topLevelTypeParams: Array<QueryType>;
   isQuery: boolean;
   isMutation: boolean;
+  isFragment: boolean;
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
-  factoryMethods:Map<string, Cls>;
+  factoryMethods: Map<string, Cls>;
   schema: Schema;
 
   constructor(schema: Schema, nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
@@ -188,13 +180,14 @@ class ClassTracker {
     this.topLevelTypeParams = [];
     this.isQuery = false;
     this.isMutation = false;
+    this.isFragment = false;
     this._useNulls = useNulls;
     this.factoryMethods = new Map();
     this.schema = schema;
   }
 
   newClassName(cn: string, n: ?number): string {
-    const name = n ? `${cn}_${n}` :cn;
+    const name = n ? `${cn}_${n}` : cn;
     const cls = this.classes.get(name);
 
     if (cls) {
@@ -275,7 +268,7 @@ class ClassTracker {
   }
 
   flattenMembers(members: Array<Member>, spreads: Array<[string, Array<Member>]>): Map<string, Array<Member>> {
-    const m : Map<string, Array<Member>> = new Map();
+    const m: Map<string, Array<Member>> = new Map();
     members.forEach(s => {
       const mem = m.get(s.name)
       m.set(s.name, mem ? mem.concat(s) : [s]);
@@ -428,8 +421,8 @@ class ClassTracker {
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags, node.useNulls);
 
     /* $FlowFixMe */
-    const newNewTpe = this.transformScalarType(node.type , newTpe);
-    let comments: Array<string> = [];
+    const newNewTpe = this.transformScalarType(node.type, newTpe);
+    let comments: Array<string>;
 
     if (node.selections.length === selectionMembers.length) {
       // No spreads.
@@ -448,7 +441,7 @@ class ClassTracker {
 
   handleQuery(node: ConcreteRoot) {
     const clsName = node.name + "Input";
-    const newClasses : Array<Cls> = [];
+    const newClasses: Array<Cls> = [];
     if (node.operation === 'query') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
         // $FlowFixMe
@@ -477,6 +470,11 @@ class ClassTracker {
     // console.log(node);
   }
 
+  handleFragment(node: ConcreteFragment) {
+    this.isFragment = true
+    this.newQueryTypeParam(undefined, node.name)
+  }
+
   newSpread(n: ConcreteFragmentSpread) {
     // $FlowFixMe
     const tpe = this.getNewTpe(n);
@@ -502,14 +500,6 @@ class ClassTracker {
 
   popSpread(): [string, ASpread] {
     return this.spreads.shift();
-  }
-
-  memberCopy(): Array<Member> {
-    return [].concat(this.fields);
-  }
-
-  jsPrefix(): string {
-    return "js";
   }
 
   transformNonNullableScalarType(
@@ -635,8 +625,8 @@ class ClassTracker {
     const node = this._nodes.get(name);
     // console.log(node);
     if (node) {
-      let result =  flattenArray(node.selections.map(s => {
-        if (s.kind == "FragmentSpread") {
+      return flattenArray(node.selections.map(s => {
+        if (s.kind === "FragmentSpread") {
           // $FlowFixMe
           return this.getDirectMembersForFrag(s.name, name + "." + titleCase(s.name));
         } else {
@@ -650,15 +640,14 @@ class ClassTracker {
             scalar: s.kind == "ScalarField" ? true : false,
           }];
         }
-      }))
-      return result;
+      }));
     } else return [];
   }
 
   makeType(className: string, s: ATpe, cs?: Set<string>, useNulls: boolean): string {
-    let newTpeName = cs && cs.has(s.name) ? className + "." + s.name: s.name;
+    let newTpeName = cs && cs.has(s.name) ? className + "." + s.name : s.name;
     s.mods.forEach(mod => {
-      if (mod == ARRAY_MOD) {
+      if (mod === ARRAY_MOD) {
         newTpeName = "js.Array[" + newTpeName + "]";
       } else if (mod == OPTIONAL_MOD) {
         if (useNulls) {
@@ -698,9 +687,9 @@ class ClassTracker {
     invariant(name, "Name needs to be set");
     const indent = otherClasses ? "" : "  ";
 
-    const declPrefix = useVars ? "  var": "  val";
+    const declPrefix = useVars ? "  var" : "  val";
     const ex = extendsC.length > 0 ? ["with", extendsC.join(" with ")] : [];
-    const cls = indent + [`trait`, name, "extends", "js.Object", ...ex , "{"].join(" ");
+    const cls = indent + [`trait`, name, "extends", "js.Object", ...ex, "{"].join(" ");
 
     const outMembers = Array.from(members.values()).filter(s => !!s).map(s => {
       const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/"];
@@ -726,15 +715,15 @@ class ClassTracker {
    */
   outImplicitsFrags(impl: Array<ImplDef>): string {
 
-    var groups: {[string]: Array<ImplDef>} = {};
+    var groups: { [string]: Array<ImplDef> } = {};
     impl.forEach((item) => {
-       var list = groups[item.from];
+      var list = groups[item.from];
 
-       if(list){
-          list.push(item);
-       } else{
-          groups[item.from] = [item];
-       }
+      if (list) {
+        list.push(item);
+      } else {
+        groups[item.from] = [item];
+      }
     });
 
     return Object.keys(groups).map(k => {
@@ -823,31 +812,47 @@ class ClassTracker {
       invariant(this.topLevelTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
     }
 
-    const objectPrefix = this.isQuery ?
-      "_root_.relay.gql.QueryTaggedNode" : (this.isMutation ?
-        "_root_.relay.gql.MutationTaggedNode" : "");
+    let objectPrefix
 
-    const objectParent = this.topLevelTypeParams.length == 1 ?
-      `${objectPrefix}[${this.topLevelTypeParams[0].input}, ${this.topLevelTypeParams[0].output}]` :
-      '_root_.relay.gql.GenericGraphQLTaggedNode';
+    if (this.isQuery) {
+      objectPrefix = "_root_.relay.gql.QueryTaggedNode"
+    } else if (this.isMutation) {
+      objectPrefix = "_root_.relay.gql.MutationTaggedNode"
+    } else if (this.isFragment) {
+      objectPrefix = "_root_.relay.gql.FragmentTaggedNode"
+    } else {
+      objectPrefix = ""
+    }
+
+    let objectParent
+    if (this.topLevelTypeParams.length === 1) {
+      // There is always an output
+      if (this.topLevelTypeParams[0].input) {
+        objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].input}, ${this.topLevelTypeParams[0].output}]`
+      } else {
+        objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].output}]`
+      }
+    } else {
+      objectParent = '_root_.relay.gql.GenericGraphQLTaggedNode';
+    }
 
     return {
-        core: Array.from(this.topClasses.entries()).map(s => {
-            const cls = s[1];
-            if (cls) {
-              return this.outTrait(cls, this.classes);
-            } else return "";
-          }).join("\n"),
-        supporting,
-        implicits,
-        objectParent
+      core: Array.from(this.topClasses.entries()).map(s => {
+        const cls = s[1];
+        if (cls) {
+          return this.outTrait(cls, this.classes);
+        } else return "";
+      }).join("\n"),
+      supporting,
+      implicits,
+      objectParent
     };
   }
 }
 
 function createVisitor(schema: Schema, ct: ClassTracker) {
   return {
-    enter : {
+    enter: {
       Root(node: ConcreteRoot) {
         const useNulls = ct.isUseNulls(node);
         const selections = node.selections.map(s => {
@@ -947,7 +952,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
         return node;
       },
       Fragment(node: ConcreteFragment) {
-        // console.log("Fragment", node);
+        ct.handleFragment(node)
         ct.closeField(node, false, false);
         // // $FlowFixMe
         // ct.handleSelections(node);
@@ -962,7 +967,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
       ScalarField(node) {
         // console.log("ScalarField", node);
         // $FlowFixMe
-        const extendsCPresent: ?string  = node.metadata && node.metadata.extends
+        const extendsCPresent: ?string = node.metadata && node.metadata.extends
 
         // $FlowFixMe
         const tpe = ct.transformScalarType((node.type: TypeID));
