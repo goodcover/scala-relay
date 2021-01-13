@@ -12,7 +12,7 @@ class GraphQLGenInjector extends ScalaMacroTypeable {
 
     reg.findFirstMatchIn(context.place.getText) match {
       case Some(value) =>
-        val reg       = raw"(fragment|mutation|subscription|query)[\s+]([\S]+)".r
+        val reg       = raw"(fragment|mutation|subscription|query)[\s]+([\w]+)".r
         val opAndName = for (m <- reg.findFirstMatchIn(value.group(1))) yield (m.group(1), m.group(2))
         opAndName match {
           case Some((_, name)) =>

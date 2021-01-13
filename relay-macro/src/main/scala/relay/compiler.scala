@@ -37,7 +37,7 @@ object compiler {
 
       s.tree match {
         case Literal(Constant(s: String)) =>
-          val reg       = raw"(fragment|mutation|subscription|query)[\s+]([\S]+)".r
+          val reg       = raw"(fragment|mutation|subscription|query)[\s]+([\w]+)".r
           val opAndName = for (m <- reg.findFirstMatchIn(s)) yield (m.group(1), m.group(2))
 
           opAndName match {
