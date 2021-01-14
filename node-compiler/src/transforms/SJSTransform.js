@@ -16,6 +16,10 @@ const {
   getLiteralArgumentValues,
 } = require('relay-compiler');
 
+
+const SCHEMA_EXTENSION =
+  `directive @scalajs(useNulls: Boolean, extends: String) on ARGUMENT_DEFINITION | ENUM | ENUM_VALUE | FIELD | FIELD_DEFINITION | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | INPUT_FIELD_DEFINITION | INPUT_OBJECT | INTERFACE | MUTATION | OBJECT | QUERY | SCALAR | SCHEMA | SUBSCRIPTION | UNION`
+
 function sjsTransform(
   context: GraphQLCompilerContext,
 ): GraphQLCompilerContext {
@@ -81,4 +85,5 @@ function visitDirective(directive: Directive): ?Directive {
 module.exports = {
   transform: sjsTransform,
   transformRemoveSjs: filterDirectivesTransform,
+  SCHEMA_EXTENSION,
 };

@@ -22,7 +22,7 @@ const RelayRelayDirectiveTransform = require('relay-compiler/lib/transforms/Rela
 const RelayMaskTransform = require('relay-compiler/lib/transforms/MaskTransform');
 const RelayMatchTransform = require('relay-compiler/lib/transforms/MatchTransform');
 // TODO: Look at adding these
-// const FlattenTransform = require("relay-compiler/lib/transforms/FlattenTransform");
+const FlattenTransform = require("relay-compiler/lib/transforms/FlattenTransform");
 // const ConnectionFieldTransform = require("relay-compiler/lib/transforms/ConnectionFieldTransform");
 const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RefetchableFragmentTransform');
 
@@ -1019,12 +1019,19 @@ const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayMaskTransform.transform,
   // ConnectionFieldTransform.transform,
   RelayMatchTransform.transform,
-  // FlattenTransform.transformWithOptions({}),
+  FlattenTransform.transformWithOptions({}),
   RelayRefetchableFragmentTransform.transform,
   SJSTransform.transform,
+  SJSTransform.transformRemoveSjs,
 ];
+
+const schemaExtensions: Array<string> = [
+  SJSTransform.SCHEMA_EXTENSION
+]
+
 
 module.exports = {
   generate: Profiler.instrument(generate, 'RelayScalaGenerator.generate'),
   transforms: FLOW_TRANSFORMS,
+  schemaExtensions,
 };
