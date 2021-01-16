@@ -31,8 +31,8 @@ const formatGeneratedModule: FormatModule = ({
 
   const result = Terser.minify(`(${concreteText})`, {compress: false});
   const code = result.code || concreteText;
-
-  const resultOfRefetch = definition.metadata?.refetch?.operation
+  const d = definition.metadata
+  const resultOfRefetch = d && d.refetch && d.refetch.operation
   const refetchTempl = resultOfRefetch ? `// Refetchable query
     defn.metadata.refetch.operation = _root_.relay.generated.${resultOfRefetch}.query` : ``
 

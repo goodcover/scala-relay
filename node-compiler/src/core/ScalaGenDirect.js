@@ -478,7 +478,7 @@ class ClassTracker {
 
   handleFragment(node: ConcreteFragment) {
     this.isFragment = true
-    if (node.metadata?.refetch?.operation) {
+    if (node.metadata && node.metadata.refetch && node.metadata.refetch.operation) {
       this.isRefetchable = true;
       const opName = node.metadata.refetch.operation
       const refetchIn = this.inputName(opName)
