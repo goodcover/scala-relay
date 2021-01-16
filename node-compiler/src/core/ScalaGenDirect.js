@@ -23,7 +23,7 @@ const RelayMaskTransform = require('relay-compiler/lib/transforms/MaskTransform'
 const RelayMatchTransform = require('relay-compiler/lib/transforms/MatchTransform');
 // TODO: Look at adding these
 const FlattenTransform = require("relay-compiler/lib/transforms/FlattenTransform");
-// const ConnectionFieldTransform = require("relay-compiler/lib/transforms/ConnectionFieldTransform");
+const RequiredFieldTransform = require('relay-compiler/lib/transforms/RequiredFieldTransform');
 const RelayRefetchableFragmentTransform = require('relay-compiler/lib/transforms/RefetchableFragmentTransform');
 
 
@@ -165,6 +165,7 @@ class ClassTracker {
   isQuery: boolean;
   isMutation: boolean;
   isFragment: boolean;
+  isRefetchable: boolean;
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
   factoryMethods: Map<string, Cls>;
@@ -181,6 +182,7 @@ class ClassTracker {
     this.isQuery = false;
     this.isMutation = false;
     this.isFragment = false;
+    this.isRefetchable = false;
     this._useNulls = useNulls;
     this.factoryMethods = new Map();
     this.schema = schema;
@@ -202,8 +204,8 @@ class ClassTracker {
     this.implicits.unshift({from, to, name, inline});
   }
 
-  newQueryTypeParam(input: string, output: string) {
-    this.topLevelTypeParams.push({input, output});
+  newQueryTypeParam(input: string, output: string , refetchIn?: string, refetchOut?: string) {
+    this.topLevelTypeParams.push({input, output, refetchIn, refetchOut});
   }
 
   /**
@@ -439,8 +441,12 @@ class ClassTracker {
     });
   }
 
+  inputName(name: string) {
+    return name + "Input"
+  }
+
   handleQuery(node: ConcreteRoot) {
-    const clsName = node.name + "Input";
+    const clsName = this.inputName(node.name);
     const newClasses: Array<Cls> = [];
     if (node.operation === 'query') {
       const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
@@ -472,7 +478,14 @@ class ClassTracker {
 
   handleFragment(node: ConcreteFragment) {
     this.isFragment = true
-    this.newQueryTypeParam(undefined, node.name)
+    if (node.metadata?.refetch?.operation) {
+      this.isRefetchable = true;
+      const opName = node.metadata.refetch.operation
+      const refetchIn = this.inputName(opName)
+      this.newQueryTypeParam(undefined, node.name, refetchIn, opName)
+    } else {
+      this.newQueryTypeParam(undefined, node.name)
+    }
   }
 
   newSpread(n: ConcreteFragmentSpread) {
@@ -757,10 +770,13 @@ class ClassTracker {
    */
   outImplicitsConversion(impl: Array<ImplDef>, otherClasses?: ?Map<string, Cls>, topClasses: Array<Cls>): string {
 
+    const ref = `_root_.relay.gql.FragmentRef`
+
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
       return [
         `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`,
+        `  implicit def ${from}2${to}Ref(f: ${from}): ${ref}[${to}] = f.asInstanceOf[${ref}[${to}]]`,
       ].join("\n");
     }).join("\n");
     return [text].join("\n");
@@ -819,7 +835,12 @@ class ClassTracker {
     } else if (this.isMutation) {
       objectPrefix = "_root_.relay.gql.MutationTaggedNode"
     } else if (this.isFragment) {
-      objectPrefix = "_root_.relay.gql.FragmentTaggedNode"
+      if (this.isRefetchable) {
+        objectPrefix = "_root_.relay.gql.FragmentRefetchableTaggedNode"
+      } else {
+        objectPrefix = "_root_.relay.gql.FragmentTaggedNode"
+
+      }
     } else {
       objectPrefix = ""
     }
@@ -830,7 +851,11 @@ class ClassTracker {
       if (this.topLevelTypeParams[0].input) {
         objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].input}, ${this.topLevelTypeParams[0].output}]`
       } else {
-        objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].output}]`
+        if (this.topLevelTypeParams[0].refetchIn) {
+          objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].output}, ${this.topLevelTypeParams[0].refetchIn}, ${this.topLevelTypeParams[0].refetchOut}]`
+        } else {
+          objectParent = `${objectPrefix}[${this.topLevelTypeParams[0].output}]`
+        }
       }
     } else {
       objectParent = '_root_.relay.gql.GenericGraphQLTaggedNode';
@@ -1019,6 +1044,7 @@ const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayMaskTransform.transform,
   // ConnectionFieldTransform.transform,
   RelayMatchTransform.transform,
+  RequiredFieldTransform.transform,
   FlattenTransform.transformWithOptions({}),
   RelayRefetchableFragmentTransform.transform,
   SJSTransform.transform,

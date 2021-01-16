@@ -49,6 +49,19 @@ object FragmentTaggedNode {
   }
 }
 
+trait FragmentRefetchableTaggedNode[O <: js.Object, RI <: js.Object, RO <: js.Object] extends FragmentTaggedNode[O] {
+  type RefetchIn  = RI
+  type RefetchOut = RO
+}
+
+object FragmentRefetchableTaggedNode {
+  implicit def fragmentTaggedNodeConv[O <: js.Object, RI <: js.Object, RO <: js.Object](
+    ftn: FragmentRefetchableTaggedNode[O, RI, RO]
+  ): TaggedNode = {
+    ftn.query
+  }
+}
+
 /** This is what all the Relay components request */
 trait TaggedNode extends js.Object
 
