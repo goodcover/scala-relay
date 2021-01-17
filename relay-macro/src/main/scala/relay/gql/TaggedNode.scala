@@ -17,6 +17,7 @@ object GenericGraphQLTaggedNode {
   }
 }
 
+/** Query */
 trait QueryTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
@@ -28,6 +29,7 @@ object QueryTaggedNode {
   }
 }
 
+/** Mutation */
 trait MutationTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
@@ -35,6 +37,18 @@ trait MutationTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTag
 
 object MutationTaggedNode {
   implicit def ggql2jsObj[I <: js.Object, O <: js.Object](ggqltn: MutationTaggedNode[I, O]): TaggedNode = {
+    ggqltn.query
+  }
+}
+
+/** Subscription */
+trait SubscriptionTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
+  type Input = I
+  type Out   = O
+}
+
+object SubscriptionTaggedNode {
+  implicit def ggql2jsObj[I <: js.Object, O <: js.Object](ggqltn: SubscriptionTaggedNode[I, O]): TaggedNode = {
     ggqltn.query
   }
 }

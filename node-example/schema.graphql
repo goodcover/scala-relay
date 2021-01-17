@@ -1,5 +1,6 @@
 schema {
   query: Root
+  subscription: Subscription
 }
 
 type Root {
@@ -18,3 +19,11 @@ type WordDefinition {
 }
 
 scalar ID
+
+type ConnectedOperator {
+  operators: [String!]!
+}
+
+type Subscription {
+  operators(seed: String!): ConnectedOperator!
+}

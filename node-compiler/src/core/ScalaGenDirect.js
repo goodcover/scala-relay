@@ -166,6 +166,7 @@ class ClassTracker {
   isMutation: boolean;
   isFragment: boolean;
   isRefetchable: boolean;
+  isSubscription: boolean;
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
   factoryMethods: Map<string, Cls>;
@@ -183,6 +184,7 @@ class ClassTracker {
     this.isMutation = false;
     this.isFragment = false;
     this.isRefetchable = false;
+    this.isSubscription = false;
     this._useNulls = useNulls;
     this.factoryMethods = new Map();
     this.schema = schema;
@@ -469,6 +471,17 @@ class ClassTracker {
       this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
       this.newQueryTypeParam(resultName, node.name);
       this.isMutation = true;
+    } else if (node.operation === 'subscription') {
+      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+        // $FlowFixMe
+        const tpe = this.transformInputType(type, newClasses);
+        return {name, tpe, comments: []};
+      });
+
+      const resultName = this.newClass(clsName, members, [], false, [], node.useNulls, false);
+      this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
+      this.newQueryTypeParam(resultName, node.name);
+      this.isSubscription = true;
     }
     newClasses.forEach(({name, members, extendsC, linkedField, spreadFrags, useVars}) => {
       this.newClass(name || '', members, extendsC, linkedField, spreadFrags, node.useNulls, false);
@@ -824,7 +837,7 @@ class ClassTracker {
     ].join("\n");
 
 
-    if (this.isQuery || this.isMutation) {
+    if (this.isQuery || this.isMutation || this.isSubscription) {
       invariant(this.topLevelTypeParams.length <= 1, "Something went wrong and there are multiple input objects.");
     }
 
@@ -834,7 +847,10 @@ class ClassTracker {
       objectPrefix = "_root_.relay.gql.QueryTaggedNode"
     } else if (this.isMutation) {
       objectPrefix = "_root_.relay.gql.MutationTaggedNode"
-    } else if (this.isFragment) {
+    } else if (this.isSubscription) {
+      objectPrefix = "_root_.relay.gql.SubscriptionTaggedNode"
+    }
+    else if (this.isFragment) {
       if (this.isRefetchable) {
         objectPrefix = "_root_.relay.gql.FragmentRefetchableTaggedNode"
       } else {
