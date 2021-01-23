@@ -20,10 +20,34 @@ type WordDefinition {
 
 scalar ID
 
+type ProposedChangeCancelled {
+  userId: String!
+  when: Float!
+}
+
+input ChangeReviewInput {
+  id: String!
+  ownerId: String!
+  approve: Boolean!
+  changeType: String!
+  details: String
+}
+
+input ChangeReviewInputInput {
+  change: ChangeReviewInput!
+}
+
 type ConnectedOperator {
   operators: [String!]!
 }
 
 type Subscription {
   operators(seed: String!): ConnectedOperator!
+}
+
+type Mutation {
+  userEvents(input: ChangeReviewInput!): ProposedChangeCancelled!
+  userEventsScalar(input: String!): ProposedChangeCancelled!
+  userEventsNoInput: ProposedChangeCancelled!
+  userEventsComplexInput(input: ChangeReviewInputInput!): ProposedChangeCancelled!
 }

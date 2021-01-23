@@ -79,7 +79,7 @@ function generate(
 
   const newCT = new ClassTracker(schema, options.nodes, options.useNulls || false);
   try {
-    const ast = IRVisitor.visit(
+    IRVisitor.visit(
       node,
       createVisitor(schema, newCT)
     )
@@ -140,6 +140,7 @@ type Cls = {
   isClass?: boolean,
   useNulls: boolean,
   useVars?: boolean,
+  parentObj?: string,
 };
 
 type ImplDef = {
@@ -169,7 +170,7 @@ class ClassTracker {
   isSubscription: boolean;
   _nodes: Map<string, ConcreteRoot | ConcreteFragment>;
   _useNulls: boolean;
-  factoryMethods: Map<string, Cls>;
+  factoryMethods: Array<[string, Cls]>;
   schema: Schema;
 
   constructor(schema: Schema, nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
@@ -186,7 +187,7 @@ class ClassTracker {
     this.isRefetchable = false;
     this.isSubscription = false;
     this._useNulls = useNulls;
-    this.factoryMethods = new Map();
+    this.factoryMethods = [];
     this.schema = schema;
   }
 
@@ -215,11 +216,13 @@ class ClassTracker {
    *
    * Linked Field means a partial/full selection.
    *
-   * @param {} cn
+   * @param {string} cn
    * @param {*} members
    * @param {*} extendsC
    * @param {*} linkedField
    * @param {*} spreadFrags
+   * @param useNulls set globally or locally
+   * @param useVars todo
    */
   newClass(cn: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean, useVars?: boolean): string {
     let name = cn;
@@ -252,8 +255,16 @@ class ClassTracker {
     return name;
   }
 
-  newFactoryMethod(methodName: string, name: string, members: Array<Member>, extendsC: Array<string>, linkedField: boolean, spreadFrags: Array<string>, useNulls: boolean, useVars?: boolean) {
-    this.factoryMethods.set(methodName, {
+  newFactoryMethod(methodName: string,
+                   name: string,
+                   members: Array<Member>,
+                   extendsC: Array<string>,
+                   linkedField: boolean,
+                   spreadFrags: Array<string>,
+                   useNulls: boolean,
+                   useVars?: boolean,
+                   parentObj?: String) {
+    this.factoryMethods.push([methodName, {
       name,
       members,
       extendsC,
@@ -262,29 +273,8 @@ class ClassTracker {
       spreadFrags,
       useNulls,
       useVars,
-    });
-  }
-
-  handleInline(node: ConcreteInlineFragment) {
-    //$FlowFixMe
-    const spreadFrags: Array<ConcreteFragmentSpread> = node.selections.filter(s => s.kind === "FragmentSpread");
-    const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread");
-  }
-
-  flattenMembers(members: Array<Member>, spreads: Array<[string, Array<Member>]>): Map<string, Array<Member>> {
-    const m: Map<string, Array<Member>> = new Map();
-    members.forEach(s => {
-      const mem = m.get(s.name)
-      m.set(s.name, mem ? mem.concat(s) : [s]);
-    });
-
-    for (const [key, value] of spreads) {
-      value.forEach(s => {
-        const mem = m.get(s.name)
-        m.set(s.name, mem ? mem.concat(s) : [s]);
-      });
-    }
-    return m;
+      parentObj
+    }]);
   }
 
   getNewTpeInlineFrag(node: ConcreteInlineFragment): string {
@@ -311,29 +301,14 @@ class ClassTracker {
     // TODO: Should I change this?
     const suffix = node.operation === "query" ? "" : "";
     // $FlowFixMe
-    const nameAlias = (node.alias || node.name) + suffix;
-    return nameAlias;
+    return (node.alias || node.name) + suffix;
   }
 
   getNewTpe(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
     const nameAlias = this.getNodeName(node);
-    if (node.kind == "LinkedField") {
+    if (node.kind === "LinkedField") {
       if (node.parentTpe) { /* $FlowFixMe */
         return node.parentTpe.slice(1).join("") + titleCase(nameAlias);
-      }
-    }
-    return titleCase(nameAlias);
-  }
-
-  getNewTpeMember(node: ConcreteLinkedField | ConcreteRoot | ConcreteFragment): string {
-    const nameAlias = this.getNodeName(node);
-    if (node.kind == "LinkedField" || node.kind === "InlineFragment") {
-      if (node.parentTpe) {
-        if (node.parentTpe.length == 1) { /* $FlowFixMe */
-          return node.parentTpe.join("") + titleCase(nameAlias)
-        } else { /* $FlowFixMe */
-          return node.parentTpe.slice(1).join("") + titleCase(nameAlias);
-        }
       }
     }
     return titleCase(nameAlias);
@@ -348,7 +323,7 @@ class ClassTracker {
     const fragSpreadMembers = node.selections.filter(s => s.kind === "FragmentSpread");
     const listOfSpreads: Array<[string, ASpread]> = fragSpreadMembers.map(_ => this.popSpread());
     // Using selection members to pull the right amount of fields out.
-    const localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+    const localMembers: Array<Member> = selectionMembers.map(() => this.popMember());
     const extendsCls = this.getScalajsDirectiveExtends(node);
     const newTpe = this.newClass(newClassName, localMembers, extendsCls, true, [], node.useNulls);
     const parentCls = this.getNewTpeParent(node);
@@ -391,7 +366,7 @@ class ClassTracker {
     const selectionMembers = node.selections.filter(s => s.kind !== "FragmentSpread" && s.kind !== "InlineFragment");
 
     // We modify this in the baton.  Pop all the members off.
-    let localMembers: Array<Member> = selectionMembers.map(foo => this.popMember());
+    let localMembers: Array<Member> = selectionMembers.map(() => this.popMember());
 
     if (!node.type) {
       throw new Error(`Expected ${node.toString()} to have a type member.`)
@@ -451,9 +426,9 @@ class ClassTracker {
     const clsName = this.inputName(node.name);
     const newClasses: Array<Cls> = [];
     if (node.operation === 'query') {
-      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+      const members: Array<Member> = node.argumentDefinitions.map(({name, type}) => {
         // $FlowFixMe
-        const tpe = this.transformInputType(type, newClasses);
+        const tpe = this.transformInputType(type, newClasses, node.name);
         return {name, tpe, comments: []};
       });
       const resultName = this.newClass(clsName, members, [], false, [], node.useNulls, false);
@@ -461,20 +436,44 @@ class ClassTracker {
       this.newQueryTypeParam(resultName, node.name);
       this.isQuery = true;
     } else if (node.operation === 'mutation') {
-      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+      // We diverge from normal graphql norms, to basically skip the { input: ...blah } part of the mutation
+      // Because honestly, its superfluous
+
+      // console.log(node.argumentDefinitions)
+      const clsMembers: Array<Member> = node.argumentDefinitions.map(({name, type}) => {
         // $FlowFixMe
-        const tpe = this.transformInputType(type, newClasses);
+        const tpe = this.transformInputType(type, newClasses, node.name);
         return {name, tpe, comments: []};
       });
 
-      const resultName = this.newClass(clsName, members, [], false, [], node.useNulls, false);
-      this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
-      this.newQueryTypeParam(resultName, node.name);
+      if (clsMembers.length === 0) {
+        this.newQueryTypeParam("Null", node.name);
+      } else {
+        if (newClasses.length === 0) {
+          // A scalar input
+          const cls = clsMembers[0].tpe[0]
+
+          this.newQueryTypeParam(cls.name, node.name);
+        } else {
+
+          // console.log(clsMembers, newClasses)
+          const innerClass = newClasses.pop()
+
+          // const resultName = this.newClass(clsName, clsMembers, [], false, [], node.useNulls, false);
+          // this.newFactoryMethod("newInput", resultName, clsMembers, [], false, [], true, false);
+          // this.newQueryTypeParam(resultName, node.name);
+          const { members, extendsC, linkedField, spreadFrags, useVars} = innerClass
+
+          const resultName = this.newClass(clsName, members, extendsC, linkedField, spreadFrags, node.useNulls, useVars);
+          this.newFactoryMethod("newInput", resultName, members, [], false, [], true, false);
+          this.newQueryTypeParam(resultName, node.name);
+        }
+      }
       this.isMutation = true;
     } else if (node.operation === 'subscription') {
-      const members: Array<Member> = node.argumentDefinitions.map(({name, type, defaultValue}) => {
+      const members: Array<Member> = node.argumentDefinitions.map(({name, type}) => {
         // $FlowFixMe
-        const tpe = this.transformInputType(type, newClasses);
+        const tpe = this.transformInputType(type, newClasses, node.name);
         return {name, tpe, comments: []};
       });
 
@@ -556,20 +555,20 @@ class ClassTracker {
     }
   }
 
-  transformInputType(type: TypeID, classes: Array<Cls>): Array<ATpe> {
+  transformInputType(type: TypeID, classes: Array<Cls>, prefix: string): Array<ATpe> {
     if (this.schema.isNonNull(type)) {
-      return this.transformNonNullableInputType(this.schema.getNullableType(type), classes);
+      return this.transformNonNullableInputType(this.schema.getNullableType(type), classes, prefix);
     } else {
-      return this.transformNonNullableInputType(type, classes).map(s => {
+      return this.transformNonNullableInputType(type, classes, prefix).map(s => {
         s.mods.push(OPTIONAL_MOD)
         return s;
       });
     }
   }
 
-  transformNonNullableInputType(type: TypeID, classes: Array<Cls>): Array<ATpe> {
+  transformNonNullableInputType(type: TypeID, classes: Array<Cls>, prefix: string): Array<ATpe> {
     if (this.schema.isList(type)) {
-      return this.transformInputType(this.schema.getListItemType(type), classes).map(s => {
+      return this.transformInputType(this.schema.getListItemType(type), classes, prefix).map(s => {
         s.mods.push(ARRAY_MOD);
         return s;
       });
@@ -582,7 +581,7 @@ class ClassTracker {
       const props: Array<Member> = fields.map((fieldID: FieldID) => {
         const fieldType = this.schema.getFieldType(fieldID);
         const fieldName = this.schema.getFieldName(fieldID);
-        const property = this.transformInputType(fieldType, classes)
+        const property = this.transformInputType(fieldType, classes, prefix)
         return {
           name: fieldName,
           tpe: property,
@@ -591,7 +590,7 @@ class ClassTracker {
       });
 
       classes.push({
-        name: type.toString(),
+        name: prefix + type.toString(),
         members: props,
         open: false,
         extendsC: [],
@@ -599,8 +598,10 @@ class ClassTracker {
         spreadFrags: [],
         useNulls: true,
       });
+
+      this.newFactoryMethod("apply", prefix + type.toString(), props, [], false, [], true, false, prefix + type.toString())
       return [{
-        name: type.toString(),
+        name: prefix + type.toString(),
         mods: [INPUT_MOD],
       }];
     } else {
@@ -663,7 +664,7 @@ class ClassTracker {
             tpe: this.transformScalarType(s.type, name + "." + titleCase(s.name)),
             comments: [`getDirectMembersForFrag child of ${name}`],
             parentFrag: name,
-            scalar: s.kind == "ScalarField" ? true : false,
+            scalar: s.kind === "ScalarField",
           }];
         }
       }));
@@ -675,7 +676,7 @@ class ClassTracker {
     s.mods.forEach(mod => {
       if (mod === ARRAY_MOD) {
         newTpeName = "js.Array[" + newTpeName + "]";
-      } else if (mod == OPTIONAL_MOD) {
+      } else if (mod === OPTIONAL_MOD) {
         if (useNulls) {
           newTpeName = `${newTpeName} | Null`
         } else {
@@ -718,13 +719,7 @@ class ClassTracker {
     const cls = indent + [`trait`, name, "extends", "js.Object", ...ex, "{"].join(" ");
 
     const outMembers = Array.from(members.values()).filter(s => !!s).map(s => {
-      const comment = s.comments.length == 0 ? [] : ["  /**", ...s.comments, "*/"];
-
-      if (!name) {
-        throw new Error(`Class is missing name, has the following members: ${members.toString()}`);
-      }
-
-      // console.log(name, useNulls);
+      const comment = s.comments.length === 0 ? [] : ["  /**", ...s.comments, "*/"];
 
       // Figure out if we've created the type, if so, add a prefix.
       const tpe = this.makeTypeFromMember(name, s, otherClasses, useNulls);
@@ -741,9 +736,9 @@ class ClassTracker {
    */
   outImplicitsFrags(impl: Array<ImplDef>): string {
 
-    var groups: { [string]: Array<ImplDef> } = {};
+    const groups: { [string]: Array<ImplDef> } = {};
     impl.forEach((item) => {
-      var list = groups[item.from];
+      const list = groups[item.from];
 
       if (list) {
         list.push(item);
@@ -820,8 +815,15 @@ class ClassTracker {
     return `  def ${methodName}(${result}): ${cls.name} = ${body}`;
   }
 
+  outFactoryObject(name: string, body: string) : string {
+    return `object ${name} {
+  ${body}
+}`
+  }
+
   out(): { supporting: string, core: string, implicits: string, objectParent: string } {
     // invariant(this.topClasses.size === 1, `there should be 1 "topClasses", got `);
+
 
     const supporting = Array.from(this.classes.entries())
       .map(s => s[1])
@@ -833,7 +835,9 @@ class ClassTracker {
     const implicits = [
       this.outImplicitsFrags(this.implicits.filter(s => s.inline)),
       this.outImplicitsConversion(this.implicits.filter(s => !s.inline), this.classes, Array.from(this.topClasses.values())),
-      ...Array.from(this.factoryMethods.entries()).map(m => this.outFactoryMethod(m[0], m[1]))
+      ...this.factoryMethods
+        .filter(([met, cls]) => !cls.parentObj)
+        .map(([method, cls]) => this.outFactoryMethod(method, cls))
     ].join("\n");
 
 
@@ -881,7 +885,16 @@ class ClassTracker {
       core: Array.from(this.topClasses.entries()).map(s => {
         const cls = s[1];
         if (cls) {
-          return this.outTrait(cls, this.classes);
+          const supportingObjects = this.factoryMethods
+            .filter(([met, maybeParent]) => maybeParent.parentObj === cls.name)
+            .filter(([met, cls]) => cls.parentObj)
+            .map(([method, cls]) => {
+
+              return this.outFactoryObject(cls.parentObj, this.outFactoryMethod(method, cls))
+            })
+            .join("\n");
+
+          return [this.outTrait(cls, this.classes), supportingObjects].join("\n");
         } else return "";
       }).join("\n"),
       supporting,
@@ -993,6 +1006,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
         return node;
       },
       Fragment(node: ConcreteFragment) {
+        // console.log("Fragment", node);
         ct.handleFragment(node)
         ct.closeField(node, false, false);
         // // $FlowFixMe

@@ -9,7 +9,7 @@ trait GenericGraphQLTaggedNode {
 }
 
 /** The typed version */
-trait TypedGraphQLTaggedNode[I <: js.Object, O <: js.Object] extends GenericGraphQLTaggedNode
+trait TypedGraphQLTaggedNode[I, O] extends GenericGraphQLTaggedNode
 
 object GenericGraphQLTaggedNode {
   implicit def ggql2jsObj(ggqltn: GenericGraphQLTaggedNode): TaggedNode = {
@@ -18,60 +18,58 @@ object GenericGraphQLTaggedNode {
 }
 
 /** Query */
-trait QueryTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
+trait QueryTaggedNode[I, O] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
 }
 
 object QueryTaggedNode {
-  implicit def ggql2jsObj[I <: js.Object, O <: js.Object](ggqltn: QueryTaggedNode[I, O]): TaggedNode = {
+  implicit def ggql2jsObj[I, O](ggqltn: QueryTaggedNode[I, O]): TaggedNode = {
     ggqltn.query
   }
 }
 
 /** Mutation */
-trait MutationTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
+trait MutationTaggedNode[I, O] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
 }
 
 object MutationTaggedNode {
-  implicit def ggql2jsObj[I <: js.Object, O <: js.Object](ggqltn: MutationTaggedNode[I, O]): TaggedNode = {
+  implicit def ggql2jsObj[I, O](ggqltn: MutationTaggedNode[I, O]): TaggedNode = {
     ggqltn.query
   }
 }
 
 /** Subscription */
-trait SubscriptionTaggedNode[I <: js.Object, O <: js.Object] extends TypedGraphQLTaggedNode[I, O] {
+trait SubscriptionTaggedNode[I, O] extends TypedGraphQLTaggedNode[I, O] {
   type Input = I
   type Out   = O
 }
 
 object SubscriptionTaggedNode {
-  implicit def ggql2jsObj[I <: js.Object, O <: js.Object](ggqltn: SubscriptionTaggedNode[I, O]): TaggedNode = {
+  implicit def ggql2jsObj[I, O](ggqltn: SubscriptionTaggedNode[I, O]): TaggedNode = {
     ggqltn.query
   }
 }
 
-trait FragmentTaggedNode[O <: js.Object] extends GenericGraphQLTaggedNode {
+trait FragmentTaggedNode[O] extends GenericGraphQLTaggedNode {
   type Out = O
 }
 
 object FragmentTaggedNode {
-  implicit def fragmentTaggedNodeConv[O <: js.Object](ftn: FragmentTaggedNode[O]): TaggedNode = {
+  implicit def fragmentTaggedNodeConv[O](ftn: FragmentTaggedNode[O]): TaggedNode = {
     ftn.query
   }
 }
 
-trait FragmentRefetchableTaggedNode[O <: js.Object, RI <: js.Object, RO <: js.Object] extends FragmentTaggedNode[O] {
+trait FragmentRefetchableTaggedNode[O, RI, RO] extends FragmentTaggedNode[O] {
   type RefetchIn  = RI
   type RefetchOut = RO
 }
 
 object FragmentRefetchableTaggedNode {
-  implicit def fragmentTaggedNodeConv[O <: js.Object, RI <: js.Object, RO <: js.Object](
-    ftn: FragmentRefetchableTaggedNode[O, RI, RO]
-  ): TaggedNode = {
+  implicit def fragmentTaggedNodeConv[O, RI, RO](ftn: FragmentRefetchableTaggedNode[O, RI, RO]): TaggedNode = {
     ftn.query
   }
 }
