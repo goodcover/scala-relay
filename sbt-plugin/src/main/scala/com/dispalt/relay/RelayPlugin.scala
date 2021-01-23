@@ -5,7 +5,6 @@ import java.io.InputStream
 import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import play.api.libs.json.{JsObject, Json}
 import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
 import sbt.Keys._
 import sbt._

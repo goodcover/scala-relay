@@ -1,8 +1,6 @@
 package relay
 
 import scala.reflect.macros.whitebox
-import scala.scalajs.js
-import scala.util.matching.Regex
 
 object compiler {
 
