@@ -1,5 +1,7 @@
+import sbtrelease.ReleaseCustom
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
+
 import scala.sys.process._
 
 val sbtVersions = List("1.4.6")
@@ -227,26 +229,10 @@ releaseProcess :=
     releaseStepCommandAndRemaining("^ sbt-relay-compiler/publishSigned"),
     releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-    doReleaseYarn,
+    ReleaseCustom.doReleaseYarn,
     setNextVersion,
-    commitNextVersion,
+    ReleaseCustom.commitNextVersion,
     pushChanges
   )
-
-lazy val doReleaseYarn = { st: State =>
-  val v = Project.extract(st)
-  val pl = new ProcessLogger {
-    override def err(s: => String): Unit = st.log.info(s)
-    override def out(s: => String): Unit = st.log.info(s)
-    override def buffer[T](f: => T): T   = st.log.buffer(f)
-  }
-  val versionString = v.get(version)
-  val bd            = v.get(baseDirectory)
-
-  Process(s"yarn", bd / "node-compiler").!
-  val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
-  cmd.!(pl)
-  st
-}
 
 addCommandAlias("publishLocalAll", ";publishLocal ;slinky-relay-ijext/publishLocal")
