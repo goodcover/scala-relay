@@ -783,8 +783,11 @@ class ClassTracker {
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
       return [
+        `  /** this is somewhat dangerous with hooks, use the frag.to${to} call instead. */`,
         `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`,
-        `  implicit def ${from}2${to}Ref(f: ${from}): ${ref}[${to}] = f.asInstanceOf[${ref}[${to}]]`,
+        `  implicit class ${from}2${to}Ref(f: ${from}) {`,
+        `    def to${to}: ${ref}[${to}] = f.asInstanceOf[${ref}[${to}]]`,
+        `  }`,
       ].join("\n");
     }).join("\n");
     return [text].join("\n");

@@ -55,6 +55,7 @@ object SubscriptionTaggedNode {
 
 trait FragmentTaggedNode[O] extends GenericGraphQLTaggedNode {
   type Out = O
+  type Ref = FragmentRef[O]
 }
 
 object FragmentTaggedNode {
