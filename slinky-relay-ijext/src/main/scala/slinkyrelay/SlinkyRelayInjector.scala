@@ -15,12 +15,9 @@ import org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.{SyntheticMemb
 import org.jetbrains.plugins.scala.lang.psi.api.toplevel.typedef._
 import org.jetbrains.plugins.scala.lang.psi.api.statements.{
   ScPatternDefinition,
-  ScTypeAliasDeclaration,
   ScTypeAliasDefinition,
   ScValueDeclaration
 }
-import org.jetbrains.plugins.scala.lang.psi.types.api.designator.ScDesignatorType
-import org.jetbrains.plugins.scala.lang.psi.types.api.{ParameterizedType, StdType}
 
 class SlinkyRelayInjector extends SyntheticMembersInjector {
   sealed trait InjectType

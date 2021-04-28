@@ -5,7 +5,6 @@ import java.io.InputStream
 import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import play.api.libs.json.{JsObject, Json}
 import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -70,7 +69,7 @@ object RelayBasePlugin extends AutoPlugin {
       /**
         * Set the version of the `relay-compiler` module.
         */
-      relayVersion := "6.0.0"
+      relayVersion := "10.1.2"
     ) ++ inConfig(Compile)(perConfigSettings)
 
   def perConfigSettings: Seq[Setting[_]] =
@@ -87,7 +86,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Output path of the relay compiler.  Necessary this is an empty directory as it will
         * delete files it thinks went away.
         */
-      relayOutput := sourceManaged.value / relayFolder,
+      relayOutput := sourceManaged.value / relayFolder / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -158,9 +157,10 @@ object RelayBasePlugin extends AutoPlugin {
     // Filter based on the presence of the annotation. and look for a change
     // in the schema path
     val scalaFiles =
-      (sourceFiles ** "*.scala").get
-        .filter(IO.read(_).contains("@graphql"))
-        .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
+      (sourceFiles ** "*.scala").get.filter { f =>
+        val wholeFile = IO.read(f)
+        wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
+      }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 
     val label      = Reference.display(thisProjectRef.value)
