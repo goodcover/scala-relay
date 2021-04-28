@@ -30,7 +30,7 @@ lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(SbtPlugin)
-  .settings(commonSettings)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
