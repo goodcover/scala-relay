@@ -50,7 +50,6 @@ lazy val `sbt-relay-compiler` = project
       }
     },
     crossScalaVersions := Nil,
-    publishMavenStyle := isSnapshot.value,
     sourceGenerators in Compile += Def.task {
       Generators.version(version.value, (sourceManaged in Compile).value)
     }.taskValue
