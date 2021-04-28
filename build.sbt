@@ -23,14 +23,13 @@ lazy val root =
     )
     .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`)
 
-def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
-def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+def RuntimeLibPlugins = Sonatype
+def SbtPluginPlugins  = Sonatype
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(SbtPlugin)
-  .settings(bintraySettings)
   .settings(commonSettings)
   .settings(
     sbtPlugin := true,
@@ -141,14 +140,6 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
 
       Seq(fileOut)
     }
-  )
-
-lazy val bintraySettings: Seq[Setting[_]] =
-  Seq(
-    bintrayOrganization := Some("dispalt"), // TODO - Coordinates
-    bintrayRepository := "sbt-plugins",
-    bintrayPackage := "sbt-relay-compiler",
-    bintrayReleaseOnPublish := true
   )
 
 lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publishTo := {
