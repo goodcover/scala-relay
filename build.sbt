@@ -23,15 +23,14 @@ lazy val root =
     )
     .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`)
 
-def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
-def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+def RuntimeLibPlugins = Sonatype
+def SbtPluginPlugins  = Sonatype
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(SbtPlugin)
-  .settings(bintraySettings)
-  .settings(commonSettings)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
@@ -124,7 +123,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0" until-build="2020.4.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2021.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
           |                   implementation="slinkyrelay.SlinkyRelayInjector">
           |            <name>Slinky @reactRelay Library Support</name>
@@ -141,14 +140,6 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
 
       Seq(fileOut)
     }
-  )
-
-lazy val bintraySettings: Seq[Setting[_]] =
-  Seq(
-    bintrayOrganization := Some("dispalt"), // TODO - Coordinates
-    bintrayRepository := "sbt-plugins",
-    bintrayPackage := "sbt-relay-compiler",
-    bintrayReleaseOnPublish := true
   )
 
 lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publishTo := {
