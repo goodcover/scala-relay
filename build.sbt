@@ -124,7 +124,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0" until-build="2020.4.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2021.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
           |                   implementation="slinkyrelay.SlinkyRelayInjector">
           |            <name>Slinky @reactRelay Library Support</name>
