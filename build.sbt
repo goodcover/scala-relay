@@ -2,12 +2,6 @@ import sbtrelease.ReleaseCustom
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
 
-import scala.sys.process._
-
-val sbtVersions = List("1.4.6")
-
-crossSbtVersions := sbtVersions
-
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
 
@@ -34,24 +28,22 @@ lazy val `sbt-relay-compiler` = project
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
-    addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % Version.ScalajsBundler),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1"),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
       val () = scriptedDependencies.value
-      val () = (publishLocal in `relay-macro`).value
+      val () = (`relay-macro` / publishLocal).value
     },
-    crossSbtVersions := sbtVersions,
     scalaVersion := {
-      (sbtBinaryVersion in pluginCrossBuild).value match {
+      (pluginCrossBuild / sbtBinaryVersion).value match {
         case "0.13" => "2.10.6"
         case _      => Version.Scala212
       }
     },
     crossScalaVersions := Nil,
-    sourceGenerators in Compile += Def.task {
-      Generators.version(version.value, (sourceManaged in Compile).value)
+    Compile / sourceGenerators += Def.task {
+      Generators.version(version.value, (Compile / sourceManaged).value)
     }.taskValue
   )
 
@@ -59,18 +51,22 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
-  .settings(crossSbtVersions := Nil, scalacOptions ++= {
-    if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
-    else Nil
-  }, libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest), macroAnnotationSettings)
+  .settings(
+    scalacOptions ++= {
+      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
+      else Nil
+    },
+    libraryDependencies ++= Seq(Library.scalatest, "org.scala-lang" % "scala-reflect" % scalaVersion.value),
+    macroAnnotationSettings
+  )
 
 lazy val `slinky-relay` = project
   .in(file("slinky-relay"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
   .settings(
-    resourceGenerators in Compile += Def.task {
-      val rootFolder = (resourceManaged in Compile).value / "META-INF"
+    Compile / resourceGenerators += Def.task {
+      val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
 
       IO.write(rootFolder / "intellij-compat.json", s"""{
@@ -79,10 +75,6 @@ lazy val `slinky-relay` = project
 
       Seq(rootFolder / "intellij-compat.json")
     },
-//    scalacOptions ++= {
-//      if ()
-//      "-Xplugin-require:macroparadise"
-//    },
     libraryDependencies ++= Vector(
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion
@@ -106,11 +98,11 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
       xml.version = version.value
-      xml.sinceBuild = (intellijBuild in ThisBuild).value
+      xml.sinceBuild = (ThisBuild / intellijBuild).value
       xml.untilBuild = "203.*"
     },
-    resourceGenerators in Compile += Def.task {
-      val rootFolder = (resourceManaged in Compile).value / "META-INF"
+    Compile / resourceGenerators += Def.task {
+      val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
       val fileOut = rootFolder / "intellij-compat.xml"
 
