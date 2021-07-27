@@ -34,6 +34,7 @@ object ReactRelayMacrosImpl {
 
   def createComponentBody(c: whitebox.Context)(cls: c.Tree): (c.Tree, List[c.Tree]) = {
     import c.universe._
+
     val q"..$_ class ${className: Name} extends ..$parents { $self => ..$stats}" = cls
 
     val hasRefetch: Boolean = parentsContainsType(c)(parents.asInstanceOf[Seq[c.Tree]], typeOf[HasRefetch])
@@ -110,13 +111,13 @@ object ReactRelayMacrosImpl {
         refetchQueryDefinitionRhs match {
           case Some(someRefetchQueryDefinitionRhs) => {
             Seq(q"""
-              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def]  = 
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def]  =
                 _root_.slinkyrelay.Containers.buildRefetchContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries), ..$someRefetchQueryDefinitionRhs)
               """)
           }
           case None => {
             Seq(q"""
-              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def] = 
+              override def apply(props: Props)(implicit constructorTag: _root_.scala.scalajs.js.ConstructorTag[Def]): _root_.slinky.core.KeyAndRefAddingStage[Def] =
                 _root_.slinkyrelay.Containers.buildFragmentContainer[Def, Props](props, $liftToReact, Map(..$fragmentSpecEntries))
               """)
           }

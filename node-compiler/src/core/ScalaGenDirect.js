@@ -754,7 +754,14 @@ class ClassTracker {
       const members = Array.from(items).map(({from, to, name}) => {
         return [
           `${indent}  def as${name}: Option[${to}] = {`,
-          `${indent}    if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
+          `${indent}    if (f == null) None`,
+          `${indent}    else if (js.isUndefined(f.__typename)) {`,
+          `${indent}      if (_root_.scala.scalajs.LinkingInfo.developmentMode) {`,
+          `${indent}        _root_.org.scalajs.dom.console.warn("Did you forget to include __typename in your graphql definition?")`,
+          `${indent}      }`,
+          `${indent}      None`,
+          `${indent}    }`,
+          `${indent}    else if (f.__typename == "${name}") Some(f.asInstanceOf[${to}])`,
           `${indent}    else None`,
           `${indent}  }`
         ].join("\n");
@@ -783,8 +790,6 @@ class ClassTracker {
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
       return [
-        `  /** this is somewhat dangerous with hooks, use the frag.to${to} call instead. */`,
-        `  implicit def ${from}2${to}(f: ${from}): ${to} = f.asInstanceOf[${to}]`,
         `  implicit class ${from}2${to}Ref(f: ${from}) {`,
         `    def to${to}: ${ref}[${to}] = f.asInstanceOf[${ref}[${to}]]`,
         `  }`,
