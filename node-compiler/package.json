@@ -1,18 +1,24 @@
 {
   "name": "relay-compiler-language-scalajs",
   "description": "A compiler tool for building GraphQL-driven Scala.js applications.",
-  "version": "0.22.11",
+  "version": "0.31.0",
   "license": "Apache-2.0",
   "main": "lib/index.js",
-  "dependencies": {
+  "devDependencies": {
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
     "@babel/preset-flow": "^7.0.0",
     "@babel/runtime": "^7.0.0",
-    "flow-bin": "^0.102.0",
+    "babel-plugin-relay": "^10.1.2",
+    "flow-bin": "^0.140.0",
+    "graphql": "^15.3.0",
+    "relay-compiler": "10.1.2",
+    "relay-runtime": "^10.1.2",
+    "signedsource": "^1.0.0"
+  },
+  "dependencies": {
     "invariant": "^2.2.4",
-    "signedsource": "^1.0.0",
     "terser": "^4.1.2"
   },
   "scripts": {
@@ -20,9 +26,9 @@
     "prepublish": "yarn run build"
   },
   "peerDependencies": {
-    "graphql": "^14.2.0",
-    "relay-compiler": "6.0.0",
-    "relay-runtime": "^6.0.0"
+    "graphql": "^15.4.0",
+    "relay-compiler": "11.0.2",
+    "relay-runtime": "^11.0.2"
   },
   "url": "https://github.com/dispalt/relay-modern-helper/",
   "email": "dan@goodcover.com",

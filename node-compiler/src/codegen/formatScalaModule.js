@@ -18,6 +18,7 @@ const formatGeneratedModule: FormatModule = ({
   documentType,
   docText,
   concreteText,
+  definition,
   typeText,
   hash,
   kind,
@@ -30,6 +31,11 @@ const formatGeneratedModule: FormatModule = ({
 
   const result = Terser.minify(`(${concreteText})`, {compress: false});
   const code = result.code || concreteText;
+  const d = definition.metadata
+  const resultOfRefetch = d && d.refetch && d.refetch.operation
+  const refetchTempl = resultOfRefetch ? `// Refetchable query
+    defn.metadata.refetch.operation = _root_.relay.generated.${resultOfRefetch}.query` : ``
+
 
   return `/**
  * relay-compiler-language-scalajs: ${hashText}
@@ -46,7 +52,11 @@ import _root_.scala.scalajs.js.|
 ${docTextComment}
 
 ${typeText}
-  lazy val query: _root_.relay.gql.${documentType} = _root_.scala.scalajs.js.eval("""${code}""").asInstanceOf[_root_.relay.gql.${documentType}]
+  lazy val query: _root_.relay.gql.${documentType} = {
+    val defn = _root_.scala.scalajs.js.eval("""${code}""").asInstanceOf[js.Dynamic]
+    ${refetchTempl}
+    defn.asInstanceOf[_root_.relay.gql.${documentType}]
+  }
   lazy val sourceHash: String = "${sourceHash}"
 }
 

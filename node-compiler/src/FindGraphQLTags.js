@@ -5,15 +5,11 @@
 const path = require('path');
 
 const GraphQLTag = require('relay-compiler').GraphQLTag;
-const GraphQLTagFinder = require('relay-compiler').GraphQLTagFinder;
 
 const GraphQL = require('graphql');
 
-const fs = require('fs');
 const invariant = require('invariant');
 
-import type {DocumentNode} from 'graphql';
-import type {PluginInterface} from 'relay-compiler';
 
 /*
   Parse the file scala style but just use regex =(
@@ -24,25 +20,54 @@ function parseFile(text, file): [] {
   if (path.extname(file) === '.scala') {
 
     invariant(
-      text.indexOf('@graphql') >= 0,
+      text.indexOf('@graphql') >= 0 ||
+      text.indexOf("graphqlGen") >= 0,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
-      'parser, got unfiltered file `%s`.',
-      file
+      'parser.',
     )
 
-    var regex = /@graphql\("""([\s\S]*?)"""\)/g;
+    var regex = /@graphql\([\s]*"""([\s\S]*?)"""\)/g;
 
     const astDefinitions = [];
 
     while (matches = regex.exec(text)) {
-        const template = matches[1];
+      const template = matches[1];
 
-        const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const stringHit = matches.input.substring(0, matches.index - 1);
+      const lineNo = stringHit.split("\n").length;
+      const column = matches.index - stringHit.lastIndexOf("\n");
 
-        astDefinitions.push({
-            keyName,
-            template,
-        });
+
+      astDefinitions.push({
+        keyName,
+        template,
+        sourceLocationOffset: {
+          line: lineNo,
+          column: column
+        }
+      });
+    }
+
+    const regex2 = /graphqlGen\([\s]*"""([\s\S]*?)"""\)/g;
+
+    while (matches = regex2.exec(text)) {
+      const template = matches[1];
+
+      const keyName = GraphQL.parse(template).definitions.map(f => f.name.value)[0].split("_")[1];
+      const stringHit = matches.input.substring(0, matches.index - 1);
+      const lineNo = stringHit.split("\n").length;
+      const column = matches.index - stringHit.lastIndexOf("\n");
+
+
+      astDefinitions.push({
+        keyName,
+        template,
+        sourceLocationOffset: {
+          line: lineNo,
+          column: column
+        }
+      });
     }
 
     return astDefinitions;
@@ -69,17 +94,18 @@ function parseFile(text, file): [] {
       false,
       'RelayFileIRParser: Files should be filtered before passed to the ' +
       'parser, got unfiltered file `%s`. Should either have a .gql extension and be a ' +
-      'single query/fragment/mutation or be embedded in a .scala file as an annotation @gql("""...""")',
+      'single query/fragment/mutation or be embedded in a .scala file as an annotation @graphql("""...""") ' +
+      'or as a function, compiler.graphqlGen("""...""")',
       file
     )
   }
 }
 
-function find (text, filePath) : Array<GraphQLTag> {
-    const ast = parseFile(text, filePath);
-    return ast;
-  };
+function find(text, filePath): Array<GraphQLTag> {
+  const ast = parseFile(text, filePath);
+  return ast;
+}
 
 module.exports = {
-    find,
+  find,
 };

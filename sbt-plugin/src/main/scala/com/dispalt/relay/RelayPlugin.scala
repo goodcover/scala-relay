@@ -5,11 +5,8 @@ import java.io.InputStream
 import sbt.{AutoPlugin, SettingKey}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import play.api.libs.json.{JsObject, Json}
-import scalajsbundler.sbtplugin.ScalaJSBundlerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
-import scalajsbundler.util.Commands
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -36,6 +33,9 @@ object RelayBasePlugin extends AutoPlugin {
     val relayDisplayOnlyOnFailure: SettingKey[Boolean] = settingKey("Display output only on failure")
 
     val relayCompilePersist: TaskKey[Option[File]] = taskKey[Option[File]]("Compile with persisted queries")
+
+    // Unset
+    val relayNpmDir: TaskKey[File] = taskKey[File]("Set the directory to the parent of node_modules")
   }
 
   val relayFolder = "relay-compiler-out"
@@ -70,7 +70,7 @@ object RelayBasePlugin extends AutoPlugin {
       /**
         * Set the version of the `relay-compiler` module.
         */
-      relayVersion := "6.0.0"
+      relayVersion := "11.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
   def perConfigSettings: Seq[Setting[_]] =
@@ -87,7 +87,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Output path of the relay compiler.  Necessary this is an empty directory as it will
         * delete files it thinks went away.
         */
-      relayOutput := sourceManaged.value / relayFolder,
+      relayOutput := sourceManaged.value / relayFolder / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -137,7 +137,7 @@ object RelayBasePlugin extends AutoPlugin {
   def relayCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir           = npmInstallDependencies.value
+    val npmDir           = relayNpmDir.value
     val cache            = streams.value.cacheDirectory / "relay-compile"
     val sourceFiles      = unmanagedSourceDirectories.value
     val resourceFiles    = resourceDirectories.value
@@ -158,9 +158,10 @@ object RelayBasePlugin extends AutoPlugin {
     // Filter based on the presence of the annotation. and look for a change
     // in the schema path
     val scalaFiles =
-      (sourceFiles ** "*.scala").get
-        .filter(IO.read(_).contains("@graphql"))
-        .toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
+      (sourceFiles ** "*.scala").get.filter { f =>
+        val wholeFile = IO.read(f)
+        wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
+      }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 
     val label      = Reference.display(thisProjectRef.value)
@@ -195,7 +196,7 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir       = npmInstallDependencies.value
+    val npmDir       = relayNpmDir.value
     val outpath      = relayOutput.value
     val compilerPath = s"node ${(npmDir / relayCompilerPath.value).getPath}"
     val verbose      = relayDebug.value

@@ -1,10 +1,6 @@
+import sbtrelease.ReleaseCustom
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, _}
 import sbtrelease.ReleaseStateTransformations._
-import scala.sys.process._
-
-val sbtVersions = List("0.13.17", "1.3.5")
-
-crossSbtVersions := sbtVersions
 
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
@@ -21,37 +17,33 @@ lazy val root =
     )
     .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`)
 
-def RuntimeLibPlugins = Sonatype && PluginsAccessor.exclude(BintrayPlugin)
-def SbtPluginPlugins  = BintrayPlugin && PluginsAccessor.exclude(Sonatype)
+def RuntimeLibPlugins = Sonatype
+def SbtPluginPlugins  = Sonatype
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
   .enablePlugins(SbtPluginPlugins)
   .enablePlugins(SbtPlugin)
-  .settings(bintraySettings)
-  .settings(commonSettings)
+  .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
-    addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % Version.ScalajsBundler),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1"),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
       val () = scriptedDependencies.value
-      val () = (publishLocal in `relay-macro`).value
+      val () = (`relay-macro` / publishLocal).value
     },
-    crossSbtVersions := sbtVersions,
     scalaVersion := {
-      (sbtBinaryVersion in pluginCrossBuild).value match {
+      (pluginCrossBuild / sbtBinaryVersion).value match {
         case "0.13" => "2.10.6"
         case _      => Version.Scala212
       }
     },
     crossScalaVersions := Nil,
-    publishMavenStyle := isSnapshot.value,
-    sourceGenerators in Compile += Def.task {
-      Generators.version(version.value, (sourceManaged in Compile).value)
+    Compile / sourceGenerators += Def.task {
+      Generators.version(version.value, (Compile / sourceManaged).value)
     }.taskValue
   )
 
@@ -59,34 +51,35 @@ lazy val `relay-macro` = project
   .in(file("relay-macro"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
-  .settings(crossSbtVersions := Nil, scalacOptions ++= {
-    if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
-    else Nil
-  }, libraryDependencies ++= Seq(Library.sangria % Provided, Library.scalatest) ++ paradisePlugin.value)
+  .settings(
+    scalacOptions ++= {
+      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
+      else Nil
+    },
+    libraryDependencies ++= Seq(Library.scalatest, "org.scala-lang" % "scala-reflect" % scalaVersion.value),
+    macroAnnotationSettings
+  )
 
 lazy val `slinky-relay` = project
   .in(file("slinky-relay"))
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
   .settings(
-    resourceGenerators in Compile += Def.task {
-      val rootFolder = (resourceManaged in Compile).value / "META-INF"
+    Compile / resourceGenerators += Def.task {
+      val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
 
       IO.write(rootFolder / "intellij-compat.json", s"""{
-           |  "artifact": "${organization.value} % slinky-relay-ijext_2.12 % ${version.value}"
+           |  "artifact": "${organization.value} % slinky-relay-ijext_2.13 % ${version.value}"
            |}""".stripMargin)
 
       Seq(rootFolder / "intellij-compat.json")
     },
-//    scalacOptions ++= {
-//      if ()
-//      "-Xplugin-require:macroparadise"
-//    },
     libraryDependencies ++= Vector(
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion
-    ) ++ paradisePlugin.value,
+    ),
+    macroAnnotationSettings,
     Library.slinky
   )
   .dependsOn(`relay-macro`)
@@ -96,19 +89,20 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
   .settings(commonSettings ++ mavenSettings)
   .settings(
+    crossScalaVersions := Seq(Version.Scala213),
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
-    intellijBuild := "192.6817.14",
+    intellijBuild := "203.5981.155",
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
       xml.version = version.value
-      xml.sinceBuild = (intellijBuild in ThisBuild).value
-      xml.untilBuild = "193.*"
+      xml.sinceBuild = (ThisBuild / intellijBuild).value
+      xml.untilBuild = "203.*"
     },
-    resourceGenerators in Compile += Def.task {
-      val rootFolder = (resourceManaged in Compile).value / "META-INF"
+    Compile / resourceGenerators += Def.task {
+      val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
       val fileOut = rootFolder / "intellij-compat.xml"
 
@@ -120,11 +114,16 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2019.2.0" until-build="2020.4.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2021.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
           |                   implementation="slinkyrelay.SlinkyRelayInjector">
-          |            <name>Slinky Relay Intellij Support</name>
-          |            <description>Expansion for @reactRelay macro</description>
+          |            <name>Slinky @reactRelay Library Support</name>
+          |            <description>Library support and expansion for @reactRelay macro</description>
+          |        </extension>
+          |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
+          |             implementation="slinkyrelay.GraphQLGenInjector">
+          |            <name>graphqlGen whitebox mac library Support</name>
+          |            <description>Support for graphqlGen macro</description>
           |        </extension>
           |    </ideaVersion>
           |</intellij-compat>
@@ -134,33 +133,26 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
     }
   )
 
-lazy val bintraySettings: Seq[Setting[_]] =
-  Seq(
-    bintrayOrganization := Some("dispalt"), // TODO - Coordinates
-    bintrayRepository := "sbt-plugins",
-    bintrayPackage := "sbt-relay-compiler",
-    bintrayReleaseOnPublish := true
-  )
-
 lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 })
 
-lazy val paradisePlugin = Def.setting {
-  CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, v)) if v <= 12 =>
-      Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
-    case _ =>
-      // if scala 2.13.0-M4 or later, macro annotations merged into scala-reflect
-      // https://github.com/scala/scala/pull/6606
-      Nil
+lazy val macroAnnotationSettings = Seq(
+  resolvers += Resolver.sonatypeRepo("releases"),
+  scalacOptions ++= {
+    if (scalaVersion.value == Version.Scala213) Seq("-Ymacro-annotations")
+    else Seq("-Xfuture")
+  },
+  libraryDependencies ++= {
+    if (scalaVersion.value == Version.Scala213) Seq.empty
+    else Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
   }
-}
+)
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := Version.Scala212,
+  scalaVersion := Version.Scala213,
   crossScalaVersions := Seq(Version.Scala212, Version.Scala213),
   scalacOptions ++= Seq(
     "-feature",
@@ -177,8 +169,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
     "-language:experimental.macros", // Allow macro definition (besides implementation and application)
     "-language:higherKinds",         // Allow higher-kinded types
-    "-language:implicitConversions", // Allow definition of implicit functions called views
-    "-Xfuture"
+    "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
   organization := "com.dispalt.relay",  // TODO - Coordinates
   sonatypeProfileName := "com.dispalt", // TODO - Coordinates
@@ -216,30 +207,14 @@ releaseProcess :=
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    if (sbtPlugin.value) releaseStepCommandAndRemaining("^ publishSigned")
-    else releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("^ sbt-relay-compiler/publishSigned"),
     releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-    doReleaseYarn,
+    ReleaseCustom.doReleaseYarn,
     setNextVersion,
-    commitNextVersion,
+    ReleaseCustom.commitNextVersion,
     pushChanges
   )
-
-lazy val doReleaseYarn = { st: State =>
-  val v = Project.extract(st)
-  val pl = new ProcessLogger {
-    override def err(s: => String): Unit = st.log.info(s)
-    override def out(s: => String): Unit = st.log.info(s)
-    override def buffer[T](f: => T): T   = st.log.buffer(f)
-  }
-  val versionString = v.get(version)
-  val bd            = v.get(baseDirectory)
-
-  Process(s"yarn", bd / "node-compiler").!
-  val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
-  cmd.!(pl)
-  st
-}
 
 addCommandAlias("publishLocalAll", ";publishLocal ;slinky-relay-ijext/publishLocal")

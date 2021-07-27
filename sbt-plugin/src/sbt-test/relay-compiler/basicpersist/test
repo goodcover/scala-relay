@@ -1,14 +1,14 @@
 > compile:relayCompile
 > compile:npmUpdate
-$ pause
+#$ pause
 $ exec echo "//" >> src/main/scala/example/Main.scala
 > compile:relayCompile
-$ pause
+#$ pause
 $ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
 > compile:relayCompile
-$ pause
+#$ pause
 $ delete src/main/scala/example/Test.scala
 $ exec echo "//" >> src/main/scala/example/Main.scala
 > compile:relayCompile
-$ pause
+#$ pause
 # > fastOptJS::webpack

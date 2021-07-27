@@ -1,5 +1,5 @@
 # graphql
-fragment Friend_word on WordDefinition @inline {
+fragment Friend_word on WordDefinition @scalajs(useNulls: true)  {
     id text image
 
 }
