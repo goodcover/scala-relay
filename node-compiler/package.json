@@ -26,9 +26,9 @@
     "prepublish": "yarn run build"
   },
   "peerDependencies": {
-    "graphql": "^15.3.0",
-    "relay-compiler": "10.1.2",
-    "relay-runtime": "^10.1.2"
+    "graphql": "^15.4.0",
+    "relay-compiler": "11.0.2",
+    "relay-runtime": "^11.0.2"
   },
   "url": "https://github.com/dispalt/relay-modern-helper/",
   "email": "dan@goodcover.com",
