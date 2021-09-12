@@ -9,7 +9,7 @@ object Version {
   final val Scala212 = "2.12.10"
   final val Scala213 = "2.13.6"
 
-  final val Slinky  = "0.6.7"
+  final val Slinky  = "0.6.8"
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
   final val ScalaTest = "3.2.10"
