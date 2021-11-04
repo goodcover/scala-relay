@@ -77,7 +77,7 @@ function generate(
   options: Options,
 ): string {
 
-  const newCT = new ClassTracker(schema, options.nodes, options.useNulls || false);
+  const newCT = new ClassTracker(schema, options.nodes, options.useNulls || false, options.customScalars);
   try {
     IRVisitor.visit(
       node,
@@ -173,7 +173,7 @@ class ClassTracker {
   factoryMethods: Array<[string, Cls]>;
   schema: Schema;
 
-  constructor(schema: Schema, nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean) {
+  constructor(schema: Schema, nodes: Map<string, ConcreteRoot | ConcreteFragment>, useNulls: boolean, customScalars: ScalarTypeMapping) {
     this.classes = new Map();
     this.topClasses = new Map();
     this.fields = [];
@@ -189,6 +189,7 @@ class ClassTracker {
     this._useNulls = useNulls;
     this.factoryMethods = [];
     this.schema = schema;
+    this.customScalars = customScalars;
   }
 
   newClassName(cn: string, n: ?number): string {
@@ -610,6 +611,10 @@ class ClassTracker {
   }
 
   transformGraphQLScalarType(type: String, backupType: ?string): Array<ATpe> {
+    const customType = this.customScalars[type];
+    if (typeof customType === 'function') {
+      throw new Error('Don\'t know how to deal with a function here');
+    }
     switch (type) {
       case 'ID':
       case 'String':
@@ -627,6 +632,9 @@ class ClassTracker {
       default:
         if (backupType) {
           return [{name: backupType, mods: []}];
+        }
+        if (customType) {
+          return [{name: customType, mods: []}];
         }
         return [{name: `js.Any`, mods: []}];
     }
@@ -1030,18 +1038,28 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
       ScalarField(node) {
         // console.log("ScalarField", node);
         // $FlowFixMe
-        const extendsCPresent: ?string = node.metadata && node.metadata.extends
+        const typeCls: ?string = node.metadata && node.metadata.typeCls;
+        const extendsCPresent: ?string = node.metadata && node.metadata.extends;
 
         // $FlowFixMe
-        const tpe = ct.transformScalarType((node.type: TypeID));
+        const tpes = ct.transformScalarType((node.type: TypeID));
+        if (typeCls) {
+          tpes.map(tpe => {
+            tpe.name = `${tpe.name}[${typeCls}]`
+            return tpe;
+          })
+        }
+
+        // $FlowFixMe
         if (extendsCPresent) {
           const extendsArray = [{
             name: extendsCPresent,
             mods: []
           }];
-          tpe.push(...extendsArray);
+          tpes.push(...extendsArray);
         }
-        ct.newMember({name: node.alias || node.name, tpe, comments: []});
+
+        ct.newMember({name: node.alias || node.name, tpe: tpes, comments: []});
         return node;
       },
       LinkedField(node: ConcreteLinkedField) {
