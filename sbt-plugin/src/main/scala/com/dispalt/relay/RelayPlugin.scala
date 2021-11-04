@@ -33,6 +33,8 @@ object RelayBasePlugin extends AutoPlugin {
     val relayDisplayOnlyOnFailure: SettingKey[Boolean] = settingKey("Display output only on failure")
 
     val relayCompilePersist: TaskKey[Option[File]] = taskKey[Option[File]]("Compile with persisted queries")
+    val relayCustomScalars: TaskKey[Map[String, String]] =
+      taskKey[Map[String, String]]("translates custom scalars to scala types, **use the full path.**")
 
     // Unset
     val relayNpmDir: TaskKey[File] = taskKey[File]("Set the directory to the parent of node_modules")
@@ -111,7 +113,11 @@ object RelayBasePlugin extends AutoPlugin {
       /**
         * Compile conditionally based on persisting a file or not.
         */
-      relayCompilePersist := relayCompilePersistTask.value
+      relayCompilePersist := relayCompilePersistTask.value,
+      /**
+        * Map custom scalar from ScalarType to Scala type
+        */
+      relayCustomScalars := Map.empty
     )
 
   implicit class QuoteStr(s: String) {
@@ -149,6 +155,7 @@ object RelayBasePlugin extends AutoPlugin {
     val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
+    val customScalars    = relayCustomScalars.value
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
     val extraWatches = relayInclude.value
@@ -181,6 +188,7 @@ object RelayBasePlugin extends AutoPlugin {
           verbose = verbose,
           extras = extras,
           persisted = persisted,
+          customScalars = customScalars,
           displayOnFailure = displayOnFailure
         )
       )(scalaFiles)
@@ -196,12 +204,13 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir       = relayNpmDir.value
-    val outpath      = relayOutput.value
-    val compilerPath = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose      = relayDebug.value
-    val schemaPath   = relaySchema.value
-    val source       = relayBaseDirectory.value
+    val npmDir        = relayNpmDir.value
+    val outpath       = relayOutput.value
+    val compilerPath  = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val verbose       = relayDebug.value
+    val schemaPath    = relaySchema.value
+    val source        = relayBaseDirectory.value
+    val customScalars = relayCustomScalars.value
 
     val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
@@ -229,6 +238,7 @@ object RelayBasePlugin extends AutoPlugin {
       verbose = verbose,
       extras = extras,
       persisted = persisted,
+      customScalars = customScalars,
       displayOnFailure = displayOnFailure
     )
 
@@ -247,6 +257,7 @@ object RelayBasePlugin extends AutoPlugin {
     verbose: Boolean,
     extras: List[String],
     persisted: Option[File],
+    customScalars: Map[String, String],
     displayOnFailure: Boolean
   ): Unit = {
 
@@ -262,6 +273,10 @@ object RelayBasePlugin extends AutoPlugin {
       case None        => Nil
     }
 
+    val customScalarsArgs = customScalars.map {
+      case (scalarType, scalaType) => s"--customScalars.${scalarType}=${scalaType}"
+    }.toList
+
     val cmd = shell :+ (List(
       compilerPath,
       "--language",
@@ -274,7 +289,7 @@ object RelayBasePlugin extends AutoPlugin {
       sourceDirectory.getAbsolutePath.quote,
       "--artifactDirectory",
       outputPath.getAbsolutePath.quote
-    ) ::: verboseList ::: extrasList ::: persistedList)
+    ) ::: verboseList ::: extrasList ::: persistedList ::: customScalarsArgs)
       .mkString(" ")
 
     var output = Vector.empty[String]
@@ -308,6 +323,7 @@ object RelayBasePlugin extends AutoPlugin {
     verbose: Boolean,
     extras: List[String],
     persisted: Option[File],
+    customScalars: Map[String, String],
     displayOnFailure: Boolean
   )(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
 
@@ -331,6 +347,7 @@ object RelayBasePlugin extends AutoPlugin {
           verbose = verbose,
           extras = extras,
           persisted = persisted,
+          customScalars = customScalars,
           displayOnFailure = displayOnFailure
         )
 
