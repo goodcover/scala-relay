@@ -718,6 +718,22 @@ class ClassTracker {
     return tpe;
   }
 
+  getClientTypeAnnotationFromSchema(node: ConcreteRoot) {
+    const maybeField = this.schema.getFieldByName(node.parentNode.type, node.name)
+    if (maybeField) {
+      const result = maybeField.directives.filter(({name}) => {
+        return name === "scalajs"
+      })
+      .flatMap(directive => directive.args
+        .filter(({name}) => name === "clientType")
+        .map(({value}) => {
+          return value.value
+        })
+      )
+      return result[0]
+    }
+  }
+
   outTrait({name, members, extendsC, open, isClass, useNulls, useVars}: Cls, otherClasses?: Map<string, Cls>): string {
     invariant(name, "Name needs to be set");
     const indent = otherClasses ? "" : "  ";
@@ -929,6 +945,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
           return {
             ...s,
             parentTpe: [node.name],
+            parentNode: node,
             useNulls,
           }
         })
@@ -944,6 +961,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
           return {
             ...s,
             parentTpe: [node.name],
+            parentNode: node,
             useNulls,
           }
         })
@@ -987,6 +1005,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
         const selections = node.selections.map(s => {
           return {
             ...s,
+            parentNode: node,
             parentTpe: ptpe.concat([titleCase(node.name)]),
             useNulls,
           }
@@ -1001,6 +1020,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
         const useNulls = ct.isUseNulls(node);
         return {
           ...node,
+          parentNode: node,
           useNulls,
         };
       },
@@ -1040,6 +1060,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
         // $FlowFixMe
         const typeCls: ?string = node.metadata && node.metadata.typeCls;
         const extendsCPresent: ?string = node.metadata && node.metadata.extends;
+        const typeInfo = ct.getClientTypeAnnotationFromSchema(node)
 
         // $FlowFixMe
         const tpes = ct.transformScalarType((node.type: TypeID));
@@ -1048,6 +1069,13 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
             tpe.name = `${tpe.name}[${typeCls}]`
             return tpe;
           })
+        } else {
+          // Don't do both
+          if (typeInfo) {
+            tpes.map(tpe => {
+              tpe.name = `${tpe.name}[${typeInfo}]`
+            })
+          }
         }
 
         // $FlowFixMe
@@ -1058,6 +1086,8 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
           }];
           tpes.push(...extendsArray);
         }
+
+
 
         ct.newMember({name: node.alias || node.name, tpe: tpes, comments: []});
         return node;

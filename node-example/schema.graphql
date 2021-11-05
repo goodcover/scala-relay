@@ -16,7 +16,7 @@ type WordDefinition {
   id: String
   text: String
   image: String
-  url: CustomUrl
+  url: CustomUrl @scalajs(clientType: "FOoo")
 }
 
 scalar ID
