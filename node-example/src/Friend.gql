@@ -1,4 +1,4 @@
 # graphql
 fragment Friend_word on WordDefinition @scalajs(useNulls: true)  {
-    id text image url @scalajs(typeCls: "Foooo")
+    id text image url
 }

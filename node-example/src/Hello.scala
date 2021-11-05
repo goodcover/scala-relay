@@ -14,7 +14,7 @@ query HelloQuery {
     id
     definition {
       ...Friend_word
-
+      url
     }
   }
 }

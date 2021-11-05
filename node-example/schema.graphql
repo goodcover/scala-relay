@@ -16,7 +16,7 @@ type WordDefinition {
   id: String
   text: String
   image: String
-  url: CustomUrl @scalajs(clientType: "FOoo")
+  url: Protobuf! @scalajs(clientType: "shared.models.b1.Premiums")
 }
 
 scalar ID
@@ -53,4 +53,4 @@ type Mutation {
   userEventsComplexInput(input: ChangeReviewInputInput!): ProposedChangeCancelled!
 }
 
-scalar CustomUrl
+scalar Protobuf
