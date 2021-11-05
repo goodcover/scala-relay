@@ -980,6 +980,7 @@ function createVisitor(schema: Schema, ct: ClassTracker) {
           return {
             ...s,
             parentTpe: ptpe,
+            parentNode: node,
             useNulls,
           }
         })
