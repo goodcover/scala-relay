@@ -720,7 +720,7 @@ class ClassTracker {
 
   getClientTypeAnnotationFromSchema(node: ConcreteRoot) {
     const maybeField = this.schema.getFieldByName(node.parentNode.type, node.name)
-    if (maybeField) {
+    if (maybeField && maybeField.directives) {
       const result = maybeField.directives.filter(({name}) => {
         return name === "scalajs"
       })
