@@ -16,6 +16,7 @@ query HelloQuery {
       ...Friend_word
       url
     }
+    description
   }
 }
 """)
