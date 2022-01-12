@@ -719,7 +719,7 @@ class ClassTracker {
   }
 
   getClientTypeAnnotationFromSchema(node: ConcreteRoot) {
-    const maybeField = this.schema.getFieldByName(this.schema.getNullableType(node.parentNode.type), node.name)
+    const maybeField = this.schema.getFieldByName(this.schema.getNullableType(this.schema.getListItemType(this.schema.getNullableType(node.parentNode.type))), node.name)
     if (maybeField && maybeField.directives) {
       const result = maybeField.directives.filter(({name}) => {
         return name === "scalajs"
