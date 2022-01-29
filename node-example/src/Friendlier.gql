@@ -1,6 +1,8 @@
 fragment Friendlier_word on Root @refetchable(queryName: "FriendlierRefetchQuery")  {
     dictionary {
         id
+        definition {
+            url
+        }
     }
-
 }

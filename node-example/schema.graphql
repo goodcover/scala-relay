@@ -16,6 +16,7 @@ type WordDefinition {
   id: String
   text: String
   image: String
+  url: Protobuf! @scalajs(clientType: "shared.models.b1.Premiums")
 }
 
 scalar ID
@@ -51,3 +52,5 @@ type Mutation {
   userEventsNoInput: ProposedChangeCancelled!
   userEventsComplexInput(input: ChangeReviewInputInput!): ProposedChangeCancelled!
 }
+
+scalar Protobuf

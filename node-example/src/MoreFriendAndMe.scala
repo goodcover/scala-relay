@@ -9,15 +9,9 @@ object OpListFn {
 
   //
   val query = graphqlGen("""
-query HelloQuery {
-  dictionary {
-    id
-    definition {
-      ...Friend_word
-      url
-    }
-    description
-  }
+fragment MoreFriendAndMe_word on WordDefinition @inline  {
+    id text image
+
 }
 """)
 
