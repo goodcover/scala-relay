@@ -93,7 +93,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
     intellijPluginName := name.value,
     intellijExternalPlugins += "org.intellij.scala".toPlugin,
     intellijInternalPlugins ++= Seq("java"),
-    intellijBuild := "203.5981.155",
+    intellijBuild := "221.5080.56",
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
@@ -114,12 +114,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0" until-build="2021.4.0">
-          |        <extension interface="org.jetbrains.plugins.scala.lang.psi.impl.toplevel.typedef.SyntheticMembersInjector"
-          |                   implementation="slinkyrelay.SlinkyRelayInjector">
-          |            <name>Slinky @reactRelay Library Support</name>
-          |            <description>Library support and expansion for @reactRelay macro</description>
-          |        </extension>
+          |    <ideaVersion since-build="2020.3.0" until-build="2022.4.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
           |             implementation="slinkyrelay.GraphQLGenInjector">
           |            <name>graphqlGen whitebox mac library Support</name>
