@@ -15,7 +15,7 @@ lazy val root =
       crossScalaVersions := Nil,
       publish / skip := true
     )
-    .aggregate(`sbt-relay-compiler`, `relay-macro`, `slinky-relay`)
+    .aggregate(`sbt-relay-compiler`, `relay-macro`)
 
 def RuntimeLibPlugins = Sonatype
 def SbtPluginPlugins  = Sonatype
@@ -60,30 +60,6 @@ lazy val `relay-macro` = project
     macroAnnotationSettings
   )
 
-lazy val `slinky-relay` = project
-  .in(file("slinky-relay"))
-  .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
-  .settings(commonSettings ++ mavenSettings)
-  .settings(
-    Compile / resourceGenerators += Def.task {
-      val rootFolder = (Compile / resourceManaged).value / "META-INF"
-      rootFolder.mkdirs()
-
-      IO.write(rootFolder / "intellij-compat.json", s"""{
-           |  "artifact": "${organization.value} % slinky-relay-ijext_2.13 % ${version.value}"
-           |}""".stripMargin)
-
-      Seq(rootFolder / "intellij-compat.json")
-    },
-    libraryDependencies ++= Vector(
-      "org.scala-lang" % "scala-reflect"    % scalaVersion.value,
-      "org.scala-js"   %% "scalajs-library" % scalaJSVersion
-    ),
-    macroAnnotationSettings,
-    Library.slinky
-  )
-  .dependsOn(`relay-macro`)
-
 lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .enablePlugins(RuntimeLibPlugins && SbtIdeaPlugin)
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
@@ -99,7 +75,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
       // This only works for proper plugins
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
-      xml.untilBuild = "203.*"
+      xml.untilBuild = "224.*"
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
