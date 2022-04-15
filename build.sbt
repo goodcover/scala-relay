@@ -52,6 +52,17 @@ lazy val `relay-macro` = project
   .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
   .settings(commonSettings ++ mavenSettings)
   .settings(
+    Compile / resourceGenerators += Def.task {
+      val rootFolder = (Compile / resourceManaged).value / "META-INF"
+      rootFolder.mkdirs()
+
+      IO.write(
+        rootFolder / "intellij-compat.json",
+        s"""{"artifact": "${organization.value} % slinky-relay-ijext_2.13 % ${version.value}" }""".stripMargin
+      )
+
+      Seq(rootFolder / "intellij-compat.json")
+    },
     scalacOptions ++= {
       if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
       else Nil
