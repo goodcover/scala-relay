@@ -590,17 +590,20 @@ class ClassTracker {
         };
       });
 
-      classes.push({
-        name: prefix + type.toString(),
-        members: props,
-        open: false,
-        extendsC: [],
-        linkedField: false,
-        spreadFrags: [],
-        useNulls: true,
-      });
+      if(!classes.find((x) => x.name == prefix + type.toString())) {
+        classes.push({
+          name: prefix + type.toString(),
+          members: props,
+          open: false,
+          extendsC: [],
+          linkedField: false,
+          spreadFrags: [],
+          useNulls: true,
+        });
 
-      this.newFactoryMethod("apply", prefix + type.toString(), props, [], false, [], true, false, prefix + type.toString())
+        this.newFactoryMethod("apply", prefix + type.toString(), props, [], false, [], true, false, prefix + type.toString())
+      }
+      
       return [{
         name: prefix + type.toString(),
         mods: [INPUT_MOD],
