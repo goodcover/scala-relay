@@ -1,6 +1,5 @@
 package relay.gql
 
-import scala.language.implicitConversions
 import scala.scalajs.js
 
 /** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
@@ -8,7 +7,12 @@ trait GenericGraphQLTaggedNode {
   def query: TaggedNode
 }
 
-/** The typed version */
+/**
+  * The typed version.
+  *
+  * We use phantom types here to signal input (`I`) and output (`O`)
+  *
+  */
 trait TypedGraphQLTaggedNode[I, O] extends GenericGraphQLTaggedNode
 
 object GenericGraphQLTaggedNode {

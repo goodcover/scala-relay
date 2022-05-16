@@ -39,8 +39,8 @@ object compiler {
           val opAndName = for (m <- reg.findFirstMatchIn(s)) yield (m.group(1), m.group(2))
 
           opAndName match {
-            case Some((op, name)) => c.Expr(q"_root_.relay.generated.${TermName(name)}")
-            case None             => c.abort(c.enclosingPosition, s"${s} doesn't seem valid.  Regex $reg doesn't match.")
+            case Some((_, name)) => c.Expr(q"_root_.relay.generated.${TermName(name)}")
+            case None            => c.abort(c.enclosingPosition, s"${s} doesn't seem valid.  Regex $reg doesn't match.")
           }
         case _ => c.abort(c.enclosingPosition, "Must provide a string literal.")
       }
