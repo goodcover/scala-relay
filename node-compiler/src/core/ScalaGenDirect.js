@@ -77,7 +77,7 @@ function generate(
   options: Options,
 ): string {
 
-  const newCT = new ClassTracker(schema, options.nodes, options.useNulls || false, options.customScalars);
+  const newCT = new ClassTracker(schema, options.nodes, options.useNulls || true, options.customScalars);
   try {
     IRVisitor.visit(
       node,
@@ -96,9 +96,9 @@ object ${node.name} extends ${code.objectParent || '_root_.relay.gql.GenericGrap
 
         ${code.supporting || ''}
 
-          ///////////////////////////
-          ////// Implicits begin here
-          ///////////////////////////
+        ///////////////////////////
+        ////// Implicits begin here
+        ///////////////////////////
         ${code.implicits || ''}
 
     `;
@@ -603,7 +603,7 @@ class ClassTracker {
 
         this.newFactoryMethod("apply", prefix + type.toString(), props, [], false, [], true, false, prefix + type.toString())
       }
-      
+
       return [{
         name: prefix + type.toString(),
         mods: [INPUT_MOD],
