@@ -11,7 +11,7 @@ object Version {
   final val Slinky  = "0.7.2"
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
-  final val ScalaTest = "3.2.12"
+  final val ScalaTest = "3.2.13"
 
 }
 
