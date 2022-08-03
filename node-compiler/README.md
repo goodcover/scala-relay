@@ -14,6 +14,7 @@ So it's a big flat package repository in the same directory.
 This is controlled by `(resourceManaged in Compile).value / "relay-compiler-out /"` in sbt terms.
 
 ### Versions
+- `0.32.x` - Relay `11.0.2`
 - `0.25.x` - Relay `10.1.2`
 - `0.22.2` - Relay `6.0.0`
 - `0.20.1` - Relay `2,0,0`

@@ -53,7 +53,7 @@ ${docTextComment}
 
 ${typeText}
   lazy val query: _root_.relay.gql.${documentType} = {
-    val defn = _root_.scala.scalajs.js.eval("""${code}""").asInstanceOf[js.Dynamic]
+    val defn = _root_.scala.scalajs.js.Function("""return ${code}""").call(null)
     ${refetchTempl}
     defn.asInstanceOf[_root_.relay.gql.${documentType}]
   }
