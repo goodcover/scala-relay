@@ -391,14 +391,15 @@ class ClassTracker {
     const spreadParentsFrags: Array<string> =
       Array.from(new Set(flattenArray(listOfSpreads.map(s => s[1].members.filter(s => !!s.parentFrag).map(s => s.parentFrag)))));
 
-    listOfSpreads.forEach(([k, {members}]) => {
-      this.newImplicit(newClassName, k, k, false);
-    });
 
     // flattenArray(listOfSpreads.map(s => s[1].extendCls));
     const fieldExtend: Array<string> = this.getScalajsDirectiveExtends(node);
 
     const newTpe = this.newClass(newClassName, localMembers, fieldExtend, linked, spreadParentsFrags, node.useNulls);
+
+    listOfSpreads.forEach(([k, {members}]) => {
+      this.newImplicit(newTpe, k, k, false);
+    });
 
     /* $FlowFixMe */
     const newNewTpe = this.transformScalarType(node.type, newTpe);
