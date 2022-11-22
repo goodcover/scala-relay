@@ -122,7 +122,7 @@ lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publish
 })
 
 lazy val macroAnnotationSettings = Seq(
-  resolvers += Resolver.sonatypeRepo("releases"),
+  resolvers ++= Resolver.sonatypeOssRepos("releases"),
   scalacOptions ++= {
     if (scalaVersion.value == Version.Scala213) Seq("-Ymacro-annotations")
     else Seq("-Xfuture")
