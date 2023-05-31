@@ -4,6 +4,7 @@ import sbtrelease.ReleaseStateTransformations._
 
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
+ThisBuild / intellijBuild := "232.6095.10"
 
 lazy val root =
   project
@@ -78,15 +79,15 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
   .settings(
     crossScalaVersions := Seq(Version.Scala213),
     intellijPluginName := name.value,
-    intellijExternalPlugins += "org.intellij.scala".toPlugin,
-    intellijInternalPlugins ++= Seq("java"),
-    intellijBuild := "223.7571.58",
+    intellijPlugins ++= Seq("org.intellij.scala".toPlugin),
+    intellijBuild := (ThisBuild / intellijBuild).value,
+    intellijBaseDirectory := (ThisBuild / intellijBaseDirectory).value,
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
       // This only works for proper plugins
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
-      xml.untilBuild = "231.*"
+      xml.untilBuild = "240.*"
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
@@ -101,7 +102,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0" until-build="2023.1.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2024.1.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
           |             implementation="slinkyrelay.GraphQLGenInjector">
           |            <name>graphqlGen whitebox mac library Support</name>
