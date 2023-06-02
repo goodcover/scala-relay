@@ -1,5 +1,5 @@
 import sbtrelease.ReleaseCustom
-import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, *}
+import sbtrelease.ReleasePlugin.autoImport.{*, ReleaseStep}
 import sbtrelease.ReleaseStateTransformations.*
 
 // Run slinky-relay-ijext/updateIntellij
@@ -29,7 +29,7 @@ lazy val `sbt-relay-compiler` = project
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
-    addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.0"),
+    addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.1"),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
