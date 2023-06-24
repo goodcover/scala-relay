@@ -4,7 +4,9 @@ import scala.scalajs.js
 
 /** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
 trait GenericGraphQLTaggedNode {
-  def query: TaggedNode
+  type Query <: TaggedNode
+
+  def query: Query
 }
 
 /**

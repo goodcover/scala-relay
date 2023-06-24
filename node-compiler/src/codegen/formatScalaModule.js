@@ -52,6 +52,8 @@ import _root_.scala.scalajs.js.|
 ${docTextComment}
 
 ${typeText}
+  type Query = _root_.relay.gql.${documentType}
+
   lazy val query: _root_.relay.gql.${documentType} = {
     val defn = _root_.scala.scalajs.js.Function("""return ${code}""").call(null)
     ${refetchTempl}
