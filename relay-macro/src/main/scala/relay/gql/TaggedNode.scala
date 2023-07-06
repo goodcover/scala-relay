@@ -4,9 +4,7 @@ import scala.scalajs.js
 
 /** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
 trait GenericGraphQLTaggedNode {
-  type Query <: TaggedNode
-
-  def query: Query
+  def query: TaggedNode
 }
 
 /**
@@ -59,7 +57,13 @@ object SubscriptionTaggedNode {
   }
 }
 
+/** Relay fragment definition for response of type Response[Out]. */
 trait FragmentTaggedNode[O] extends GenericGraphQLTaggedNode {
+  type Query <: TaggedNode
+
+  /** Query return constructor. Either `js.Array[T]` or `T`. */
+  type Response[T]
+
   type Out = O
   type Ref = FragmentRef[O]
 }
@@ -79,6 +83,10 @@ object FragmentRefetchableTaggedNode {
   implicit def fragmentTaggedNodeConv[O, RI, RO](ftn: FragmentRefetchableTaggedNode[O, RI, RO]): TaggedNode = {
     ftn.query
   }
+}
+
+abstract class CastToFragmentRef[From, To](from: From) {
+  def castToRef: FragmentRef[To] = from.asInstanceOf[FragmentRef[To]]
 }
 
 /** This is what all the Relay components request */

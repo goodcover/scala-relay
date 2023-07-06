@@ -1,5 +1,5 @@
 import sbtrelease.ReleaseCustom
-import sbtrelease.ReleasePlugin.autoImport.{*, ReleaseStep}
+import sbtrelease.ReleasePlugin.autoImport.*
 import sbtrelease.ReleaseStateTransformations.*
 
 // Run slinky-relay-ijext/updateIntellij

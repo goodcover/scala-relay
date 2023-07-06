@@ -52,6 +52,7 @@ import _root_.scala.scalajs.js.|
 ${docTextComment}
 
 ${typeText}
+  // Used to differentiate between normal and inline query types.
   type Query = _root_.relay.gql.${documentType}
 
   lazy val query: _root_.relay.gql.${documentType} = {
