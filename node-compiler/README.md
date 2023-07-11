@@ -46,6 +46,12 @@ Looking at the sbt tests is the best way to get a handle on how things work.
 
 ## Dev
 
+Build with:
+
+```shell
+yarn build
+```
+
 ### Testing
 
 Go to [node-example] and run:
@@ -54,5 +60,23 @@ Go to [node-example] and run:
 yarn iterate
 ```
 
+> ⚠️ `yarn link`
+> 
+> This will run `yarn link` in this directory which will install it globally.
+> You may want to run `yarn unlink` when you are done.
 
+### Debugging
+
+First build and then use the `relay-compiler` Run Configuration in IntelliJ.
+
+Alternatively, modify [iterate.sh] to:
+
+```shell
+node --inspect brk
+```
+
+Then run this and attach a debugger.
+
+
+[iterate.sh]: ../node-example/iterate.sh
 [node-example]: ../node-example
