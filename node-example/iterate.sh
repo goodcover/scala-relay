@@ -2,7 +2,7 @@
 
 set -xe
 
-pushd ../node-compiler && yarn build
+pushd ../node-compiler && yarn build && yarn link
 popd
-yarn add file:../node-compiler
-node ./node_modules/.bin/relay-compiler --language scalajs --schema ./schema.graphql --src src/ --artifactDirectory target/ --customScalars.Protobuf=com.pack.Class
+yarn link relay-compiler-language-scalajs
+node --inspect-brk ./node_modules/.bin/relay-compiler --language scalajs --schema ./schema.graphql --src src/ --artifactDirectory target/ --customScalars.Protobuf=com.pack.Class
