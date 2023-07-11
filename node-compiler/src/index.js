@@ -9,7 +9,7 @@ const typeGen = require("./core/ScalaGenDirect");
 const fileFilter = require("./core/SjsFileFilter").fileFilter;
 
 // Look at the interface here,
-// https://github.com/facebook/relay/blob/master/packages/relay-compiler/language/RelayLanguagePluginInterface.js
+// https://github.com/facebook/relay/blob/v11.0.2/packages/relay-compiler/language/RelayLanguagePluginInterface.js
 function plugin() {
   return {
     inputExtensions: ["scala", "gql"],
