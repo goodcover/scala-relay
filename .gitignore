@@ -3,11 +3,13 @@ __generated__
 *.log
 out/
 target/
+target2/
 .ensime
 .ensime_cache/
 .idea/
 node-compiler/lib/
 node-compiler/realex/
+node-compiler-text/lib/
 
 # Metals
 .metals/

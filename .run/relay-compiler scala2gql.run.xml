@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="relay-compiler scala2gql" type="NodeJSConfigurationType" node-parameters="./node_modules/.bin/relay-compiler --language scala2gql --schema ./schema.graphql --src src/ --artifactDirectory target2/ --customScalars.Protobuf=com.pack.Class" working-dir="$PROJECT_DIR$/node-example">
+    <method v="2" />
+  </configuration>
+</component>
