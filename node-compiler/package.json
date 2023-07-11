@@ -22,7 +22,7 @@
     "terser": "^4.1.2"
   },
   "scripts": {
-    "build": "babel src/ -d lib/",
+    "build": "babel src/ -d lib/ --source-maps",
     "prepublish": "yarn run build"
   },
   "peerDependencies": {
