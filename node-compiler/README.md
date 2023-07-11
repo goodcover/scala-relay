@@ -45,3 +45,14 @@ Looking at the sbt tests is the best way to get a handle on how things work.
 
 
 ## Dev
+
+### Testing
+
+Go to [node-example] and run:
+
+```shell
+yarn iterate
+```
+
+
+[node-example]: ../node-example
