@@ -19,6 +19,8 @@ jobs:
         PGP_SECRET: ${{ secrets.gpg_key_priv }}
         PGP_PUBLIC: ${{ secrets.gpg_key_pub }}
       run: scripts/import-gpg.sh
-
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
     - name: Run tests
-      run: sbt test
+      run: sbt "test; scripted"

@@ -2,7 +2,7 @@
   "dependencies": {
     "graphql": "^15.3.0",
     "relay-compiler": "^11.0.2",
-    "relay-compiler-language-scalajs": "file:../node-compiler"
+    "relay-compiler-language-scalajs": "link:../node-compiler"
   },
   "scripts": {
     "iterate": "./iterate.sh"
