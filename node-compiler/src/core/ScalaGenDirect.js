@@ -86,7 +86,7 @@ function generate(
     const code = newCT.out();
 
     const metadata = node.metadata || {}
-    const responseType = metadata.plural ? "type Response[T] = js.Array[T]" : "type Response[T] = T";
+    const responseType = metadata.plural ? "type Ctor[T] = js.Array[T]" : "type Ctor[T] = T";
 
     return `
 ${code.core}

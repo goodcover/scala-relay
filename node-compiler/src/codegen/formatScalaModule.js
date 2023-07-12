@@ -36,6 +36,10 @@ const formatGeneratedModule: FormatModule = ({
   const refetchTempl = resultOfRefetch ? `// Refetchable query
     defn.metadata.refetch.operation = _root_.relay.generated.${resultOfRefetch}.query` : ``
 
+  const queryTypeParams =
+        documentType === 'ReaderFragment' ? '[Ctor, Out]' :
+        documentType === 'ReaderInlineDataFragment' ? '[Ctor, Out]' :
+        '';
 
   return `/**
  * relay-compiler-language-scalajs: ${hashText}
@@ -53,12 +57,12 @@ ${docTextComment}
 
 ${typeText}
   // Used to differentiate between normal and inline query types.
-  type Query = _root_.relay.gql.${documentType}
+  type Query = _root_.relay.gql.${documentType}${queryTypeParams}
 
-  lazy val query: _root_.relay.gql.${documentType} = {
+  lazy val query: Query = {
     val defn = _root_.scala.scalajs.js.Function("""return ${code}""").call(null)
     ${refetchTempl}
-    defn.asInstanceOf[_root_.relay.gql.${documentType}]
+    defn.asInstanceOf[Query]
   }
   lazy val sourceHash: String = "${sourceHash}"
 }
