@@ -1,12 +1,10 @@
 package com.dispalt.relay
 
 import java.io.InputStream
-
-import sbt.{AutoPlugin, SettingKey}
+import sbt.{AutoPlugin, Def, SettingKey, _}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
-import sbt._
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -22,6 +20,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
     val relayForceCompile: TaskKey[Seq[File]]   = taskKey[Seq[File]]("Run the relay compiler uncached")
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
+    val relayGqlOutput: SettingKey[Option[File]] = settingKey[Option[File]]("Optional output of the schema stuff as gql files")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
     val relayBaseDirectory: SettingKey[File] = settingKey[File]("The base directory the relay compiler")
@@ -89,7 +88,17 @@ object RelayBasePlugin extends AutoPlugin {
         * Output path of the relay compiler.  Necessary this is an empty directory as it will
         * delete files it thinks went away.
         */
-      relayOutput := sourceManaged.value / relayFolder / "relay" / "generated",
+      relayOutput := relaySubFolder("generated").value,
+      /**
+        * Output path of the relay compiler as gql files.  Necessary this is an empty directory as it will
+        * delete files it thinks went away.
+        *
+        * Example:
+        * {{{
+        *   inConfig(Compile)(relayGqlOutput := Some(relaySubFolder("gql").value))
+        * }}}
+        */
+      relayGqlOutput := None,
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -124,6 +133,10 @@ object RelayBasePlugin extends AutoPlugin {
     def quote: String = "\"" + s + "\""
   }
 
+  def relaySubFolder(subFolder: String): Def.Initialize[File] = Def.setting {
+    sourceManaged.value / relayFolder / "relay" / subFolder
+  }
+
   def relayCompilePersistTask = Def.taskDyn[Option[File]] {
     if (relayPersistedPath.value.nonEmpty) {
       relayForceCompile.map { _ =>
@@ -148,11 +161,14 @@ object RelayBasePlugin extends AutoPlugin {
     val sourceFiles      = unmanagedSourceDirectories.value
     val resourceFiles    = resourceDirectories.value
     val outpath          = relayOutput.value
+    val gqlOutpath       = relayGqlOutput.value
     val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
     val verbose          = relayDebug.value
     val schemaPath       = relaySchema.value
     val source           = relayBaseDirectory.value
-    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    // The relay-compiler is really stupid and includes have to be relative to the source directory.
+    // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
+    val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
     val customScalars    = relayCustomScalars.value
@@ -184,6 +200,7 @@ object RelayBasePlugin extends AutoPlugin {
           schemaPath = schemaPath,
           sourceDirectory = source,
           outputPath = outpath,
+          gqlOutputPath = gqlOutpath,
           logger = logger,
           verbose = verbose,
           extras = extras,
@@ -206,6 +223,7 @@ object RelayBasePlugin extends AutoPlugin {
 
     val npmDir        = relayNpmDir.value
     val outpath       = relayOutput.value
+    val gqlOutpath    = relayGqlOutput.value
     val compilerPath  = s"node ${(npmDir / relayCompilerPath.value).getPath}"
     val verbose       = relayDebug.value
     val schemaPath    = relaySchema.value
@@ -234,6 +252,7 @@ object RelayBasePlugin extends AutoPlugin {
       schemaPath = schemaPath,
       sourceDirectory = source,
       outputPath = outpath,
+      gqlOutputPath = gqlOutpath,
       logger = logger,
       verbose = verbose,
       extras = extras,
@@ -253,6 +272,7 @@ object RelayBasePlugin extends AutoPlugin {
     schemaPath: File,
     sourceDirectory: File,
     outputPath: File,
+    gqlOutputPath: Option[File],
     logger: Logger,
     verbose: Boolean,
     extras: List[String],
@@ -277,39 +297,44 @@ object RelayBasePlugin extends AutoPlugin {
       case (scalarType, scalaType) => s"--customScalars.${scalarType}=${scalaType}"
     }.toList
 
-    val cmd = shell :+ (List(
-      compilerPath,
-      "--language",
-      "scalajs",
-      "--watchman",
-      "false",
-      "--schema",
-      schemaPath.getAbsolutePath.quote,
-      "--src",
-      sourceDirectory.getAbsolutePath.quote,
-      "--artifactDirectory",
-      outputPath.getAbsolutePath.quote
-    ) ::: verboseList ::: extrasList ::: persistedList ::: customScalarsArgs)
-      .mkString(" ")
+    def compileLanguage(language: String, artifactDirectory: File): Unit = {
+      val cmd = shell :+ (List(
+        compilerPath,
+        "--language",
+        language,
+        "--watchman",
+        "false",
+        "--schema",
+        schemaPath.getAbsolutePath.quote,
+        "--src",
+        sourceDirectory.getAbsolutePath.quote,
+        "--artifactDirectory",
+        artifactDirectory.getAbsolutePath.quote
+      ) ::: verboseList ::: extrasList ::: persistedList ::: customScalarsArgs)
+        .mkString(" ")
 
-    var output = Vector.empty[String]
+      var output = Vector.empty[String]
 
-    Commands.run(
-      cmd,
-      workingDir,
-      logger,
-      (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector
-    ) match {
-      case Left(value) =>
-        output.foreach(logger.error(_))
-        sys.error(s"Relay compiler failed, ${value}")
+      Commands.run(
+        cmd,
+        workingDir,
+        logger,
+        (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector
+      ) match {
+        case Left(value) =>
+          output.foreach(logger.error(_))
+          sys.error(s"Relay compiler failed, ${value}")
 
-      case Right(_) =>
-        if (!displayOnFailure) {
-          output.foreach(logger.info(_))
-        }
+        case Right(_) =>
+          if (!displayOnFailure) {
+            output.foreach(logger.info(_))
+          }
 
+      }
     }
+
+    compileLanguage("scalajs", outputPath)
+    gqlOutputPath.foreach(compileLanguage("scala2gql", _))
   }
 
   def handleUpdate(
@@ -319,6 +344,7 @@ object RelayBasePlugin extends AutoPlugin {
     schemaPath: File,
     sourceDirectory: File,
     outputPath: File,
+    gqlOutputPath: Option[File],
     logger: Logger,
     verbose: Boolean,
     extras: List[String],
@@ -343,6 +369,7 @@ object RelayBasePlugin extends AutoPlugin {
           schemaPath = schemaPath,
           sourceDirectory = sourceDirectory,
           outputPath = outputPath,
+          gqlOutputPath = gqlOutputPath,
           logger = logger,
           verbose = verbose,
           extras = extras,

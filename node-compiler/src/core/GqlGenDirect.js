@@ -31,15 +31,24 @@ const SJSTransform = require("../transforms/SJSTransform");
 
 import type {Schema} from "relay-compiler/core/Schema";
 
-import type {Fragment, IRTransform, Root} from 'relay-compiler/lib/RelayCompilerPublic';
+import type {Fragment, Root} from 'relay-compiler/core/IR';
+import type {IRTransform} from 'relay-compiler/core/CompilerContext';
+import type {TypeGeneratorOptions} from "relay-compiler/language/RelayLanguagePluginInterface";
+type CompilerContext = ReturnType<IRTransform>;
 
 function generate(
   schema: Schema,
   node: Root | Fragment,
+  options: TypeGeneratorOptions
 ): string {
   return Printer.print(schema, node)
 }
 
+function transform(context: CompilerContext): CompilerContext {
+  return context
+}
+
+// TODO: Share the common transforms with ScalaGenDirect
 const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayRelayDirectiveTransform.transform,
   RelayMaskTransform.transform,
@@ -47,7 +56,8 @@ const FLOW_TRANSFORMS: Array<IRTransform> = [
   RelayMatchTransform.transform,
   RequiredFieldTransform.transform,
   FlattenTransform.transformWithOptions({}),
-  RelayRefetchableFragmentTransform.transform
+  RelayRefetchableFragmentTransform.transform,
+  transform
 ];
 
 const schemaExtensions: Array<string> = [

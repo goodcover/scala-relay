@@ -1,11 +1,11 @@
 package example
 
+import relay.compiler.graphqlGen
 import relay.generated.TaskComponent_task
-import relay.graphql
 
 object TaskComponent {
 
-  private val fragment = @graphqlGen("""
+  private val fragment = graphqlGen("""
     fragment TaskComponent_task on Task {
       title
     }

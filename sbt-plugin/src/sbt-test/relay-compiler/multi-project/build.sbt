@@ -21,8 +21,10 @@ def commonSettings = Seq(
 lazy val a = project
   .enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
   .settings(commonSettings)
+  .settings(inConfig(Compile)(relayGqlOutput := Some(RelayBasePlugin.relaySubFolder("gql").value)))
 
 lazy val b = project
   .enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
   .dependsOn(a)
   .settings(commonSettings)
+  .settings(inConfig(Compile)(relayInclude += (a / relayGqlOutput).value))
