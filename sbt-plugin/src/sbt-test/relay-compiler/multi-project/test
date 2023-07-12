@@ -1,0 +1,4 @@
+$ pause
+> b/Compile/relayCompile
+> b/Compile/npmUpdate
+> b/fastOptJS/webpack
