@@ -25,3 +25,5 @@ npmDevDependencies in Compile ++= Seq(
 relayDisplayOnlyOnFailure in Compile := true
 
 Compile / relayNpmDir := (Compile / npmInstallDependencies).value
+
+webpack / version := "5.75.0"

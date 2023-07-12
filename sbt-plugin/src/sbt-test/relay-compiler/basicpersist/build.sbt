@@ -1,4 +1,4 @@
-name := "basic"
+name := "basicpersist"
 
 libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "1.1.0"
 
@@ -25,3 +25,5 @@ npmDevDependencies in Compile ++= Seq(
 relayDisplayOnlyOnFailure in Compile := true
 
 Compile / relayNpmDir := (Compile / npmInstallDependencies).value
+
+webpack / version := "5.75.0"
