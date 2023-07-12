@@ -1,3 +1,6 @@
+$ pause
+> a/Compile/npmUpdate
+$ exec ls -la ./a/target/scala-2.13/scalajs-bundler/main/
 > a/Compile/relayCompile
 > b/Compile/relayCompile
 > b/fastOptJS/webpack
