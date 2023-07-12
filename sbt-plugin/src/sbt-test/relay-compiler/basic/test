@@ -1,3 +1,4 @@
+$ pause
 > Compile/relayCompile
 > Compile/npmUpdate
 > fastOptJS/webpack

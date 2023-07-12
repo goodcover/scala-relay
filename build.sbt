@@ -1,5 +1,8 @@
 import sbtrelease.ReleaseCustom
-import sbtrelease.ReleaseStateTransformations.*
+import sbtrelease.ReleaseStateTransformations._
+
+import java.nio.file.Files
+import scala.sys.process._
 
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
@@ -30,10 +33,43 @@ lazy val `sbt-relay-compiler` = project
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.1"),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
+    scriptedLaunchOpts += "-Droot.project.dir=" + (LocalRootProject / baseDirectory).value,
     scriptedBufferLog := false,
     scriptedDependencies := {
-      val () = scriptedDependencies.value
-      val () = (`relay-macro` / publishLocal).value
+      scriptedDependencies.value
+
+      (`relay-macro` / publishLocal).value
+
+      val rootDir = (LocalRootProject / baseDirectory).value
+
+      val plugins = Map(
+        "node-compiler" -> "relay-compiler-language-scalajs",
+        "node-compiler-text" -> "relay-compiler-language-scala2gql"
+      )
+
+      plugins.foreach { case (sourceDir, _) =>
+        val cwd = rootDir / sourceDir
+        require(Process(Seq("yarn", "install"), cwd).! == 0)
+        require(Process(Seq("yarn", "build"), cwd).! == 0)
+      }
+
+      // Create a link in each test directory to the plugin so that it will get copied into the test.
+      // Be careful of https://github.com/sbt/sbt/issues/7331.
+      val testGroups = sbtTestDirectory.value.listFiles()
+      testGroups.foreach { group =>
+        val tests = group.listFiles()
+        tests.foreach { test =>
+          val nodeModulesDir = test / "node_modules"
+          nodeModulesDir.mkdirs()
+          plugins.foreach { case (sourceDir, packageName) =>
+            val link = nodeModulesDir / packageName
+            if (!link.exists()) {
+              val target = rootDir / sourceDir
+              Files.createSymbolicLink(link.toPath, target.toPath)
+            }
+          }
+        }
+      }
     },
     scalaVersion := {
       (pluginCrossBuild / sbtBinaryVersion).value match {

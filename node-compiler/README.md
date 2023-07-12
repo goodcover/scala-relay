@@ -60,11 +60,6 @@ Go to [node-example] and run:
 yarn iterate
 ```
 
-> ⚠️ `yarn link`
-> 
-> This will run `yarn link` in this directory which will install it globally.
-> You may want to run `yarn unlink` when you are done.
-
 ### Debugging
 
 First build and then use the `relay-compiler` Run Configuration in IntelliJ.
