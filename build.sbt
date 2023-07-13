@@ -163,7 +163,7 @@ lazy val macroAnnotationSettings = Seq(
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalaVersion := Version.Scala213,
-  crossScalaVersions := Seq(Version.Scala212, Version.Scala213),
+  crossScalaVersions := Seq(Version.Scala213),
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",

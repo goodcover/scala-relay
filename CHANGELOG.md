@@ -1,5 +1,8 @@
 ## Changes
 
+### 0.40.0
+- Drop 2.12
+
 ### 0.22.8
 - Support scala2.13
 
