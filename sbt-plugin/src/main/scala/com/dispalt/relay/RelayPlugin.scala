@@ -1,12 +1,10 @@
 package com.dispalt.relay
 
 import java.io.InputStream
-
-import sbt.{AutoPlugin, SettingKey}
+import sbt.{AutoPlugin, Def, SettingKey, _}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
-import sbt._
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -152,7 +150,9 @@ object RelayBasePlugin extends AutoPlugin {
     val verbose          = relayDebug.value
     val schemaPath       = relaySchema.value
     val source           = relayBaseDirectory.value
-    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    // The relay-compiler is really stupid and includes have to be relative to the source directory.
+    // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
+    val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
     val customScalars    = relayCustomScalars.value

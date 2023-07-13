@@ -45,3 +45,33 @@ Looking at the sbt tests is the best way to get a handle on how things work.
 
 
 ## Dev
+
+Build with:
+
+```shell
+yarn build
+```
+
+### Testing
+
+Go to [node-example] and run:
+
+```shell
+yarn iterate
+```
+
+### Debugging
+
+First build and then use the `relay-compiler` Run Configuration in IntelliJ.
+
+Alternatively, modify [iterate.sh] to:
+
+```shell
+node --inspect brk
+```
+
+Then run this and attach a debugger.
+
+
+[iterate.sh]: ../node-example/iterate.sh
+[node-example]: ../node-example
