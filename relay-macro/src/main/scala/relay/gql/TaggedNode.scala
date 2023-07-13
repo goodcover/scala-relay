@@ -105,7 +105,14 @@ trait ConcreteBatch extends TaggedNode
 @js.native
 trait ConcreteRequest extends TaggedNode
 
+/** Typed fragment query.
+  *
+  * @tparam F fragment value type constructor (`js.Array` for plural fragments, otherwise `Id`).
+  * @tparam O fragment value type.
+  * @tparam X inline indicator (`Inline` for inline fragments, otherwise `Any`).
+  */
 @js.native
 trait TaggedNodeQuery[F[_], O, +X] extends TaggedNode
 
+trait Block
 trait Inline
