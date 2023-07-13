@@ -23,4 +23,4 @@ jobs:
       with:
         node-version: 18
     - name: Run tests
-      run: sbt "test; scripted"
+      run: sbt "all test scripted"
