@@ -85,11 +85,15 @@ function generate(
     )
     const code = newCT.out();
 
+    const metadata = node.metadata || {}
+    const responseType = metadata.plural ? "type Ctor[T] = js.Array[T]" : "type Ctor[T] = T";
 
     return `
 ${code.core}
 
 object ${node.name} extends ${code.objectParent || '_root_.relay.gql.GenericGraphQLTaggedNode'} {
+        ${responseType}
+
         ////////////////////////////////////
         ////// Supporting classes begin here
         ////////////////////////////////////
@@ -818,8 +822,8 @@ class ClassTracker {
     // Handle explicits implicits we've asked for.
     const text = impl.map(({from, to, name}) => {
       return [
-        `  implicit class ${from}2${to}Ref(f: ${from}) {`,
-        `    def to${to}: ${ref}[${to}] = f.asInstanceOf[${ref}[${to}]]`,
+        `  implicit class ${from}2${to}Ref(f: ${from}) extends _root_.relay.gql.CastToFragmentRef[${from}, ${to}](f) {`,
+        `    def to${to}: ${ref}[${to}] = castToRef`,
         `  }`,
       ].join("\n");
     }).join("\n");

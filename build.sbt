@@ -1,4 +1,5 @@
 import sbtrelease.ReleaseCustom
+import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 
 import java.nio.file.Files
