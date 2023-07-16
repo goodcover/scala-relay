@@ -6,7 +6,7 @@ enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
 
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
 
-scalaVersion := "2.13.10"
+scalaVersion := "2.13.11"
 
 useYarn := true
 
