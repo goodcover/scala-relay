@@ -1,6 +1,6 @@
 name := "multi-project"
 
-Global / scalaVersion := "2.13.10"
+Global / scalaVersion := "2.13.11"
 
 def commonSettings = Seq(
   scalacOptions += "-Ymacro-annotations",
@@ -8,9 +8,9 @@ def commonSettings = Seq(
   relaySchema := (LocalRootProject / baseDirectory).value / "testschema.graphql",
   relayDebug := true,
   Compile / npmDevDependencies ++= Seq(
-    "relay-compiler-language-scalajs"   -> s"link:${baseDirectory.value}/node_modules/relay-compiler-language-scalajs",
-    "relay-compiler"                    -> "11.0.0",
-    "graphql"                           -> "^15.4.0"
+    "relay-compiler-language-scalajs" -> s"link:${baseDirectory.value}/node_modules/relay-compiler-language-scalajs",
+    "relay-compiler"                  -> "11.0.0",
+    "graphql"                         -> "^15.4.0"
   ),
   Compile / relayDisplayOnlyOnFailure := true,
   Compile / relayNpmDir := (Compile / npmInstallDependencies).value,
