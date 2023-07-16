@@ -5,7 +5,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Version {
-  final val Scala212 = "2.12.17"
+  final val Scala212 = "2.12.18"
   final val Scala213 = "2.13.11"
 
   final val Slinky  = "0.7.2"
