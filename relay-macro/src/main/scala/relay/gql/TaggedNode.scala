@@ -114,5 +114,4 @@ trait ConcreteRequest extends TaggedNode
 @js.native
 trait TaggedNodeQuery[F[_], O, +X] extends TaggedNode
 
-trait Block
 trait Inline
