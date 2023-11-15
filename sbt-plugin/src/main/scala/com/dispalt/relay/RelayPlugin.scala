@@ -22,8 +22,9 @@ object RelayBasePlugin extends AutoPlugin {
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
-    val relayBaseDirectory: SettingKey[File] = settingKey[File]("The base directory the relay compiler")
-    val relayInclude: SettingKey[Seq[File]]  = settingKey[Seq[File]]("extra directories to include")
+    val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
+    val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
+    val relayInclude: SettingKey[Seq[File]]     = settingKey[Seq[File]]("extra directories to include")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -57,6 +58,7 @@ object RelayBasePlugin extends AutoPlugin {
         * outside the directory, changing this should be considered.
         */
       relayBaseDirectory := baseDirectory.value,
+      relayWorkingDirectory := file(sys.props("user.dir")),
       /**
         * Get the compiler path from the installed dependencies.
         */
@@ -171,7 +173,7 @@ object RelayBasePlugin extends AutoPlugin {
         (extraWatches ** "*.gql").get.toSet
 
     val label      = Reference.display(thisProjectRef.value)
-    val workingDir = file(sys.props("user.dir"))
+    val workingDir = relayWorkingDirectory.value
     val logger     = streams.value.log
 
     sbt.shim.SbtCompat.FileFunction
@@ -215,7 +217,7 @@ object RelayBasePlugin extends AutoPlugin {
 
     val persisted = relayPersistedPath.value
 
-    val workingDir = file(sys.props("user.dir"))
+    val workingDir = relayWorkingDirectory.value
     val logger     = streams.value.log
 
     // @note: Workaround for https://github.com/facebook/relay/issues/2625
