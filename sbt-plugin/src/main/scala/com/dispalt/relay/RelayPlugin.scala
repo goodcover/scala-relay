@@ -61,7 +61,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Get the compiler path from the installed dependencies.
         */
       relayCompilerPath := {
-        "node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
+        "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
       },
       /**
         * The version of the node module
@@ -141,15 +141,14 @@ object RelayBasePlugin extends AutoPlugin {
   def relayCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir           = relayNpmDir.value
-    val cache            = streams.value.cacheDirectory / "relay-compile"
-    val sourceFiles      = unmanagedSourceDirectories.value
-    val resourceFiles    = resourceDirectories.value
-    val outpath          = relayOutput.value
-    val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose          = relayDebug.value
-    val schemaPath       = relaySchema.value
-    val source           = relayBaseDirectory.value
+    val cache         = streams.value.cacheDirectory / "relay-compile"
+    val sourceFiles   = unmanagedSourceDirectories.value
+    val resourceFiles = resourceDirectories.value
+    val outpath       = relayOutput.value
+    val compilerPath  = relayCompilerPath.value
+    val verbose       = relayDebug.value
+    val schemaPath    = relaySchema.value
+    val source        = relayBaseDirectory.value
     // The relay-compiler is really stupid and includes have to be relative to the source directory.
     // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
     val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
@@ -204,9 +203,8 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir        = relayNpmDir.value
     val outpath       = relayOutput.value
-    val compilerPath  = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val compilerPath  = relayCompilerPath.value
     val verbose       = relayDebug.value
     val schemaPath    = relaySchema.value
     val source        = relayBaseDirectory.value

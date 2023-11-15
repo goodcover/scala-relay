@@ -172,6 +172,8 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-unchecked",
     "-Xlint",
 //    "-Yno-adapted-args",
+    "-release",
+    "11",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
