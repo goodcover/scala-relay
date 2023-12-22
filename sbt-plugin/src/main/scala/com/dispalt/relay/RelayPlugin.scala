@@ -1,12 +1,10 @@
 package com.dispalt.relay
 
 import java.io.InputStream
-
-import sbt.{AutoPlugin, SettingKey}
+import sbt.{AutoPlugin, Def, SettingKey, _}
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import sbt.Keys._
-import sbt._
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -24,8 +22,9 @@ object RelayBasePlugin extends AutoPlugin {
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
     val relayCompilerPath: SettingKey[String] =
       settingKey[String]("The location of the `scala-relay-compiler` executable.")
-    val relayBaseDirectory: SettingKey[File] = settingKey[File]("The base directory the relay compiler")
-    val relayInclude: SettingKey[Seq[File]]  = settingKey[Seq[File]]("extra directories to include")
+    val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
+    val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
+    val relayInclude: SettingKey[Seq[File]]     = settingKey[Seq[File]]("extra directories to include")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -59,11 +58,12 @@ object RelayBasePlugin extends AutoPlugin {
         * outside the directory, changing this should be considered.
         */
       relayBaseDirectory := baseDirectory.value,
+      relayWorkingDirectory := file(sys.props("user.dir")),
       /**
         * Get the compiler path from the installed dependencies.
         */
       relayCompilerPath := {
-        "node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
+        "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
       },
       /**
         * The version of the node module
@@ -143,16 +143,17 @@ object RelayBasePlugin extends AutoPlugin {
   def relayCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir           = relayNpmDir.value
-    val cache            = streams.value.cacheDirectory / "relay-compile"
-    val sourceFiles      = unmanagedSourceDirectories.value
-    val resourceFiles    = resourceDirectories.value
-    val outpath          = relayOutput.value
-    val compilerPath     = s"node ${(npmDir / relayCompilerPath.value).getPath}"
-    val verbose          = relayDebug.value
-    val schemaPath       = relaySchema.value
-    val source           = relayBaseDirectory.value
-    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val cache         = streams.value.cacheDirectory / "relay-compile"
+    val sourceFiles   = unmanagedSourceDirectories.value
+    val resourceFiles = resourceDirectories.value
+    val outpath       = relayOutput.value
+    val compilerPath  = relayCompilerPath.value
+    val verbose       = relayDebug.value
+    val schemaPath    = relaySchema.value
+    val source        = relayBaseDirectory.value
+    // The relay-compiler is really stupid and includes have to be relative to the source directory.
+    // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
+    val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
     val customScalars    = relayCustomScalars.value
@@ -172,7 +173,7 @@ object RelayBasePlugin extends AutoPlugin {
         (extraWatches ** "*.gql").get.toSet
 
     val label      = Reference.display(thisProjectRef.value)
-    val workingDir = file(sys.props("user.dir"))
+    val workingDir = relayWorkingDirectory.value
     val logger     = streams.value.log
 
     sbt.shim.SbtCompat.FileFunction
@@ -204,9 +205,8 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val npmDir        = relayNpmDir.value
     val outpath       = relayOutput.value
-    val compilerPath  = s"node ${(npmDir / relayCompilerPath.value).getPath}"
+    val compilerPath  = relayCompilerPath.value
     val verbose       = relayDebug.value
     val schemaPath    = relaySchema.value
     val source        = relayBaseDirectory.value
@@ -217,7 +217,7 @@ object RelayBasePlugin extends AutoPlugin {
 
     val persisted = relayPersistedPath.value
 
-    val workingDir = file(sys.props("user.dir"))
+    val workingDir = relayWorkingDirectory.value
     val logger     = streams.value.log
 
     // @note: Workaround for https://github.com/facebook/relay/issues/2625

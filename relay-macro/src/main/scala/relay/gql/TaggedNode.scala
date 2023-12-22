@@ -1,6 +1,8 @@
 package relay.gql
 
+import scala.annotation.unchecked.uncheckedVariance
 import scala.scalajs.js
+import scala.scalajs.js.|
 
 /** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
 trait GenericGraphQLTaggedNode {
@@ -57,9 +59,17 @@ object SubscriptionTaggedNode {
   }
 }
 
+/** Relay fragment definition for response of type Ctor[Out]. */
 trait FragmentTaggedNode[O] extends GenericGraphQLTaggedNode {
+  type Query <: TaggedNodeQuery[Ctor, O, Any]
+
+  /** Query in/out constructor. Either `js.Array[T]` or `T`. */
+  type Ctor[T]
+
   type Out = O
   type Ref = FragmentRef[O]
+
+  override def query: Query
 }
 
 object FragmentTaggedNode {
@@ -79,6 +89,10 @@ object FragmentRefetchableTaggedNode {
   }
 }
 
+abstract class CastToFragmentRef[From, To](from: From) {
+  def castToRef: FragmentRef[To] = from.asInstanceOf[FragmentRef[To]]
+}
+
 /** This is what all the Relay components request */
 trait TaggedNode extends js.Object
 
@@ -89,7 +103,16 @@ trait ConcreteFragment extends TaggedNode
 trait ConcreteBatch extends TaggedNode
 
 @js.native
-trait ReaderFragment extends TaggedNode
-
-@js.native
 trait ConcreteRequest extends TaggedNode
+
+/** Typed fragment query.
+  *
+  * @tparam F fragment value type constructor (`js.Array` for plural fragments, otherwise `Id`).
+  * @tparam O fragment value type.
+  * @tparam X inline indicator (`Inline` for inline fragments, otherwise `Any`).
+  */
+@js.native
+trait TaggedNodeQuery[F[_], O, +X] extends TaggedNode
+
+trait Block
+trait Inline

@@ -1,6 +1,9 @@
 import sbtrelease.ReleaseCustom
-import sbtrelease.ReleasePlugin.autoImport.{*, ReleaseStep}
-import sbtrelease.ReleaseStateTransformations.*
+import sbtrelease.ReleasePlugin.autoImport._
+import sbtrelease.ReleaseStateTransformations._
+
+import java.nio.file.Files
+import scala.sys.process._
 
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
@@ -29,12 +32,36 @@ lazy val `sbt-relay-compiler` = project
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
-    addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.1"),
+    addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2"),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
-      val () = scriptedDependencies.value
-      val () = (`relay-macro` / publishLocal).value
+      scriptedDependencies.value
+
+      (`relay-macro` / publishLocal).value
+
+      val rootDir     = (LocalRootProject / baseDirectory).value
+      val sourceDir   = "node-compiler"
+      val packageName = "relay-compiler-language-scalajs"
+      val cwd         = rootDir / sourceDir
+      require(Process(Seq("yarn", "install"), cwd).! == 0)
+      require(Process(Seq("yarn", "build"), cwd).! == 0)
+
+      // Create a link in each test directory to the plugin so that it will get copied into the test.
+      // Be careful of https://github.com/sbt/sbt/issues/7331.
+      val testGroups = sbtTestDirectory.value.listFiles()
+      testGroups.foreach { group =>
+        val tests = group.listFiles()
+        tests.foreach { test =>
+          val nodeModulesDir = test / "node_modules"
+          nodeModulesDir.mkdirs()
+          val link = nodeModulesDir / packageName
+          if (!link.exists()) {
+            val target = rootDir / sourceDir
+            Files.createSymbolicLink(link.toPath, target.toPath)
+          }
+        }
+      }
     },
     scalaVersion := {
       (pluginCrossBuild / sbtBinaryVersion).value match {
@@ -136,7 +163,7 @@ lazy val macroAnnotationSettings = Seq(
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalaVersion := Version.Scala213,
-  crossScalaVersions := Seq(Version.Scala212, Version.Scala213),
+  crossScalaVersions := Seq(Version.Scala213),
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -145,6 +172,8 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-unchecked",
     "-Xlint",
 //    "-Yno-adapted-args",
+    "-release",
+    "11",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",

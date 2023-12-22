@@ -1,3 +1,4 @@
-> compile:relayCompile
-> compile:npmUpdate
-# > fastOptJS::webpack
+# FIXME: Extensions do not work, at least not how they are defined here.
+# > Compile/relayCompile
+# > Compile/npmUpdate
+# > fastOptJS/webpack
