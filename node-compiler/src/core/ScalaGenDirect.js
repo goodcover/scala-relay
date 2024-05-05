@@ -209,7 +209,11 @@ class ClassTracker {
   }
 
   newImplicit(from: string, to: string, name: string, inline: boolean) {
-    this.implicits.unshift({from, to, name, inline});
+    if (!this.implicits.find(implicit =>
+      implicit.from === from && implicit.to === to && implicit.name === name && implicit.inline === inline)
+    ) {
+      this.implicits.unshift({from, to, name, inline});
+    }
   }
 
   newQueryTypeParam(input: string, output: string , refetchIn?: string, refetchOut?: string) {
