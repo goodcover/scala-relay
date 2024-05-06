@@ -20,8 +20,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
     val relayForceCompile: TaskKey[Seq[File]]   = taskKey[Seq[File]]("Run the relay compiler uncached")
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
-    val relayCompilerPath: SettingKey[String] =
-      settingKey[String]("The location of the `scala-relay-compiler` executable.")
+    val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
     val relayInclude: SettingKey[Seq[File]]     = settingKey[Seq[File]]("extra directories to include")
@@ -62,7 +61,7 @@ object RelayBasePlugin extends AutoPlugin {
       /**
         * Get the compiler path from the installed dependencies.
         */
-      relayCompilerPath := {
+      relayCompilerCommand := {
         "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
       },
       /**
@@ -147,7 +146,7 @@ object RelayBasePlugin extends AutoPlugin {
     val sourceFiles   = unmanagedSourceDirectories.value
     val resourceFiles = resourceDirectories.value
     val outpath       = relayOutput.value
-    val compilerPath  = relayCompilerPath.value
+    val compilerCommand  = relayCompilerCommand.value
     val verbose       = relayDebug.value
     val schemaPath    = relaySchema.value
     val source        = relayBaseDirectory.value
@@ -181,7 +180,7 @@ object RelayBasePlugin extends AutoPlugin {
         handleUpdate(
           label = label,
           workingDir = workingDir,
-          compilerPath = compilerPath,
+          compilerCommand = compilerCommand,
           schemaPath = schemaPath,
           sourceDirectory = source,
           outputPath = outpath,
@@ -205,12 +204,12 @@ object RelayBasePlugin extends AutoPlugin {
   def relayForceCompileTask = Def.task[Seq[File]] {
     import Path.relativeTo
 
-    val outpath       = relayOutput.value
-    val compilerPath  = relayCompilerPath.value
-    val verbose       = relayDebug.value
-    val schemaPath    = relaySchema.value
-    val source        = relayBaseDirectory.value
-    val customScalars = relayCustomScalars.value
+    val outpath         = relayOutput.value
+    val compilerCommand = relayCompilerCommand.value
+    val verbose         = relayDebug.value
+    val schemaPath      = relaySchema.value
+    val source          = relayBaseDirectory.value
+    val customScalars   = relayCustomScalars.value
 
     val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
@@ -230,7 +229,7 @@ object RelayBasePlugin extends AutoPlugin {
 
     runCompiler(
       workingDir = workingDir,
-      compilerPath = compilerPath,
+      compilerCommand = compilerCommand,
       schemaPath = schemaPath,
       sourceDirectory = source,
       outputPath = outpath,
@@ -249,7 +248,7 @@ object RelayBasePlugin extends AutoPlugin {
 
   def runCompiler(
     workingDir: File,
-    compilerPath: String,
+    compilerCommand: String,
     schemaPath: File,
     sourceDirectory: File,
     outputPath: File,
@@ -278,7 +277,7 @@ object RelayBasePlugin extends AutoPlugin {
     }.toList
 
     val cmd = shell :+ (List(
-      compilerPath,
+      compilerCommand,
       "--language",
       "scalajs",
       "--watchman",
@@ -315,7 +314,7 @@ object RelayBasePlugin extends AutoPlugin {
   def handleUpdate(
     label: String,
     workingDir: File,
-    compilerPath: String,
+    compilerCommand: String,
     schemaPath: File,
     sourceDirectory: File,
     outputPath: File,
@@ -339,7 +338,7 @@ object RelayBasePlugin extends AutoPlugin {
 
         runCompiler(
           workingDir = workingDir,
-          compilerPath = compilerPath,
+          compilerCommand = compilerCommand,
           schemaPath = schemaPath,
           sourceDirectory = sourceDirectory,
           outputPath = outputPath,
