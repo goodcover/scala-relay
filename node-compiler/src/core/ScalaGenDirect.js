@@ -209,11 +209,17 @@ class ClassTracker {
   }
 
   newImplicit(from: string, to: string, name: string, inline: boolean) {
-    if (!this.implicits.find(implicit =>
-      implicit.from === from && implicit.to === to && implicit.name === name && implicit.inline === inline)
-    ) {
-      this.implicits.unshift({from, to, name, inline});
+    if (!inline && this.implicits.find(implicit => !implicit.inline && implicit.from === from && implicit.to)) {
+      const fieldNameGuess = from.charAt(0).toLowerCase() + from.slice(1).replace(/_\d+$/, '');
+      throw (
+        `Encountered a duplicate implicit from '${from}' to '${to}'.\n` +
+        'This is very likely to be caused by a bug in the relay-compiler which does not give a fresh name to fragment' +
+        ' types when they occur after an object spread.\n' +
+        `To workaround this, either add an alias to the field (e.g. 'alias: ${fieldNameGuess}'), or move the fragment` +
+        ` spread '... on ${from}' above the object spread that contains the field '${fieldNameGuess}'.`
+      )
     }
+    this.implicits.unshift({from, to, name, inline});
   }
 
   newQueryTypeParam(input: string, output: string , refetchIn?: string, refetchOut?: string) {
