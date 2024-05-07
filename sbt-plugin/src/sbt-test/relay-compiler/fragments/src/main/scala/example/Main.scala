@@ -1,21 +1,39 @@
 package example
 
 import java.util.NoSuchElementException
+import relay.generated._
 import relay.graphql
 import relay.gql.FragmentRef
 import scala.scalajs.js.|
 
+// The order here matters.
+// There is a bug where if an object spread occurs with a field that has the same name as the type name within the
+// type condition of a fragment spread.
 @graphql("""
     fragment Main_node on Node {
       __typename
       ... on Comment {
-        feedback {
+        # An alias works around the bug.
+        foo: feedback {
           ...Main_feedback
         }
       }
-      # Order matters. There was a bug which only occurred when this came last.
       ... on Feedback {
         ...Main_feedback
+      }
+    }
+  """)
+@graphql("""
+    fragment Main_node2 on Node {
+      __typename
+      # Changing the order also fixes the bug.
+      ... on Feedback {
+        ...Main_feedback
+      }
+      ... on Comment {
+        feedback {
+          ...Main_feedback
+        }
       }
     }
   """)
@@ -35,8 +53,15 @@ object Main extends App {
   }
 
   def main(args: List[String]): Unit = {
-    val node: relay.generated.Main_node = null
-    val user: Option[FragmentRef[relay.generated.Main_feedback]] = node.asFeedback.map(_.toMain_feedback)
-    val author: Option[FragmentRef[relay.generated.Main_feedback]] = node.asComment.map(_.feedback.get.toMain_feedback)
+    locally {
+      val node: Main_node = null
+      val user: Option[FragmentRef[Main_feedback]] = node.asFeedback.map(_.toMain_feedback)
+      val author: Option[FragmentRef[Main_feedback]] = node.asComment.map(_.foo.get.toMain_feedback)
+    }
+    locally {
+      val node: Main_node2 = null
+      val user: Option[FragmentRef[Main_feedback]] = node.asFeedback.map(_.toMain_feedback)
+      val author: Option[FragmentRef[Main_feedback]] = node.asComment.map(_.feedback.get.toMain_feedback)
+    }
   }
 }
