@@ -213,7 +213,7 @@ class ClassTracker {
       const fieldNameGuess = from.charAt(0).toLowerCase() + from.slice(1).replace(/_\d+$/, '');
       throw (
         `Encountered a duplicate implicit from '${from}' to '${to}'.\n` +
-        'This is very likely to be caused by a bug in the relay-compiler which does not give a fresh name to fragment' +
+        'This is likely to be caused by a bug in the relay-compiler which does not give a fresh name to fragment' +
         ' types when they occur after an object spread.\n' +
         `To workaround this, either add an alias to the field (e.g. 'alias: ${fieldNameGuess}'), or move the fragment` +
         ` spread '... on ${from}' above the object spread that contains the field '${fieldNameGuess}'.`
