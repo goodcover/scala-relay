@@ -7,7 +7,7 @@ import scala.sys.process._
 
 // Run slinky-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
-ThisBuild / intellijBuild := "232.6095.10"
+ThisBuild / intellijBuild := "241.17890.1"
 
 lazy val root =
   project
@@ -114,7 +114,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
       // This only works for proper plugins
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
-      xml.untilBuild = "240.*"
+      xml.untilBuild = "280.*"
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
@@ -129,7 +129,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0" until-build="2024.1.0">
+          |    <ideaVersion since-build="2020.3.0" until-build="2028.1.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
           |             implementation="slinkyrelay.GraphQLGenInjector">
           |            <name>graphqlGen whitebox mac library Support</name>
