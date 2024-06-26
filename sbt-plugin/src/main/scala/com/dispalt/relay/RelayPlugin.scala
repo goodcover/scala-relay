@@ -148,8 +148,8 @@ object RelayBasePlugin extends AutoPlugin {
     // The relay-compiler is really stupid and includes have to be relative to the source directory.
     // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
     val extras =
-      if (force) included.map(f => source.toPath.relativize(f.toPath) + "/**").toList
-      else included.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
+      if (force) included.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
+      else included.map(f => source.toPath.relativize(f.toPath) + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     val persisted = relayPersistedPath.value
