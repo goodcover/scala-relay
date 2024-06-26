@@ -80,11 +80,11 @@ object RelayBasePlugin extends AutoPlugin {
       /**
         * The big task that performs all the magic.
         */
-      relayCompile := relayCompileTask.value,
+      relayCompile := relayCompileTask().value,
       /**
         * Run relay-compiler with no caching.
         */
-      relayForceCompile := relayForceCompileTask.value,
+      relayForceCompile := relayCompileTask(force = true).value,
       /**
         * Output path of the relay compiler.  Necessary this is an empty directory as it will
         * delete files it thinks went away.
@@ -136,11 +136,7 @@ object RelayBasePlugin extends AutoPlugin {
     }
   }
 
-  /***
-    * REAL SIMILAR TO [[relayForceCompileTask]], update both, factor later.
-    * @return
-    */
-  def relayCompileTask = Def.task[Seq[File]] {
+  def relayCompileTask(force: Boolean = false) = Def.task[Seq[File]] {
     val outpath         = relayOutput.value
     val compilerCommand = relayCompilerCommand.value
     val verbose         = relayDebug.value
@@ -148,9 +144,12 @@ object RelayBasePlugin extends AutoPlugin {
     val source          = relayBaseDirectory.value
     val customScalars   = relayCustomScalars.value
 
+    val included = relayInclude.value
     // The relay-compiler is really stupid and includes have to be relative to the source directory.
     // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
-    val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
+    val extras =
+      if (force) included.map(f => source.toPath.relativize(f.toPath) + "/**").toList
+      else included.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     val persisted = relayPersistedPath.value
@@ -159,92 +158,67 @@ object RelayBasePlugin extends AutoPlugin {
     val logger     = streams.value.log
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
-    val extraWatches = relayInclude.value
+    val extraWatches  = included
     val cache         = streams.value.cacheDirectory / "relay-compile"
     val sourceFiles   = unmanagedSourceDirectories.value
     val resourceFiles = resourceDirectories.value
 
-    IO.createDirectory(outpath)
-
-    // Filter based on the presence of the annotation. and look for a change
-    // in the schema path
-    val scalaFiles =
-      (sourceFiles ** "*.scala").get.filter { f =>
-        val wholeFile = IO.read(f)
-        wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
-      }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
-        (extraWatches ** "*.gql").get.toSet
-
-    val label = Reference.display(thisProjectRef.value)
-
-    sbt.shim.SbtCompat.FileFunction
-      .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
-        handleUpdate(
-          label = label,
-          workingDir = workingDir,
-          compilerCommand = compilerCommand,
-          schemaPath = schemaPath,
-          sourceDirectory = source,
-          outputPath = outpath,
-          logger = logger,
-          verbose = verbose,
-          extras = extras,
-          persisted = persisted,
-          customScalars = customScalars,
-          displayOnFailure = displayOnFailure
-        )
-      )(scalaFiles)
-
-    // We can't add persisted file here because it would get wrapped up with the computation
-    val outputFiles = outpath.listFiles()
-    logger.info(s"relayCompile produced ${outputFiles.size} files.")
-    outputFiles
-  }
-
-  /***
-    * REAL SIMILAR TO [[relayCompileTask]], update both, factor later.
-    * @return
-    */
-  def relayForceCompileTask = Def.task[Seq[File]] {
-    val outpath         = relayOutput.value
-    val compilerCommand = relayCompilerCommand.value
-    val verbose         = relayDebug.value
-    val schemaPath      = relaySchema.value
-    val source          = relayBaseDirectory.value
-    val customScalars   = relayCustomScalars.value
-
-    val extras           = relayInclude.value.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
-    val displayOnFailure = relayDisplayOnlyOnFailure.value
-
-    val persisted = relayPersistedPath.value
-
-    val workingDir = relayWorkingDirectory.value
-    val logger     = streams.value.log
-
-    // @note: Workaround for https://github.com/facebook/relay/issues/2625
-    if (persisted.nonEmpty) {
+    if (force && persisted.nonEmpty) {
+      // @note: Workaround for https://github.com/facebook/relay/issues/2625
       IO.delete(outpath.getAbsoluteFile)
       IO.delete(persisted.get)
     }
 
     IO.createDirectory(outpath)
 
-    runCompiler(
-      workingDir = workingDir,
-      compilerCommand = compilerCommand,
-      schemaPath = schemaPath,
-      sourceDirectory = source,
-      outputPath = outpath,
-      logger = logger,
-      verbose = verbose,
-      extras = extras,
-      persisted = persisted,
-      customScalars = customScalars,
-      displayOnFailure = displayOnFailure
-    )
+    if (force) {
+      runCompiler(
+        workingDir = workingDir,
+        compilerCommand = compilerCommand,
+        schemaPath = schemaPath,
+        sourceDirectory = source,
+        outputPath = outpath,
+        logger = logger,
+        verbose = verbose,
+        extras = extras,
+        persisted = persisted,
+        customScalars = customScalars,
+        displayOnFailure = displayOnFailure
+      )
+    } else {
+      // Filter based on the presence of the annotation. and look for a change
+      // in the schema path
+      val scalaFiles =
+        (sourceFiles ** "*.scala").get.filter { f =>
+          val wholeFile = IO.read(f)
+          wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
+        }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
+          (extraWatches ** "*.gql").get.toSet
 
+      val label = Reference.display(thisProjectRef.value)
+
+      sbt.shim.SbtCompat.FileFunction
+        .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
+          handleUpdate(
+            label = label,
+            workingDir = workingDir,
+            compilerCommand = compilerCommand,
+            schemaPath = schemaPath,
+            sourceDirectory = source,
+            outputPath = outpath,
+            logger = logger,
+            verbose = verbose,
+            extras = extras,
+            persisted = persisted,
+            customScalars = customScalars,
+            displayOnFailure = displayOnFailure
+          )
+        )(scalaFiles)
+    }
+
+    // We can't add persisted file here because it would get wrapped up with the computation
     val outputFiles = outpath.listFiles()
-    logger.info(s"relayForceCompile produced ${outputFiles.size} files.")
+    logger.info(s"relayCompile(force: $force) produced ${outputFiles.size} files.")
     outputFiles
   }
 
