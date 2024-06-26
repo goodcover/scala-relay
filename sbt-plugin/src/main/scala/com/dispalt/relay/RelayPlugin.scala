@@ -255,7 +255,7 @@ object RelayBasePlugin extends AutoPlugin {
     val cmd = shell :+ (List(
       compilerCommand,
       "--language",
-      "scalajs",
+      "typescript",
       "--watchman",
       "false",
       "--schema",

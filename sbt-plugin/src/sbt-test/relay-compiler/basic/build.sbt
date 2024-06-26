@@ -19,9 +19,11 @@ relaySchema := (Compile / resourceDirectory).value / "testschema.graphql"
 relayDebug := true
 
 Compile / npmDevDependencies ++= Seq(
-  "relay-compiler-language-scalajs" -> s"link:${(Compile / npmUpdate / crossTarget).value.absolutePath}/node_modules/relay-compiler-language-scalajs",
-  "relay-compiler"                  -> "11.0.0",
-  "graphql"                         -> "^15.4.0"
+  // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
+  "relay-compiler-language-typescript" -> "14.1.0",
+  "typescript"                         -> "^4.2.4",
+  "relay-compiler"                     -> "11.0.0",
+  "graphql"                            -> "^15.4.0"
 )
 
 Compile / relayDisplayOnlyOnFailure := true
