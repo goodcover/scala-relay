@@ -1,10 +1,11 @@
 package com.dispalt.relay
 
-import java.io.InputStream
-import sbt.{AutoPlugin, Def, SettingKey, _}
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import sbt.Keys._
+import sbt.Keys.*
+import sbt.{AutoPlugin, Def, SettingKey, *}
+
+import java.io.InputStream
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -40,7 +41,7 @@ object RelayBasePlugin extends AutoPlugin {
 
   val relayFolder = "relay-compiler-out"
 
-  import autoImport._
+  import autoImport.*
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
@@ -140,25 +141,28 @@ object RelayBasePlugin extends AutoPlugin {
     * @return
     */
   def relayCompileTask = Def.task[Seq[File]] {
-    import Path.relativeTo
+    val outpath         = relayOutput.value
+    val compilerCommand = relayCompilerCommand.value
+    val verbose         = relayDebug.value
+    val schemaPath      = relaySchema.value
+    val source          = relayBaseDirectory.value
+    val customScalars   = relayCustomScalars.value
 
-    val cache         = streams.value.cacheDirectory / "relay-compile"
-    val sourceFiles   = unmanagedSourceDirectories.value
-    val resourceFiles = resourceDirectories.value
-    val outpath       = relayOutput.value
-    val compilerCommand  = relayCompilerCommand.value
-    val verbose       = relayDebug.value
-    val schemaPath    = relaySchema.value
-    val source        = relayBaseDirectory.value
     // The relay-compiler is really stupid and includes have to be relative to the source directory.
     // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
     val extras           = relayInclude.value.map(f => source.toPath.relativize(f.toPath) + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
-    val persisted        = relayPersistedPath.value
-    val customScalars    = relayCustomScalars.value
+
+    val persisted = relayPersistedPath.value
+
+    val workingDir = relayWorkingDirectory.value
+    val logger     = streams.value.log
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
     val extraWatches = relayInclude.value
+    val cache         = streams.value.cacheDirectory / "relay-compile"
+    val sourceFiles   = unmanagedSourceDirectories.value
+    val resourceFiles = resourceDirectories.value
 
     IO.createDirectory(outpath)
 
@@ -171,9 +175,7 @@ object RelayBasePlugin extends AutoPlugin {
       }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
         (extraWatches ** "*.gql").get.toSet
 
-    val label      = Reference.display(thisProjectRef.value)
-    val workingDir = relayWorkingDirectory.value
-    val logger     = streams.value.log
+    val label = Reference.display(thisProjectRef.value)
 
     sbt.shim.SbtCompat.FileFunction
       .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
@@ -194,7 +196,9 @@ object RelayBasePlugin extends AutoPlugin {
       )(scalaFiles)
 
     // We can't add persisted file here because it would get wrapped up with the computation
-    outpath.listFiles()
+    val outputFiles = outpath.listFiles()
+    logger.info(s"relayCompile produced ${outputFiles.size} files.")
+    outputFiles
   }
 
   /***
@@ -202,8 +206,6 @@ object RelayBasePlugin extends AutoPlugin {
     * @return
     */
   def relayForceCompileTask = Def.task[Seq[File]] {
-    import Path.relativeTo
-
     val outpath         = relayOutput.value
     val compilerCommand = relayCompilerCommand.value
     val verbose         = relayDebug.value
@@ -211,7 +213,7 @@ object RelayBasePlugin extends AutoPlugin {
     val source          = relayBaseDirectory.value
     val customScalars   = relayCustomScalars.value
 
-    val extras           = relayInclude.value.pair(relativeTo(source)).map(f => f._2 + "/**").toList
+    val extras           = relayInclude.value.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
     val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     val persisted = relayPersistedPath.value
@@ -364,7 +366,7 @@ object RelayGeneratePlugin extends AutoPlugin {
 
   override def trigger = noTrigger
 
-  import RelayBasePlugin.autoImport._
+  import RelayBasePlugin.autoImport.*
 
   override lazy val projectSettings: Seq[Setting[_]] =
     inConfig(Compile)(perConfigSettings)
