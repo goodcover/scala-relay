@@ -170,17 +170,18 @@ object RelayBasePlugin extends AutoPlugin {
 
     val s = streams.value
 
+    // TODO: This should be its own task.
     // First step is to extract the graphql definitions from the Scala source files and output JavaScript files and
     // Scala.js facades for the final JavaScript that relay-compiler will generate.
     val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
     // TODO: Make this a setting.
-    val extractOutputDirectory = managedSourceDirectories.value.head / "graphql"
+    // TODO: Revisit this. It might have been the relay-compiler output messing things up.
+    // sbt annoyingly defaults everything to Compile when we want the setting with a Zero config axis.
+    val extractOutputDirectory = sourceManaged.in(ThisScope.copy(config = Zero)).value / "graphql"
     if (force) {
       GraphqlExtractor.clean(extractCacheStoreFactory)
-      GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
-    } else {
-      GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
     }
+    GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
 
     // The second step we run in two parts. From the graphql files we generate:
     // a) The JavaScript
@@ -230,10 +231,7 @@ object RelayBasePlugin extends AutoPlugin {
         )(scalaFiles)
     }
 
-    // We can't add persisted file here because it would get wrapped up with the computation
-    val outputFiles = outpath.listFiles()
-    logger.info(s"relayCompile(force: $force) produced ${outputFiles.size} files.")
-    outputFiles
+    Seq.empty
   }
 
   def runCompiler(
