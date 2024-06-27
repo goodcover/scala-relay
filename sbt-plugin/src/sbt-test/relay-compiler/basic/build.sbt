@@ -19,6 +19,7 @@ relaySchema := (Compile / resourceDirectory).value / "testschema.graphql"
 relayDebug := true
 
 Compile / npmDevDependencies ++= Seq(
+  // TODO: This is temporary. We only want to produce JavaScript.
   // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
   "relay-compiler-language-typescript" -> "14.1.0",
   "typescript"                         -> "^4.2.4",

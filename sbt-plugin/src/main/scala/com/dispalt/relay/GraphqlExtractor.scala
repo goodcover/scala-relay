@@ -39,9 +39,9 @@ object GraphqlExtractor {
 
   private object Stores {
     def apply(cacheStoreFactory: CacheStoreFactory): Stores = Stores(
-    last    = cacheStoreFactory.make("last"),
-    sources = cacheStoreFactory.make("sources"),
-    outputs = cacheStoreFactory.make("outputs")
+      last = cacheStoreFactory.make("last"),
+      sources = cacheStoreFactory.make("sources"),
+      outputs = cacheStoreFactory.make("outputs")
     )
   }
 
@@ -127,7 +127,9 @@ object GraphqlExtractor {
         builder += t.value
       case annot @ mod"@graphql(...$exprss)" =>
         def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
-        log.error(s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal.")
+        log.error(
+          s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
+        )
         log.error(s"    at ${positionText(pos)}")
       // The application has to be exactly this. It cannot be an alias or qualified.
       // We could support more but it would require SemanticDB which is slower.
@@ -135,16 +137,23 @@ object GraphqlExtractor {
         builder += t.value
       case app @ q"graphqlGen(...$exprss)" =>
         def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
-        log.error(s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal.")
+        log.error(
+          s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
+        )
         log.error(s"    at ${positionText(pos)}")
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
-      val outputFile = outputDir / s"${file.base}.graphql"
+      // relay-compiler doesn't seem to support loading executable definitions from .graphql files.
+      // We have to write them to the same language file that we relay-compiler will output to.
+      // See https://github.com/facebook/relay/issues/4726#issuecomment-2193708623.
+      // TODO: TypeScript output is temporary.
+      val outputFile = outputDir / s"${file.base}.ts"
       fileWriter(StandardCharsets.UTF_8)(outputFile) { writer =>
         definitions.foreach { definition =>
+          writer.write("graphql`\n")
           writer.write(definition)
-          writer.write("\n")
+          writer.write("\n`\n")
         }
       }
       log.debug(s"Extracted ${definitions.size} definitions to: $outputFile")
@@ -157,9 +166,9 @@ object GraphqlExtractor {
 
   private def positionText(position: Position): String = {
     position.input match {
-      case Input.File(path, _) => s"${path.syntax}:${position.start}:${position.startColumn}"
+      case Input.File(path, _)        => s"${path.syntax}:${position.start}:${position.startColumn}"
       case Input.VirtualFile(path, _) => s"$path:${position.start}:${position.startColumn}"
-      case _ => position.toString
+      case _                          => position.toString
     }
   }
 

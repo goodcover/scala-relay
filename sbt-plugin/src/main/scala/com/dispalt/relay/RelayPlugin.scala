@@ -144,12 +144,8 @@ object RelayBasePlugin extends AutoPlugin {
     val source          = relayBaseDirectory.value
     val customScalars   = relayCustomScalars.value
 
-    val included = relayInclude.value
-    // The relay-compiler is really stupid and includes have to be relative to the source directory.
-    // We can't use relativeTo from sbt.io as that forces a strict parent child layout.
-    val extras =
-      if (force) included.pair(Path.relativeTo(source)).map(f => f._2 + "/**").toList
-      else included.map(f => source.toPath.relativize(f.toPath) + "/**").toList
+    val included         = relayInclude.value
+    val extras           = Nil
     val displayOnFailure = relayDisplayOnlyOnFailure.value
 
     val persisted = relayPersistedPath.value
@@ -174,9 +170,11 @@ object RelayBasePlugin extends AutoPlugin {
 
     val s = streams.value
 
-    // First step is to extract the graphql files and Scala.js from the Scala files.
+    // First step is to extract the graphql definitions from the Scala source files and output JavaScript files and
+    // Scala.js facades for the final JavaScript that relay-compiler will generate.
     val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
-    val extractOutputDirectory = managedResourceDirectories.value.head / "graphql"
+    // TODO: Make this a setting.
+    val extractOutputDirectory = managedSourceDirectories.value.head / "graphql"
     if (force) {
       GraphqlExtractor.clean(extractCacheStoreFactory)
       GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
