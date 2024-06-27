@@ -158,10 +158,11 @@ object RelayBasePlugin extends AutoPlugin {
     val logger     = streams.value.log
 
     // This could be a lot better, since we naturally include the default sourceFiles thing twice.
-    val extraWatches  = included
-    val cache         = streams.value.cacheDirectory / "relay-compile"
-    val sourceFiles   = unmanagedSourceDirectories.value
-    val resourceFiles = resourceDirectories.value
+    val extraWatches      = included
+    val cache             = streams.value.cacheDirectory / "relay-compile"
+    val sourceDirectories = unmanagedSourceDirectories.value
+    val sourceFiles       = unmanagedSources.value.toSet
+    val resourceFiles     = resourceDirectories.value
 
     if (force && persisted.nonEmpty) {
       // @note: Workaround for https://github.com/facebook/relay/issues/2625
@@ -171,6 +172,21 @@ object RelayBasePlugin extends AutoPlugin {
 
     IO.createDirectory(outpath)
 
+    val s = streams.value
+
+    // First step is to extract the graphql files and Scala.js from the Scala files.
+    val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
+    val extractOutputDirectory = managedResourceDirectories.value.head / "graphql"
+    if (force) {
+      GraphqlExtractor.clean(extractCacheStoreFactory)
+      GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
+    } else {
+      GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
+    }
+
+    // The second step we run in two parts. From the graphql files we generate:
+    // a) The JavaScript
+    // b) The corresponding Scala.js facades
     if (force) {
       runCompiler(
         workingDir = workingDir,
@@ -189,7 +205,7 @@ object RelayBasePlugin extends AutoPlugin {
       // Filter based on the presence of the annotation. and look for a change
       // in the schema path
       val scalaFiles =
-        (sourceFiles ** "*.scala").get.filter { f =>
+        (sourceDirectories ** "*.scala").get.filter { f =>
           val wholeFile = IO.read(f)
           wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
         }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++

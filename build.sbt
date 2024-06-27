@@ -26,13 +26,14 @@ def SbtPluginPlugins  = Sonatype
 
 lazy val `sbt-relay-compiler` = project
   .in(file("sbt-plugin"))
-  .enablePlugins(SbtPluginPlugins)
-  .enablePlugins(SbtPlugin)
+  .enablePlugins(SbtPlugin, SbtPluginPlugins)
   .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
+    // TODO: Why are these here?
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2"),
+    libraryDependencies += "org.scalameta" %% "scalameta" % "4.9.7",
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
