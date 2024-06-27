@@ -21,16 +21,17 @@ import scala.scalajs.js.annotation.JSImport
       }
     }
   """)
-@graphql("""
-    fragment Main_foo on Task {
-      title
-    }
-  """)
 object frag
 
 case class Foo(i: Int)(val f: relay.generated.Main_foo)
 
 object Main extends App {
+
+  val fragment = graphqlGen("""
+    fragment Main_foo on Task {
+      title
+    }
+  """)
 
   def main(args: List[String]): Unit = {
     val q = relay.generated.MainQuery.query

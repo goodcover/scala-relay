@@ -129,6 +129,14 @@ object GraphqlExtractor {
         def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
         log.error(s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal.")
         log.error(s"    at ${positionText(pos)}")
+      // The application has to be exactly this. It cannot be an alias or qualified.
+      // We could support more but it would require SemanticDB which is slower.
+      case q"graphqlGen(${t: Lit.String})" =>
+        builder += t.value
+      case app @ q"graphqlGen(...$exprss)" =>
+        def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
+        log.error(s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal.")
+        log.error(s"    at ${positionText(pos)}")
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
