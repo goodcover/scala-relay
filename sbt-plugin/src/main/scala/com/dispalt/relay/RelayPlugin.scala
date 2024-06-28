@@ -187,7 +187,7 @@ object RelayBasePlugin extends AutoPlugin {
     // a) The JavaScript
     // b) The corresponding Scala.js facades
     if (force) {
-      runCompiler(
+      RelayCompiler.compile(
         workingDir = workingDir,
         compilerCommand = compilerCommand,
         schemaPath = schemaPath,
@@ -234,71 +234,6 @@ object RelayBasePlugin extends AutoPlugin {
     Seq.empty
   }
 
-  def runCompiler(
-    workingDir: File,
-    compilerCommand: String,
-    schemaPath: File,
-    sourceDirectory: File,
-    outputPath: File,
-    logger: Logger,
-    verbose: Boolean,
-    extras: List[String],
-    persisted: Option[File],
-    customScalars: Map[String, String],
-    displayOnFailure: Boolean
-  ): Unit = {
-
-    // TODO: this sucks not sure how to get npm scripts to work from java PB.
-    val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
-      List("cmd.exe", "/C")
-    } else List("sh", "-c")
-
-    val verboseList = if (verbose) "--verbose" :: Nil else Nil
-    val extrasList  = extras flatMap (e => "--include" :: e.quote :: Nil)
-    val persistedList = persisted match {
-      case Some(value) => List("--persist-output", value.getPath.quote)
-      case None        => Nil
-    }
-
-    val customScalarsArgs = customScalars.map {
-      case (scalarType, scalaType) => s"--customScalars.${scalarType}=${scalaType}"
-    }.toList
-
-    val cmd = shell :+ (List(
-      compilerCommand,
-      "--language",
-      "typescript",
-      "--watchman",
-      "false",
-      "--schema",
-      schemaPath.getAbsolutePath.quote,
-      "--src",
-      sourceDirectory.getAbsolutePath.quote,
-      "--artifactDirectory",
-      outputPath.getAbsolutePath.quote
-    ) ::: verboseList ::: extrasList ::: persistedList ::: customScalarsArgs)
-      .mkString(" ")
-
-    var output = Vector.empty[String]
-
-    Commands.run(
-      cmd,
-      workingDir,
-      logger,
-      (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector
-    ) match {
-      case Left(value) =>
-        output.foreach(logger.error(_))
-        sys.error(s"Relay compiler failed, ${value}")
-
-      case Right(_) =>
-        if (!displayOnFailure) {
-          output.foreach(logger.info(_))
-        }
-
-    }
-  }
-
   def handleUpdate(
     label: String,
     workingDir: File,
@@ -324,7 +259,7 @@ object RelayBasePlugin extends AutoPlugin {
           IO.getModifiedTimeOrZero(file)
         }
 
-        runCompiler(
+        RelayCompiler.compile(
           workingDir = workingDir,
           compilerCommand = compilerCommand,
           schemaPath = schemaPath,
