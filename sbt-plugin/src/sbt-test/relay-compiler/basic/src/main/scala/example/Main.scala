@@ -2,6 +2,7 @@ package example
 
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
+import relay.compiler.graphqlGen
 import relay.graphql
 import org.scalajs.dom
 

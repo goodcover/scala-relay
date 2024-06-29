@@ -7,7 +7,7 @@ import sbt.{AutoPlugin, Def, SettingKey, *}
 
 object RelayBasePlugin extends AutoPlugin {
 
-  override def requires = ScalaJSPlugin
+  override def requires: Plugins = ScalaJSPlugin
 
   override def trigger = noTrigger
 
@@ -20,9 +20,16 @@ object RelayBasePlugin extends AutoPlugin {
       "If true, sets the language to TypeScript. If false, sets the language to JavaScript. Defaults to false. This is" +
         "only really useful as a temporary step to compare against the generated Scala.js facades."
     )
-    val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
-    val relayForceCompile: TaskKey[Seq[File]]   = taskKey[Seq[File]]("Run the relay compiler uncached")
-    val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
+    val relayExtract: TaskKey[Set[File]] =
+      taskKey[Set[File]]("Extracts the graphql definitions from the Scala sources. Returns the generated Scala.js facades.")
+    val relayCompile: TaskKey[Set[File]]      = taskKey[Set[File]]("Run the relay compiler")
+    val relayForceCompile: TaskKey[Set[File]] = taskKey[Set[File]]("Run the relay compiler uncached")
+    val relayOutput: SettingKey[File]         = settingKey[File]("Output of the schema stuff")
+    val relayGraphQLOutput: SettingKey[File] = settingKey[File](
+      "Output directory for the generated JavaScript/TypeScript sources containing the graphql macros for the relay-compiler"
+    )
+    val relayScalaOutput: SettingKey[File] =
+      settingKey[File]("Output directory for the generated Scala.js facades that match the generate")
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
@@ -80,6 +87,7 @@ object RelayBasePlugin extends AutoPlugin {
 
   def perConfigSettings: Seq[Setting[_]] =
     Seq(
+      relayExtract := relayExtractTask().value,
       /**
         * The big task that performs all the magic.
         */
@@ -93,6 +101,8 @@ object RelayBasePlugin extends AutoPlugin {
         * assume that all files contained within it are artifacts from relay.
         */
       relayOutput := sourceManagedRoot.value / "relay" / "generated",
+      relayGraphQLOutput := sourceManagedRoot.value / "graphql",
+      relayScalaOutput := sourceManaged.value / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -124,12 +134,12 @@ object RelayBasePlugin extends AutoPlugin {
       relayCustomScalars := Map.empty
     )
 
-  def sourceManagedRoot = Def.task {
+  private def sourceManagedRoot = Def.setting {
     // sbt annoyingly defaults everything to Compile when we want the setting with a Zero config axis.
     sourceManaged.in(ThisScope.copy(config = Zero)).value
   }
 
-  def relayCompilePersistTask = Def.taskDyn[Option[File]] {
+  private def relayCompilePersistTask = Def.taskDyn[Option[File]] {
     if (relayPersistedPath.value.nonEmpty) {
       relayForceCompile.map { _ =>
         relayPersistedPath.value
@@ -141,7 +151,31 @@ object RelayBasePlugin extends AutoPlugin {
     }
   }
 
-  def relayCompileTask(force: Boolean = false) = Def.task[Seq[File]] {
+  def relayExtractTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
+    val typeScript       = relayTypeScript.value
+    val sourceFiles      = unmanagedSources.value.toSet
+    val graphqlOutputDir = relayGraphQLOutput.value
+    val scalaOutputDir   = relayScalaOutput.value
+    val s                = streams.value
+
+    // First step is to extract the graphql definitions from the Scala source files and output them as graphql relay
+    // JavaScript/TypeScript "macros" (we don't need the Babel stuff as we are doing that ourselves). Ideally these
+    // would be graphql files with the executable definitions but relay-compiler doesn't support that.
+    // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
+    val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
+
+    if (force) {
+      GraphqlExtractor.clean(extractCacheStoreFactory)
+    }
+
+    val extractOptions = GraphqlExtractor.Options(graphqlOutputDir, scalaOutputDir, typeScript)
+    val results = GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOptions, s.log)
+    results.scalaSources
+  }
+
+  def relayCompileTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
+    val _ = relayExtract.value
+
     val outpath          = relayOutput.value
     val compilerCommand  = relayCompilerCommand.value
     val verbose          = relayDebug.value
@@ -153,9 +187,9 @@ object RelayBasePlugin extends AutoPlugin {
     val persisted        = relayPersistedPath.value
     val workingDir       = relayWorkingDirectory.value
     val typeScript       = relayTypeScript.value
-    val sourceFiles      = unmanagedSources.value.toSet
-    val logger           = streams.value.log
+    val s                = streams.value
 
+    // TODO: Do we still need this?
     if (force && persisted.nonEmpty) {
       // @note: Workaround for https://github.com/facebook/relay/issues/2625
       IO.delete(outpath.getAbsoluteFile)
@@ -164,27 +198,14 @@ object RelayBasePlugin extends AutoPlugin {
 
     IO.createDirectory(outpath)
 
-    val s = streams.value
-
-    // TODO: This should be its own task.
-    // First step is to extract the graphql definitions from the Scala source files and output them as graphql relay
-    // JavaScript/TypeScript "macros" (we don't need the Babel stuff as we are doing that ourselves). Ideally these
-    // would be graphql files with the executable definitions but relay-compiler doesn't support that.
-    // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
-    val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
-    // TODO: Make this a setting.
-    // TODO: Revisit this. It might have been the relay-compiler output messing things up.
-    // sbt annoyingly defaults everything to Compile when we want the setting with a Zero config axis.
-    val extractOutputDirectory = sourceManaged.in(ThisScope.copy(config = Zero)).value / "graphql"
-    if (force) {
-      GraphqlExtractor.clean(extractCacheStoreFactory)
-    }
-    val extractOptions = GraphqlExtractor.Options(extractOutputDirectory, typeScript)
-    GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOptions, s.log)
-
     // We give the JavaScript/TypeScript files from above that contain the graphql "macros" to the relay-compiler and
     // get it to do its usual thing, completely unaware of Scala.js since it no longer supports language plugins.
     val compileCacheStoreFactory = s.cacheStoreFactory / "relay-compile"
+
+    if (force) {
+      RelayCompiler.clean(compileCacheStoreFactory)
+    }
+
     val compileOptions = RelayCompiler.Options(
       workingDir = workingDir,
       compilerCommand = compilerCommand,
@@ -198,30 +219,6 @@ object RelayBasePlugin extends AutoPlugin {
       displayOnFailure = displayOnFailure,
       typeScript = typeScript
     )
-    if (force) {
-      RelayCompiler.clean(compileCacheStoreFactory)
-    }
-    RelayCompiler.compile(compileCacheStoreFactory, compileOptions, logger).toSeq
+    RelayCompiler.compile(compileCacheStoreFactory, compileOptions, s.log)
   }
-}
-
-object RelayGeneratePlugin extends AutoPlugin {
-
-  override def requires =
-    ScalaJSPlugin && RelayBasePlugin
-
-  override def trigger = noTrigger
-
-  import RelayBasePlugin.autoImport.*
-
-  override lazy val projectSettings: Seq[Setting[_]] =
-    inConfig(Compile)(perConfigSettings)
-
-  def perConfigSettings: Seq[Setting[_]] =
-    Seq(
-      /**
-        * Hook the relay compiler into the compile pipeline.
-        */
-      sourceGenerators += relayCompile.taskValue
-    )
 }

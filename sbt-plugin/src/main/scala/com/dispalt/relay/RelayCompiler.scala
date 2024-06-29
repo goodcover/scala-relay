@@ -120,6 +120,7 @@ object RelayCompiler {
   }
 
   def compile(cacheStoreFactory: CacheStoreFactory, options: Options, logger: Logger): Results = {
+    logger.info("Running relay-compiler...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))

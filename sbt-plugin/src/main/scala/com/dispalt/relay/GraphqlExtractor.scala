@@ -15,21 +15,21 @@ object GraphqlExtractor {
   // Increment when the extraction code changes to bust the cache.
   private val Version = 1
 
-  final case class Options(outputDir: File, typeScript: Boolean)
+  final case class Options(graphqlOutputDir: File, scalaOutputDir: File, typeScript: Boolean)
 
   object Options {
     //noinspection TypeAnnotation
-    implicit val iso = LList.iso[Options, File :*: Boolean :*: LNil]( //
+    implicit val iso = LList.iso[Options, File :*: File :*: Boolean :*: LNil]( //
       { o: Options => //
-        ("outputDir" -> o.outputDir) :*: ("typeScript" -> o.typeScript) :*: LNil
+        ("graphqlOutputDir" -> o.graphqlOutputDir) :*: ("scalaOutputDir" -> o.scalaOutputDir) :*: ("typeScript" -> o.typeScript) :*: LNil
       }, {
-        case (_, outputDir) :*: (_, typeScript) :*: LNil => //
-          Options(outputDir, typeScript)
+        case (_, graphqlOutputDir) :*: (_, scalaOutputDir) :*: (_, typeScript) :*: LNil => //
+          Options(graphqlOutputDir, scalaOutputDir, typeScript)
       }
     )
   }
 
-  type Results = Set[File]
+  final case class Results(graphqlSources: Set[File], scalaSources: Set[File])
 
   private type Extracts = Map[File, File]
 
@@ -65,6 +65,7 @@ object GraphqlExtractor {
     options: Options,
     logger: Logger
   ): Results = {
+    logger.info("Extracting GraphQL...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -97,7 +98,9 @@ object GraphqlExtractor {
         Analysis(Version, options, extracts)
       }
     }
-    prevTracker(()).extracts.values.toSet
+    val graphqlSources = prevTracker(()).extracts.values.toSet
+    // TODO: Scala sources.
+    Results(graphqlSources, Set.empty)
   }
 
   /**
@@ -171,7 +174,7 @@ object GraphqlExtractor {
       // We have to write them to the same language file that we relay-compiler will output to.
       // See https://github.com/facebook/relay/issues/4726#issuecomment-2193708623.
       val extension  = if (options.typeScript) "ts" else "js"
-      val outputFile = options.outputDir / s"${file.base}.$extension"
+      val outputFile = options.graphqlOutputDir / s"${file.base}.$extension"
       fileWriter(StandardCharsets.UTF_8)(outputFile) { writer =>
         definitions.foreach { definition =>
           writer.write("graphql`\n")
