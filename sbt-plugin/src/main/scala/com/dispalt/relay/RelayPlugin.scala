@@ -5,8 +5,6 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys.*
 import sbt.{AutoPlugin, Def, SettingKey, *}
 
-import java.io.InputStream
-
 object RelayBasePlugin extends AutoPlugin {
 
   override def requires = ScalaJSPlugin
@@ -201,15 +199,6 @@ object RelayBasePlugin extends AutoPlugin {
         displayOnFailure = displayOnFailure
       )
     } else {
-      // Filter based on the presence of the annotation. and look for a change
-      // in the schema path
-      val scalaFiles =
-        (sourceDirectories ** "*.scala").get.filter { f =>
-          val wholeFile = IO.read(f)
-          wholeFile.contains("@graphql") || wholeFile.contains("graphqlGen(")
-        }.toSet ++ Set(schemaPath) ++ (resourceFiles ** "*.gql").get.toSet ++
-          (extraWatches ** "*.gql").get.toSet
-
       val label = Reference.display(thisProjectRef.value)
 
       sbt.shim.SbtCompat.FileFunction
@@ -228,7 +217,7 @@ object RelayBasePlugin extends AutoPlugin {
             customScalars = customScalars,
             displayOnFailure = displayOnFailure
           )
-        )(scalaFiles)
+        )(Set(file("abc")))
     }
 
     Seq.empty
@@ -248,35 +237,29 @@ object RelayBasePlugin extends AutoPlugin {
     customScalars: Map[String, String],
     displayOnFailure: Boolean
   )(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
+    logger.info(s"Executing relayCompile on $label...")
 
-    val files = in.modified -- in.removed
-    sbt.shim.SbtCompat.Analysis
-      .counted("Scala source", "", "s", files.size)
-      .foreach { count =>
-        logger.info(s"Executing relayCompile on $count $label...")
+    val lastModified = persisted.map { file =>
+      IO.getModifiedTimeOrZero(file)
+    }
 
-        val lastModified = persisted.map { file =>
-          IO.getModifiedTimeOrZero(file)
-        }
+    RelayCompiler.compile(
+      workingDir = workingDir,
+      compilerCommand = compilerCommand,
+      schemaPath = schemaPath,
+      sourceDirectory = sourceDirectory,
+      outputPath = outputPath,
+      logger = logger,
+      verbose = verbose,
+      extras = extras,
+      persisted = persisted,
+      customScalars = customScalars,
+      displayOnFailure = displayOnFailure
+    )
 
-        RelayCompiler.compile(
-          workingDir = workingDir,
-          compilerCommand = compilerCommand,
-          schemaPath = schemaPath,
-          sourceDirectory = sourceDirectory,
-          outputPath = outputPath,
-          logger = logger,
-          verbose = verbose,
-          extras = extras,
-          persisted = persisted,
-          customScalars = customScalars,
-          displayOnFailure = displayOnFailure
-        )
-
-        lastModified.foreach(mtime => IO.setModifiedTimeOrFalse(persisted.get, mtime))
-        logger.info(s"Finished relayCompile.")
-      }
-    files ++ persisted
+    lastModified.foreach(mtime => IO.setModifiedTimeOrFalse(persisted.get, mtime))
+    logger.info(s"Finished relayCompile.")
+    persisted.toSet
   }
 }
 
