@@ -101,8 +101,8 @@ object RelayBasePlugin extends AutoPlugin {
         * assume that all files contained within it are artifacts from relay.
         */
       relayOutput := sourceManagedRoot.value / "relay" / "generated",
-      relayGraphQLOutput := sourceManagedRoot.value / "graphql",
-      relayScalaOutput := sourceManaged.value / "relay" / "generated",
+      relayGraphQLOutput := sourceManagedRoot.value / "relay" / "graphql",
+      relayScalaOutput := sourceManaged.value / "relay" / "scala",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -162,7 +162,7 @@ object RelayBasePlugin extends AutoPlugin {
     // JavaScript/TypeScript "macros" (we don't need the Babel stuff as we are doing that ourselves). Ideally these
     // would be graphql files with the executable definitions but relay-compiler doesn't support that.
     // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
-    val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
+    val extractCacheStoreFactory = s.cacheStoreFactory / "relay-extract"
 
     if (force) {
       GraphqlExtractor.clean(extractCacheStoreFactory)
