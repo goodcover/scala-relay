@@ -16,13 +16,18 @@ object RelayBasePlugin extends AutoPlugin {
     val relayScalaJSVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-scalajs version")
     val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
     val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
+    val relayTypeScript: SettingKey[Boolean] = settingKey[Boolean](
+      "If true, sets the language to TypeScript. If false, sets the language to JavaScript. Defaults to false. This is" +
+        "only really useful as a temporary step to compare against the generated Scala.js facades."
+    )
     val relayCompile: TaskKey[Seq[File]]        = taskKey[Seq[File]]("Run the relay compiler")
     val relayForceCompile: TaskKey[Seq[File]]   = taskKey[Seq[File]]("Run the relay compiler uncached")
     val relayOutput: SettingKey[File]           = settingKey[File]("Output of the schema stuff")
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
-    val relayInclude: SettingKey[Seq[File]]     = settingKey[Seq[File]]("extra directories to include")
+    val relayInclude: SettingKey[Seq[String]] =
+      settingKey[Seq[String]]("Globs of files to include, relative to the relayBaseDirectory. Defaults to **.")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -37,8 +42,6 @@ object RelayBasePlugin extends AutoPlugin {
     val relayNpmDir: TaskKey[File] = taskKey[File]("Set the directory to the parent of node_modules")
   }
 
-  val relayFolder = "relay-compiler-out"
-
   import autoImport.*
 
   override lazy val projectSettings: Seq[Setting[_]] =
@@ -51,6 +54,8 @@ object RelayBasePlugin extends AutoPlugin {
         * Set this if you'd like to see timing and larger stack traces.
         */
       relayDebug := false,
+      // TODO: Change this back to false.
+      relayTypeScript := true,
       /**
         * So this should normally default to the base directory, but in some cases if you want to include stuff
         * outside the directory, changing this should be considered.
@@ -84,21 +89,22 @@ object RelayBasePlugin extends AutoPlugin {
         */
       relayForceCompile := relayCompileTask(force = true).value,
       /**
-        * Output path of the relay compiler.  Necessary this is an empty directory as it will
-        * delete files it thinks went away.
+        * Output path of the relay compiler. Necessary this is an empty directory as it will
+        * assume that all files contained within it are artifacts from relay.
         */
-      relayOutput := sourceManaged.value / relayFolder / "relay" / "generated",
+      relayOutput := sourceManagedRoot.value / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
       relayDependencies := Seq(
+        // TODO: Remove.
         "relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
         "relay-compiler"                  -> relayVersion.value
       ),
       /**
         * Include files in the source directory.
         */
-      relayInclude := Seq(sourceDirectory.value),
+      relayInclude := Seq("**"),
       /**
         * Set no use of persistence.
         */
@@ -118,8 +124,9 @@ object RelayBasePlugin extends AutoPlugin {
       relayCustomScalars := Map.empty
     )
 
-  implicit class QuoteStr(s: String) {
-    def quote: String = "\"" + s + "\""
+  def sourceManagedRoot = Def.task {
+    // sbt annoyingly defaults everything to Compile when we want the setting with a Zero config axis.
+    sourceManaged.in(ThisScope.copy(config = Zero)).value
   }
 
   def relayCompilePersistTask = Def.taskDyn[Option[File]] {
@@ -135,28 +142,19 @@ object RelayBasePlugin extends AutoPlugin {
   }
 
   def relayCompileTask(force: Boolean = false) = Def.task[Seq[File]] {
-    val outpath         = relayOutput.value
-    val compilerCommand = relayCompilerCommand.value
-    val verbose         = relayDebug.value
-    val schemaPath      = relaySchema.value
-    val source          = relayBaseDirectory.value
-    val customScalars   = relayCustomScalars.value
-
+    val outpath          = relayOutput.value
+    val compilerCommand  = relayCompilerCommand.value
+    val verbose          = relayDebug.value
+    val schemaPath       = relaySchema.value
+    val source           = relayBaseDirectory.value
+    val customScalars    = relayCustomScalars.value
     val included         = relayInclude.value
-    val extras           = Nil
     val displayOnFailure = relayDisplayOnlyOnFailure.value
-
-    val persisted = relayPersistedPath.value
-
-    val workingDir = relayWorkingDirectory.value
-    val logger     = streams.value.log
-
-    // This could be a lot better, since we naturally include the default sourceFiles thing twice.
-    val extraWatches      = included
-    val cache             = streams.value.cacheDirectory / "relay-compile"
-    val sourceDirectories = unmanagedSourceDirectories.value
-    val sourceFiles       = unmanagedSources.value.toSet
-    val resourceFiles     = resourceDirectories.value
+    val persisted        = relayPersistedPath.value
+    val workingDir       = relayWorkingDirectory.value
+    val typeScript       = relayTypeScript.value
+    val sourceFiles      = unmanagedSources.value.toSet
+    val logger           = streams.value.log
 
     if (force && persisted.nonEmpty) {
       // @note: Workaround for https://github.com/facebook/relay/issues/2625
@@ -168,12 +166,11 @@ object RelayBasePlugin extends AutoPlugin {
 
     val s = streams.value
 
-    // TODO: Make this a setting.
-    val typeScript = true
-
     // TODO: This should be its own task.
-    // First step is to extract the graphql definitions from the Scala source files and output JavaScript files and
-    // Scala.js facades for the final JavaScript that relay-compiler will generate.
+    // First step is to extract the graphql definitions from the Scala source files and output them as graphql relay
+    // JavaScript/TypeScript "macros" (we don't need the Babel stuff as we are doing that ourselves). Ideally these
+    // would be graphql files with the executable definitions but relay-compiler doesn't support that.
+    // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
     val extractCacheStoreFactory = s.cacheStoreFactory / "graphql-extract"
     // TODO: Make this a setting.
     // TODO: Revisit this. It might have been the relay-compiler output messing things up.
@@ -185,9 +182,8 @@ object RelayBasePlugin extends AutoPlugin {
     val extractOptions = GraphqlExtractor.Options(extractOutputDirectory, typeScript)
     GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOptions, s.log)
 
-    // The second step we run in two parts. From the graphql files we generate:
-    // a) The JavaScript
-    // b) The corresponding Scala.js facades
+    // We give the JavaScript/TypeScript files from above that contain the graphql "macros" to the relay-compiler and
+    // get it to do its usual thing, completely unaware of Scala.js since it no longer supports language plugins.
     val compileCacheStoreFactory = s.cacheStoreFactory / "relay-compile"
     val compileOptions = RelayCompiler.Options(
       workingDir = workingDir,
@@ -196,7 +192,7 @@ object RelayBasePlugin extends AutoPlugin {
       sourceDirectory = source,
       outputPath = outpath,
       verbose = verbose,
-      extras = extras,
+      includes = included,
       persisted = persisted,
       customScalars = customScalars,
       displayOnFailure = displayOnFailure,
@@ -228,5 +224,4 @@ object RelayGeneratePlugin extends AutoPlugin {
         */
       sourceGenerators += relayCompile.taskValue
     )
-
 }

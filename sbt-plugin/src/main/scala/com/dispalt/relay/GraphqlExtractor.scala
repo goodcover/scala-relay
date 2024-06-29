@@ -68,10 +68,10 @@ object GraphqlExtractor {
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
-      logger.debug(s"Previous Analysis:\n$previousAnalysis")
+      logger.debug(s"Previous analysis:\n$previousAnalysis")
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
-        logger.debug(s"Source report:\n$sourcesReport")
+        logger.debug(s"Sources:\n$sourcesReport")
         // There are 5 cases to handle:
         // 1) Version or options changed - delete all previous extracts and re-generate everything
         // 2) Source removed - delete the extract
@@ -84,7 +84,7 @@ object GraphqlExtractor {
         val outputs           = modifiedOutputs ++ unmodifiedOutputs
         // NOTE: Update clean if you change this.
         Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
-          logger.debug(s"Outputs report:\n$outputsReport")
+          logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
             val needsExtraction = unmodifiedExtracts.collect {
@@ -150,6 +150,8 @@ object GraphqlExtractor {
           s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
         )
         logger.error(s"    at ${positionText(pos)}")
+        logger.debug(annot.syntax)
+        logger.debug(annot.structure)
       // The application has to be exactly this. It cannot be an alias or qualified.
       // We could support more but it would require SemanticDB which is slower.
       case q"graphqlGen(${t: Lit.String})" =>
@@ -160,6 +162,8 @@ object GraphqlExtractor {
           s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
         )
         logger.error(s"    at ${positionText(pos)}")
+        logger.debug(app.syntax)
+        logger.debug(app.structure)
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
@@ -185,8 +189,8 @@ object GraphqlExtractor {
 
   private def positionText(position: Position): String = {
     position.input match {
-      case Input.File(path, _)        => s"${path.syntax}:${position.start}:${position.startColumn}"
-      case Input.VirtualFile(path, _) => s"$path:${position.start}:${position.startColumn}"
+      case Input.File(path, _)        => s"${path.syntax}:${position.startLine}:${position.startColumn}"
+      case Input.VirtualFile(path, _) => s"$path:${position.startLine}:${position.startColumn}"
       case _                          => position.toString
     }
   }

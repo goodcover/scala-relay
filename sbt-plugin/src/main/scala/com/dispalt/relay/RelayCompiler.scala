@@ -13,7 +13,10 @@ object RelayCompiler {
   private val Version = 1
 
   private implicit class QuoteStr(val s: String) extends AnyVal {
-    def quote: String = "\"" + s + "\""
+    def quote: String = {
+      require(!s.contains('\''))
+      "'" + s + "'"
+    }
   }
 
   final case class Options(
@@ -23,18 +26,23 @@ object RelayCompiler {
     sourceDirectory: File,
     outputPath: File,
     verbose: Boolean,
-    extras: List[String],
+    includes: Seq[String],
     persisted: Option[File],
     customScalars: Map[String, String],
     displayOnFailure: Boolean,
     typeScript: Boolean
-  )
+  ) {
+    def language: String = if (typeScript) "typescript" else "javascript"
+
+    def excludes: Seq[String] =
+      Seq("**/node_modules/**", "**/__mocks__/**", "**/__generated__/**", outputPath.getAbsolutePath)
+  }
 
   object Options {
 
     //noinspection TypeAnnotation
     implicit val iso = LList
-      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: List[String] :*: Option[File] :*: Map[
+      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Option[File] :*: Map[
         String,
         String
       ] :*: Boolean :*: Boolean :*: LNil]( //
@@ -45,7 +53,7 @@ object RelayCompiler {
             ("sourceDirectory"  -> o.sourceDirectory) :*:
             ("outputPath"       -> o.outputPath) :*:
             ("verbose"          -> o.verbose) :*:
-            ("extras"           -> o.extras) :*:
+            ("includes"         -> o.includes) :*:
             ("persisted"        -> o.persisted) :*:
             ("customScalars"    -> o.customScalars) :*:
             ("displayOnFailure" -> o.displayOnFailure) :*:
@@ -115,14 +123,14 @@ object RelayCompiler {
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
-      logger.debug(s"Previous Analysis:\n$previousAnalysis")
+      logger.debug(s"Previous analysis:\n$previousAnalysis")
       val sources = findSources(options)
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
-        logger.debug(s"Source report:\n$sourcesReport")
+        logger.debug(s"Sources:\n$sourcesReport")
         // NOTE: Update clean if you change this.
         val artifacts = Tracked.diffOutputs(stores.outputs, FileInfo.lastModified) { outputsReport =>
-          logger.debug(s"Outputs report:\n$outputsReport")
+          logger.debug(s"Previous outputs:\n$outputsReport")
           // If anything changes we need to delete all artifacts and recompile everything.
           // We could potentially run relay-compile in watch mode if necessary.
           if (Version != previousAnalysis.version || sourcesReport.modified.nonEmpty || outputsReport.modified.nonEmpty) {
@@ -140,9 +148,15 @@ object RelayCompiler {
   }
 
   private def findSources(options: Options): Set[File] = {
-    val finder = options.sourceDirectory ** ("*.graphql" || "*.graphqls" || (if (options.typeScript) "*.ts"
-                                                                             else "*.js"))
-    finder.get().toSet
+    val includes = options.sourceDirectory **
+      ("*.graphql" || "*.graphqls" || (if (options.typeScript) "*.ts" else "*.js"))
+    // TODO: It would be nice to use options.excludes but how do we do that?
+    //  Ideally we could use sbt.io.PathFinder.GlobPathFinder.GlobPathFinder but it is private.
+    // Exclude the default excludes.
+    val excludes = options.sourceDirectory **
+      ("node_modules" || "__mocks__" || "__generated__") ** "*"
+    val output = options.outputPath ** "*"
+    (includes --- excludes --- output).get().toSet
   }
 
   private def findArtifacts(options: Options): Set[File] = {
@@ -152,22 +166,6 @@ object RelayCompiler {
 
   private def run(options: Options, logger: Logger): Unit = {
     import options.*
-
-    // TODO: this sucks not sure how to get npm scripts to work from java PB.
-    val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
-      List("cmd.exe", "/C")
-    } else List("sh", "-c")
-
-    val verboseList = if (verbose) "--verbose" :: Nil else Nil
-    val extrasList  = extras flatMap (e => "--include" :: e.quote :: Nil)
-    val persistedList = persisted match {
-      case Some(value) => List("--persist-output", value.getPath.quote)
-      case None        => Nil
-    }
-
-    val customScalarsArgs = customScalars.map {
-      case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
-    }.toList
 
     // Version 11 Help:
     //
@@ -218,10 +216,16 @@ object RelayCompiler {
     //   --eagerESModules      This option enables emitting es modules artifacts.
     //                                                       [boolean] [default: false]
     //   --help                Show help                                      [boolean]
-    val cmd = shell :+ (List(
+
+    // TODO: this sucks not sure how to get npm scripts to work from java PB.
+    val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {
+      Seq("cmd.exe", "/C")
+    } else Seq("sh", "-c")
+
+    val argsList = Seq(
       compilerCommand,
       "--language",
-      "typescript",
+      language,
       "--watchman",
       "false",
       "--schema",
@@ -230,8 +234,24 @@ object RelayCompiler {
       sourceDirectory.getAbsolutePath.quote,
       "--artifactDirectory",
       outputPath.getAbsolutePath.quote
-    ) ::: verboseList ::: extrasList ::: persistedList ::: customScalarsArgs)
-      .mkString(" ")
+    )
+
+    val verboseList = if (verbose) Seq("--verbose") else Seq.empty
+
+    val includesList = includes flatMap (include => Seq("--include", include.quote))
+
+    val excludesList = excludes flatMap (exclude => Seq("--exclude", exclude.quote))
+
+    val persistedList = persisted match {
+      case Some(value) => Seq("--persist-output", value.getPath.quote)
+      case None        => Seq.empty
+    }
+
+    val customScalarsArgs = customScalars.map {
+      case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
+    }.toSeq
+
+    val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ persistedList ++ customScalarsArgs).mkString(" ")
 
     var output = Vector.empty[String]
 
