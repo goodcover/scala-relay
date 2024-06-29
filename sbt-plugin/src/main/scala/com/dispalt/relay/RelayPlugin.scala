@@ -168,6 +168,9 @@ object RelayBasePlugin extends AutoPlugin {
 
     val s = streams.value
 
+    // TODO: Make this a setting.
+    val typeScript = true
+
     // TODO: This should be its own task.
     // First step is to extract the graphql definitions from the Scala source files and output JavaScript files and
     // Scala.js facades for the final JavaScript that relay-compiler will generate.
@@ -179,87 +182,30 @@ object RelayBasePlugin extends AutoPlugin {
     if (force) {
       GraphqlExtractor.clean(extractCacheStoreFactory)
     }
-    GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOutputDirectory, s.log)
+    val extractOptions = GraphqlExtractor.Options(extractOutputDirectory, typeScript)
+    GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOptions, s.log)
 
     // The second step we run in two parts. From the graphql files we generate:
     // a) The JavaScript
     // b) The corresponding Scala.js facades
-    if (force) {
-      RelayCompiler.compile(
-        workingDir = workingDir,
-        compilerCommand = compilerCommand,
-        schemaPath = schemaPath,
-        sourceDirectory = source,
-        outputPath = outpath,
-        logger = logger,
-        verbose = verbose,
-        extras = extras,
-        persisted = persisted,
-        customScalars = customScalars,
-        displayOnFailure = displayOnFailure
-      )
-    } else {
-      val label = Reference.display(thisProjectRef.value)
-
-      sbt.shim.SbtCompat.FileFunction
-        .cached(cache)(FilesInfo.hash, FilesInfo.exists)(
-          handleUpdate(
-            label = label,
-            workingDir = workingDir,
-            compilerCommand = compilerCommand,
-            schemaPath = schemaPath,
-            sourceDirectory = source,
-            outputPath = outpath,
-            logger = logger,
-            verbose = verbose,
-            extras = extras,
-            persisted = persisted,
-            customScalars = customScalars,
-            displayOnFailure = displayOnFailure
-          )
-        )(Set(file("abc")))
-    }
-
-    Seq.empty
-  }
-
-  def handleUpdate(
-    label: String,
-    workingDir: File,
-    compilerCommand: String,
-    schemaPath: File,
-    sourceDirectory: File,
-    outputPath: File,
-    logger: Logger,
-    verbose: Boolean,
-    extras: List[String],
-    persisted: Option[File],
-    customScalars: Map[String, String],
-    displayOnFailure: Boolean
-  )(in: ChangeReport[File], out: ChangeReport[File]): Set[File] = {
-    logger.info(s"Executing relayCompile on $label...")
-
-    val lastModified = persisted.map { file =>
-      IO.getModifiedTimeOrZero(file)
-    }
-
-    RelayCompiler.compile(
+    val compileCacheStoreFactory = s.cacheStoreFactory / "relay-compile"
+    val compileOptions = RelayCompiler.Options(
       workingDir = workingDir,
       compilerCommand = compilerCommand,
       schemaPath = schemaPath,
-      sourceDirectory = sourceDirectory,
-      outputPath = outputPath,
-      logger = logger,
+      sourceDirectory = source,
+      outputPath = outpath,
       verbose = verbose,
       extras = extras,
       persisted = persisted,
       customScalars = customScalars,
-      displayOnFailure = displayOnFailure
+      displayOnFailure = displayOnFailure,
+      typeScript = typeScript
     )
-
-    lastModified.foreach(mtime => IO.setModifiedTimeOrFalse(persisted.get, mtime))
-    logger.info(s"Finished relayCompile.")
-    persisted.toSet
+    if (force) {
+      RelayCompiler.clean(compileCacheStoreFactory)
+    }
+    RelayCompiler.compile(compileCacheStoreFactory, compileOptions, logger).toSeq
   }
 }
 
