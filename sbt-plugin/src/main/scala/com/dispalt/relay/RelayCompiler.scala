@@ -150,7 +150,7 @@ object RelayCompiler {
 
   private def findSources(options: Options): Set[File] = {
     val includes = options.sourceDirectory **
-      ("*.graphql" || "*.graphqls" || (if (options.typeScript) "*.ts" else "*.js"))
+      ("*.gql" || "*.graphql" || "*.graphqls" || (if (options.typeScript) "*.ts" else "*.js"))
     // TODO: It would be nice to use options.excludes but how do we do that?
     //  Ideally we could use sbt.io.PathFinder.GlobPathFinder.GlobPathFinder but it is private.
     // Exclude the default excludes.

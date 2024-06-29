@@ -31,15 +31,32 @@ object GraphqlExtractor {
 
   final case class Results(graphqlSources: Set[File], scalaSources: Set[File])
 
-  private type Extracts = Map[File, File]
+  private final case class Extracts(graphql: File, scala: Set[File]) {
+    def all: Set[File] = scala + graphql
+  }
 
-  private final case class Analysis(version: Int, options: Options, extracts: Extracts)
+  private object Extracts {
+
+    //noinspection TypeAnnotation
+    implicit val iso = LList.iso[Extracts, File :*: Set[File] :*: LNil]( //
+      { e: Extracts => //
+        ("graphql" -> e.graphql) :*: ("scala" -> e.scala) :*: LNil
+      }, {
+        case (_, graphql) :*: (_, scala) :*: LNil => //
+          Extracts(graphql, scala)
+      }
+    )
+  }
+
+  private type SourceExtracts = Map[File, Extracts]
+
+  private final case class Analysis(version: Int, options: Options, extracts: SourceExtracts)
 
   private object Analysis {
     def apply(options: Options): Analysis = Analysis(Version, options, Map.empty)
 
     //noinspection TypeAnnotation
-    implicit val iso = LList.iso[Analysis, Int :*: Options :*: Extracts :*: LNil]( //
+    implicit val iso = LList.iso[Analysis, Int :*: Options :*: SourceExtracts :*: LNil]( //
       { a: Analysis => //
         ("version" -> a.version) :*: ("options" -> a.options) :*: ("extracts" -> a.extracts) :*: LNil
       }, {
@@ -80,17 +97,18 @@ object GraphqlExtractor {
         // 4) Source modified - generate the extract
         // 5) Extract modified - generate the extract
         val (modifiedExtracts, unmodifiedExtracts) = extractModified(sourcesReport, previousAnalysis, options, logger)
-        val modifiedOutputs   = modifiedExtracts.values.toSet
-        val unmodifiedOutputs = unmodifiedExtracts.values.toSet
+        val modifiedOutputs   = modifiedExtracts.values.flatMap(_.all).toSet
+        val unmodifiedOutputs = unmodifiedExtracts.values.flatMap(_.all).toSet
         val outputs           = modifiedOutputs ++ unmodifiedOutputs
         // NOTE: Update clean if you change this.
         Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val needsExtraction = unmodifiedExtracts.collect {
-              case (source, output) if unexpectedChanges.contains(output) => source
+            val reversed = unmodifiedExtracts.flatMap {
+              case (source, extracts) => extracts.all.map(_ -> source)
             }
+            val needsExtraction = unexpectedChanges.flatMap(reversed.get)
             extractFiles(needsExtraction, options, logger)
           }
         }
@@ -98,9 +116,8 @@ object GraphqlExtractor {
         Analysis(Version, options, extracts)
       }
     }
-    val graphqlSources = prevTracker(()).extracts.values.toSet
-    // TODO: Scala sources.
-    Results(graphqlSources, Set.empty)
+    val extracts = prevTracker(()).extracts.values
+    Results(extracts.map(_.graphql).toSet, extracts.flatMap(_.scala).toSet)
   }
 
   /**
@@ -115,10 +132,10 @@ object GraphqlExtractor {
     previousAnalysis: Analysis,
     options: Options,
     logger: Logger
-  ): (Extracts, Extracts) = {
+  ): (SourceExtracts, SourceExtracts) = {
     if (Version == previousAnalysis.version && options == previousAnalysis.options) {
       logger.debug("Version and options have not changed")
-      val outputsOfRemoved = previousAnalysis.extracts.filterKeys(sourceReport.removed.contains).values
+      val outputsOfRemoved = previousAnalysis.extracts.filterKeys(sourceReport.removed.contains).values.flatMap(_.all)
       IO.delete(outputsOfRemoved)
       val addedOrChangedSources = sourceReport.modified -- sourceReport.removed
       val modifiedExtracts      = extractFiles(addedOrChangedSources, options, logger)
@@ -126,18 +143,19 @@ object GraphqlExtractor {
       (modifiedExtracts, unmodifiedExtracts)
     } else {
       logger.debug((if (Version != previousAnalysis.version) "Version" else "Options") + " changed")
-      IO.delete(previousAnalysis.extracts.values)
+      val previousOutputs = previousAnalysis.extracts.values.flatMap(_.all)
+      IO.delete(previousOutputs)
       val modifiedExtracts = extractFiles(sourceReport.checked, options, logger)
       (modifiedExtracts, Map.empty)
     }
   }
 
-  private def extractFiles(files: Iterable[File], options: Options, logger: Logger): Extracts =
+  private def extractFiles(files: Iterable[File], options: Options, logger: Logger): SourceExtracts =
     files.flatMap { file =>
       extractFile(file, options, logger).map(file -> _)
     }.toMap
 
-  private def extractFile(file: File, options: Options, logger: Logger): Option[File] = {
+  private def extractFile(file: File, options: Options, logger: Logger): Option[Extracts] = {
     logger.debug(s"Checking file for graphql definitions: $file")
     val input   = Input.File(file)
     val source  = input.parse[Source].get
@@ -170,24 +188,35 @@ object GraphqlExtractor {
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
-      // relay-compiler doesn't seem to support loading executable definitions from .graphql files.
-      // We have to write them to the same language file that we relay-compiler will output to.
-      // See https://github.com/facebook/relay/issues/4726#issuecomment-2193708623.
-      val extension  = if (options.typeScript) "ts" else "js"
-      val outputFile = options.graphqlOutputDir / s"${file.base}.$extension"
-      fileWriter(StandardCharsets.UTF_8)(outputFile) { writer =>
-        definitions.foreach { definition =>
-          writer.write("graphql`\n")
-          writer.write(definition)
-          writer.write("\n`\n")
-        }
-      }
-      logger.debug(s"Extracted ${definitions.size} definitions to: $outputFile")
-      Some(outputFile)
+      val graphqlFile = writeGraphql(file, options, definitions)
+      val scalaFiles = writeScala(file, options, definitions)
+      val extracts = Extracts(graphqlFile, scalaFiles)
+      logger.debug(s"Extracted ${definitions.size} definitions to: $extracts")
+      Some(extracts)
     } else {
       logger.debug("No definitions found")
       None
     }
+  }
+
+  private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
+    // relay-compiler doesn't seem to support loading executable definitions from .graphql files.
+    // We have to write them to the same language file that we relay-compiler will output to.
+    // See https://github.com/facebook/relay/issues/4726#issuecomment-2193708623.
+    val extension  = if (options.typeScript) "ts" else "js"
+    val graphqlFile = options.graphqlOutputDir / s"${source.base}.$extension"
+    fileWriter(StandardCharsets.UTF_8)(graphqlFile) { writer =>
+      definitions.foreach { definition =>
+        writer.write("graphql`\n")
+        writer.write(definition)
+        writer.write("\n`\n")
+      }
+    }
+    graphqlFile
+  }
+
+  private def writeScala(source: File, options: Options, definitions: Iterable[String]): Set[File] = {
+    Set.empty
   }
 
   private def positionText(position: Position): String = {
