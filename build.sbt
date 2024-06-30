@@ -33,7 +33,10 @@ lazy val `sbt-relay-compiler` = project
     // TODO: Why are these here?
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2"),
-    libraryDependencies += "org.scalameta" %% "scalameta" % "4.9.7",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "scalameta" % "4.9.7",
+      "com.github.ghostdogpr" %% "caliban" % "2.8.0"
+    ),
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {

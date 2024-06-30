@@ -34,7 +34,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
     val relayInclude: SettingKey[Seq[String]] =
-      settingKey[Seq[String]]("Globs of files to include, relative to the relayBaseDirectory. Defaults to **.")
+      settingKey[Seq[String]]("Globs of files to include, relative to the relayBaseDirectory")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -112,9 +112,11 @@ object RelayBasePlugin extends AutoPlugin {
         "relay-compiler"                  -> relayVersion.value
       ),
       /**
-        * Include files in the source directory.
+        * Include files in the base directory.
         */
-      relayInclude := Seq("**"),
+      relayInclude :=
+        (relayGraphQLOutput.value +: resourceDirectories.value)
+          .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
       /**
         * Set no use of persistence.
         */
@@ -154,6 +156,7 @@ object RelayBasePlugin extends AutoPlugin {
   def relayExtractTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
     val typeScript       = relayTypeScript.value
     val sourceFiles      = unmanagedSources.value.toSet
+    val schemaFile       = relaySchema.value
     val graphqlOutputDir = relayGraphQLOutput.value
     val scalaOutputDir   = relayScalaOutput.value
     val s                = streams.value
@@ -165,11 +168,11 @@ object RelayBasePlugin extends AutoPlugin {
     val extractCacheStoreFactory = s.cacheStoreFactory / "relay-extract"
 
     if (force) {
-      GraphqlExtractor.clean(extractCacheStoreFactory)
+      GraphQLExtractor.clean(extractCacheStoreFactory)
     }
 
-    val extractOptions = GraphqlExtractor.Options(graphqlOutputDir, scalaOutputDir, typeScript)
-    val results = GraphqlExtractor.extract(extractCacheStoreFactory, sourceFiles, extractOptions, s.log)
+    val extractOptions = GraphQLExtractor.Options(graphqlOutputDir, scalaOutputDir, typeScript)
+    val results = GraphQLExtractor.extract(extractCacheStoreFactory, sourceFiles, schemaFile, extractOptions, s.log)
     results.scalaSources
   }
 

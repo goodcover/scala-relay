@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 import scala.meta.*
 import scala.meta.inputs.Input
 
-object GraphqlExtractor {
+object GraphQLExtractor {
 
   // Increment when the extraction code changes to bust the cache.
   private val Version = 1
@@ -66,12 +66,13 @@ object GraphqlExtractor {
     )
   }
 
-  private final case class Stores(last: CacheStore, sources: CacheStore, outputs: CacheStore)
+  private final case class Stores(last: CacheStore, sources: CacheStore, schema: CacheStore, outputs: CacheStore)
 
   private object Stores {
     def apply(cacheStoreFactory: CacheStoreFactory): Stores = Stores(
       last = cacheStoreFactory.make("last"),
       sources = cacheStoreFactory.make("sources"),
+      schema = cacheStoreFactory.make("schema"),
       outputs = cacheStoreFactory.make("outputs")
     )
   }
@@ -79,6 +80,7 @@ object GraphqlExtractor {
   def extract(
     cacheStoreFactory: CacheStoreFactory,
     sources: Set[File],
+    schemaFile: File,
     options: Options,
     logger: Logger
   ): Results = {
@@ -90,30 +92,36 @@ object GraphqlExtractor {
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
         logger.debug(s"Sources:\n$sourcesReport")
-        // There are 5 cases to handle:
-        // 1) Version or options changed - delete all previous extracts and re-generate everything
-        // 2) Source removed - delete the extract
-        // 3) Source added - generate the extract
-        // 4) Source modified - generate the extract
-        // 5) Extract modified - generate the extract
-        val (modifiedExtracts, unmodifiedExtracts) = extractModified(sourcesReport, previousAnalysis, options, logger)
-        val modifiedOutputs   = modifiedExtracts.values.flatMap(_.all).toSet
-        val unmodifiedOutputs = unmodifiedExtracts.values.flatMap(_.all).toSet
-        val outputs           = modifiedOutputs ++ unmodifiedOutputs
         // NOTE: Update clean if you change this.
-        Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
-          logger.debug(s"Outputs:\n$outputsReport")
-          val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
-          if (unexpectedChanges.nonEmpty) {
-            val reversed = unmodifiedExtracts.flatMap {
-              case (source, extracts) => extracts.all.map(_ -> source)
+        Tracked.diffInputs(stores.schema, FileInfo.lastModified)(Set(schemaFile)) { schemaReport =>
+          logger.debug(s"Schema:\n$schemaReport")
+          // There are 5 cases to handle:
+          // 1) Version, schema, or options changed - delete all previous extracts and re-generate everything
+          // 2) Source removed - delete the extract
+          // 3) Source added - generate the extract
+          // 4) Source modified - generate the extract
+          // 5) Extract modified - generate the extract
+          val schema = GraphQLSchema(schemaFile)
+          val (modifiedExtracts, unmodifiedExtracts) =
+            extractModified(sourcesReport, schemaReport, schema, previousAnalysis, options, logger)
+          val modifiedOutputs   = modifiedExtracts.values.flatMap(_.all).toSet
+          val unmodifiedOutputs = unmodifiedExtracts.values.flatMap(_.all).toSet
+          val outputs           = modifiedOutputs ++ unmodifiedOutputs
+          // NOTE: Update clean if you change this.
+          Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
+            logger.debug(s"Outputs:\n$outputsReport")
+            val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
+            if (unexpectedChanges.nonEmpty) {
+              val reversed = unmodifiedExtracts.flatMap {
+                case (source, extracts) => extracts.all.map(_ -> source)
+              }
+              val needsExtraction = unexpectedChanges.flatMap(reversed.get)
+              extractFiles(needsExtraction, schema, options, logger)
             }
-            val needsExtraction = unexpectedChanges.flatMap(reversed.get)
-            extractFiles(needsExtraction, options, logger)
           }
+          val extracts = modifiedExtracts ++ unmodifiedExtracts
+          Analysis(Version, options, extracts)
         }
-        val extracts = modifiedExtracts ++ unmodifiedExtracts
-        Analysis(Version, options, extracts)
       }
     }
     val extracts = prevTracker(()).extracts.values
@@ -129,33 +137,47 @@ object GraphqlExtractor {
     */
   private def extractModified(
     sourceReport: ChangeReport[File],
+    schemaReport: ChangeReport[File],
+    schema: GraphQLSchema,
     previousAnalysis: Analysis,
     options: Options,
     logger: Logger
   ): (SourceExtracts, SourceExtracts) = {
-    if (Version == previousAnalysis.version && options == previousAnalysis.options) {
-      logger.debug("Version and options have not changed")
+    def versionUnchanged = Version == previousAnalysis.version
+    def schemaUnchanged  = schemaReport.modified.isEmpty
+    def optionsUnchanged = options == previousAnalysis.options
+    if (versionUnchanged && schemaUnchanged && optionsUnchanged) {
+      logger.debug("Version, schema, and options have not changed")
       val outputsOfRemoved = previousAnalysis.extracts.filterKeys(sourceReport.removed.contains).values.flatMap(_.all)
       IO.delete(outputsOfRemoved)
       val addedOrChangedSources = sourceReport.modified -- sourceReport.removed
-      val modifiedExtracts      = extractFiles(addedOrChangedSources, options, logger)
+      val modifiedExtracts      = extractFiles(addedOrChangedSources, schema, options, logger)
       val unmodifiedExtracts    = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
       (modifiedExtracts, unmodifiedExtracts)
     } else {
-      logger.debug((if (Version != previousAnalysis.version) "Version" else "Options") + " changed")
+      def whatChanged =
+        if (!versionUnchanged) "Version"
+        else if (!schemaUnchanged) "Schema"
+        else "Options"
+      logger.debug(s"$whatChanged changed")
       val previousOutputs = previousAnalysis.extracts.values.flatMap(_.all)
       IO.delete(previousOutputs)
-      val modifiedExtracts = extractFiles(sourceReport.checked, options, logger)
+      val modifiedExtracts = extractFiles(sourceReport.checked, schema, options, logger)
       (modifiedExtracts, Map.empty)
     }
   }
 
-  private def extractFiles(files: Iterable[File], options: Options, logger: Logger): SourceExtracts =
+  private def extractFiles(
+    files: Iterable[File],
+    schema: GraphQLSchema,
+    options: Options,
+    logger: Logger
+  ): SourceExtracts =
     files.flatMap { file =>
-      extractFile(file, options, logger).map(file -> _)
+      extractFile(file, schema, options, logger).map(file -> _)
     }.toMap
 
-  private def extractFile(file: File, options: Options, logger: Logger): Option[Extracts] = {
+  private def extractFile(file: File, schema: GraphQLSchema, options: Options, logger: Logger): Option[Extracts] = {
     logger.debug(s"Checking file for graphql definitions: $file")
     val input   = Input.File(file)
     val source  = input.parse[Source].get
@@ -189,8 +211,8 @@ object GraphqlExtractor {
     val definitions = builder.result()
     if (definitions.nonEmpty) {
       val graphqlFile = writeGraphql(file, options, definitions)
-      val scalaFiles = writeScala(file, options, definitions)
-      val extracts = Extracts(graphqlFile, scalaFiles)
+      val scalaFiles  = writeScala(options, schema, definitions)
+      val extracts    = Extracts(graphqlFile, scalaFiles)
       logger.debug(s"Extracted ${definitions.size} definitions to: $extracts")
       Some(extracts)
     } else {
@@ -203,7 +225,7 @@ object GraphqlExtractor {
     // relay-compiler doesn't seem to support loading executable definitions from .graphql files.
     // We have to write them to the same language file that we relay-compiler will output to.
     // See https://github.com/facebook/relay/issues/4726#issuecomment-2193708623.
-    val extension  = if (options.typeScript) "ts" else "js"
+    val extension   = if (options.typeScript) "ts" else "js"
     val graphqlFile = options.graphqlOutputDir / s"${source.base}.$extension"
     fileWriter(StandardCharsets.UTF_8)(graphqlFile) { writer =>
       definitions.foreach { definition =>
@@ -215,8 +237,9 @@ object GraphqlExtractor {
     graphqlFile
   }
 
-  private def writeScala(source: File, options: Options, definitions: Iterable[String]): Set[File] = {
-    Set.empty
+  private def writeScala(options: Options, schema: GraphQLSchema, definitions: Iterable[String]): Set[File] = {
+    val writer = new ScalaWriter(options.graphqlOutputDir, schema)
+    definitions.flatMap(writer.write).toSet
   }
 
   private def positionText(position: Position): String = {
@@ -228,9 +251,10 @@ object GraphqlExtractor {
   }
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {
-    val Stores(last, sources, outputs) = Stores(cacheStoreFactory)
+    val Stores(last, sources, schema, outputs) = Stores(cacheStoreFactory)
     last.delete()
     Tracked.diffInputs(sources, FileInfo.lastModified).clean()
+    Tracked.diffInputs(schema, FileInfo.lastModified).clean()
     Tracked.diffOutputs(outputs, FileInfo.lastModified).clean()
   }
 }
