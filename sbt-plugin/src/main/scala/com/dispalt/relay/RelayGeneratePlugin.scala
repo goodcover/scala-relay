@@ -18,9 +18,6 @@ object RelayGeneratePlugin extends AutoPlugin {
 
   def perConfigSettings: Seq[Setting[_]] =
     Seq(
-      /**
-        * Hook the relay compiler into the compile pipeline.
-        */
       sourceGenerators += relayConvert.taskValue.map(_.toSeq),
       resourceGenerators += relayCompile.taskValue.map(_.toSeq)
     )

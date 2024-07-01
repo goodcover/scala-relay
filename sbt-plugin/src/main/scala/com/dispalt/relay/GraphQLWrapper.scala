@@ -1,5 +1,6 @@
 package com.dispalt.relay
 
+import com.dispalt.relay.GraphQLText.{countSelectionSetDiff, splitComment}
 import sbt.*
 import sbt.io.Using.{fileReader, fileWriter}
 import sbt.util.CacheImplicits.*
@@ -159,12 +160,12 @@ object GraphQLWrapper {
   }
 
   private def writeWrapper(reader: BufferedReader, writer: BufferedWriter, logger: Logger): Unit = {
+    @tailrec
     /**
       * @param level 0 when not inside a graphql macro
       *              1 when inside a graphql macro
       *              +1 for every open selection set
       */
-    @tailrec
     def loop(level: Int): Unit = {
       Option(reader.readLine()) match {
         case Some(line) if line.isBlank =>
@@ -181,9 +182,8 @@ object GraphQLWrapper {
           writer.write("\n")
           val openSelectionSets = math.max(0, level - 1)
           val hadContent = openSelectionSets > 0 || !nonComment.isBlank
-          // This probably isn't very accurate but seems good enough for now.
-          val additionalOpenSelectionSets = nonComment.count(_ == '{') - nonComment.count(_ == '}')
-          val nextOpenSelectionSets = openSelectionSets + additionalOpenSelectionSets
+          val selectionSetDiff = countSelectionSetDiff(nonComment, hasComments = false)
+          val nextOpenSelectionSets = openSelectionSets + selectionSetDiff
           if (nextOpenSelectionSets == 0 && hadContent) {
             writer.write("`\n")
             loop(0)
@@ -196,11 +196,6 @@ object GraphQLWrapper {
       }
     }
     loop(0)
-  }
-
-  private def splitComment(s: String): (String, String) = {
-    val i = s.indexOf('#')
-    if (i >= 0) s.splitAt(i) else (s, "")
   }
 
   private def escape(s: String): String =

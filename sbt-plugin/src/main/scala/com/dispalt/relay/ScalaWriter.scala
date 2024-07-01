@@ -4,6 +4,7 @@ import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{Directive, OperationType, Selection}
+import com.dispalt.relay.GraphQLText.appendOperationText
 import sbt.*
 import sbt.io.Using.fileWriter
 
@@ -37,13 +38,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText)
+      writePreamble(writer, documentText, operation)
       writer.write("\n")
       writeInputType(writer, operation)
       writer.write("\n")
       writeQueryTrait(writer, operation)
       writer.write("\n")
-      writeQueryCompanion(writer, operation)
+      writeQueryObject(writer, operation)
     }
     file
   }
@@ -52,10 +53,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText)
+      writePreamble(writer, documentText, operation)
       writeInputType(writer, operation)
-      // TODO
-      //writeMutationCompanion(writer, operation)
+    // TODO
+    //writeMutationCompanion(writer, operation)
     }
     file
   }
@@ -64,52 +65,36 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText)
+      writePreamble(writer, documentText, operation)
       ???
     }
     file
   }
 
-  private def writePreamble(writer: Writer, documentText: String): Unit = {
-    writer.write(
-      s"""package relay.generated
+  private def writePreamble(writer: Writer, documentText: String, operation: OperationDefinition): Unit = {
+    writer.write(s"""package relay.generated
          |
          |import _root_.scala.scalajs.js
          |import _root_.scala.scalajs.js.|
          |
          |""".stripMargin)
     writer.write("/*\n")
-    writer.write(documentText.replace("*/", "*\\/"))
-    writer.write("\n*/\n")
-  }
-
-  private def writeQueryTrait(writer: Writer, operation: OperationDefinition): Unit = {
-    writer.write("trait ")
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
-    writer.write(operationName)
-    writer.write(" extends js.Object {\n")
-    operation.selectionSet.foreach {
-      case field: Selection.Field => writeQueryField(writer, field, operationName)
-      case spread: Selection.FragmentSpread => ???
-      case fragment: Selection.InlineFragment => ???
+    appendOperationText(documentText, operation) { line =>
+      writer.write(line.replace("*/", "*\\/"))
+      val last = line.lastOption
+      if (!last.contains('\n') && !last.contains('\f')) {
+        writer.write("\n")
+      }
     }
-    writer.write("}\n")
-  }
-
-  private def writeQueryCompanion(writer: Writer, operation: OperationDefinition): Unit = {
-    writer.write("object ")
-    writer.write(operation.name.get)
-    writer.write(""" {
-                   |  def newInput""".stripMargin)
-    writer.write("}")
+    writer.write("*/\n")
   }
 
   // TODO: Don't do this. We should create shared types from the schema.
   private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
     writer.write("trait ")
-    // TODO: When is the operation name None?
-    writer.write(operation.name.get)
+    // TODO: When does an operation not have a name?
+    val operationName = operation.name.get
+    writer.write(operationName)
     writer.write("Input extends js.Object {\n")
     operation.variableDefinitions.foreach { variable =>
       // TODO: Handle directives.
@@ -131,6 +116,36 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       //      }
       writer.write(innerType(variable.variableType))
     }
+    writer.write("}\n")
+  }
+
+  private def writeQueryTrait(writer: Writer, operation: OperationDefinition): Unit = {
+    writer.write("trait ")
+    // TODO: When does an operation not have a name?
+    val operationName = operation.name.get
+    writer.write(operationName)
+    writer.write(" extends js.Object {\n")
+    operation.selectionSet.foreach {
+      case field: Selection.Field             => writeQueryField(writer, field, operationName)
+      case spread: Selection.FragmentSpread   => ???
+      case fragment: Selection.InlineFragment => ???
+    }
+    writer.write("}\n")
+  }
+
+  private def writeQueryObject(writer: Writer, operation: OperationDefinition): Unit = {
+    writer.write("object ")
+    // TODO: When does an operation not have a name?
+    val operationName = operation.name.get
+    writer.write(operationName)
+    writer.write(" _root_.relay.gql.QueryTaggedNode[")
+    writer.write(operationName)
+    writer.write("Input, ")
+    writer.write(operationName)
+    writer.write("""] {
+                   |  def newInput(""".stripMargin)
+    // TODO: Parameters.
+    writer.write(") = ???\n")
     writer.write("}\n")
   }
 

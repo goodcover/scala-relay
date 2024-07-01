@@ -65,35 +65,14 @@ object RelayBasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-      /**
-        * Runtime dependency on the macro
-        */
       libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
-      /**
-        * Set this if you'd like to see timing and larger stack traces.
-        */
       relayDebug := false,
       // TODO: Change this back to false.
       relayTypeScript := true,
-      /**
-        * So this should normally default to the base directory, but in some cases if you want to include stuff
-        * outside the directory, changing this should be considered.
-        */
       relayBaseDirectory := baseDirectory.value,
       relayWorkingDirectory := file(sys.props("user.dir")),
-      /**
-        * Get the compiler path from the installed dependencies.
-        */
-      relayCompilerCommand := {
-        "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js"
-      },
-      /**
-        * The version of the node module
-        */
+      relayCompilerCommand := "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js",
       relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
-      /**
-        * Set the version of the `relay-compiler` module.
-        */
       relayVersion := "11.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
@@ -102,52 +81,25 @@ object RelayBasePlugin extends AutoPlugin {
       relayExtract := relayExtractTask().value,
       relayWrap := relayWrapTask().value,
       relayConvert := relayConvertTask().value,
-      /**
-        * The big task that performs all the magic.
-        */
       relayCompile := relayCompileTask().value,
-      /**
-        * Run relay-compiler with no caching.
-        */
       relayForceCompile := relayCompileTask(force = true).value,
       relayExtractDirectory := sourceManagedRoot.value / "relay" / "graphql",
       relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
       relayConvertDirectory := sourceManaged.value / "relay" / "generated",
-      /**
-        * Output path of the relay compiler. Necessary this is an empty directory as it will
-        * assume that all files contained within it are artifacts from relay.
-        */
       relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
-      /**
-        * Add the NPM Dev Dependency on the scalajs module.
-        */
       relayDependencies := Seq(
         // TODO: Remove.
         "relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
         "relay-compiler"                  -> relayVersion.value
       ),
-      /**
-        * Include files in the base directory.
-        */
       relayInclude :=
         (relayWrapDirectory.value +: resourceDirectories.value)
           .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
-      /**
-        * Set no use of persistence.
-        */
       relayPersistedPath := None,
-      /**
-        * Display output only on a failure, this works well with persisted queries because they delete all the files
-        * before outputting them.
-        */
+      // Display output only on a failure, this works well with persisted queries because they delete all the files
+      // before outputting them.
       relayDisplayOnlyOnFailure := false,
-      /**
-        * Compile conditionally based on persisting a file or not.
-        */
       relayCompilePersist := relayCompilePersistTask.value,
-      /**
-        * Map custom scalar from ScalarType to Scala type
-        */
       relayCustomScalars := Map.empty
     )
 
