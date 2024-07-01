@@ -8,6 +8,7 @@ import sjsonnew.*
 
 import java.io.{BufferedReader, BufferedWriter}
 import java.nio.charset.StandardCharsets
+import scala.annotation.tailrec
 
 object GraphQLWrapper {
 
@@ -139,6 +140,7 @@ object GraphQLWrapper {
     }
   }
 
+  // TODO: Add parallelism.
   private def wrapFiles(files: Iterable[File], options: Options, logger: Logger): Wrappers =
     files.map { file =>
       file -> wrapFile(file, options, logger)
@@ -150,31 +152,43 @@ object GraphQLWrapper {
     val wrapperFile = options.outputDir / s"${file.base}.$extension"
     fileReader(StandardCharsets.UTF_8)(file) { reader =>
       fileWriter(StandardCharsets.UTF_8)(wrapperFile) { writer =>
-        writeWrapper(reader, writer)
+        writeWrapper(reader, writer, logger)
       }
     }
     wrapperFile
   }
 
-  private def writeWrapper(reader: BufferedReader, writer: BufferedWriter): Unit = {
+  private def writeWrapper(reader: BufferedReader, writer: BufferedWriter, logger: Logger): Unit = {
+    /**
+      * @param level 0 when not inside a graphql macro
+      *              1 when inside a graphql macro
+      *              +1 for every open selection set
+      */
+    @tailrec
     def loop(level: Int): Unit = {
       Option(reader.readLine()) match {
         case Some(line) if line.isBlank =>
           writer.write(line)
           writer.write("\n")
+          loop(level)
         case Some(line) =>
           if (level == 0) {
             writer.write("graphql`\n")
-            writer.write("\n")
           }
           val (nonComment, comment) = splitComment(line)
           writer.write(escape(nonComment))
           writer.write(comment)
           writer.write("\n")
+          val openSelectionSets = math.max(0, level - 1)
+          val hadContent = openSelectionSets > 0 || !nonComment.isBlank
           // This probably isn't very accurate but seems good enough for now.
-          val nextLevel = level + nonComment.count(_ == '{') - nonComment.count(_ == '}')
-          if (nextLevel == 0) {
+          val additionalOpenSelectionSets = nonComment.count(_ == '{') - nonComment.count(_ == '}')
+          val nextOpenSelectionSets = openSelectionSets + additionalOpenSelectionSets
+          if (nextOpenSelectionSets == 0 && hadContent) {
             writer.write("`\n")
+            loop(0)
+          } else {
+            loop(1 + nextOpenSelectionSets)
           }
         case None if level > 0 =>
           throw new IllegalArgumentException("Encountered an unclosed selection set.")

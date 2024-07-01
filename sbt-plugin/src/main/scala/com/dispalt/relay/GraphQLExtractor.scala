@@ -135,6 +135,7 @@ object GraphQLExtractor {
     }
   }
 
+  // TODO: Add parallelism.
   private def extractFiles(files: Iterable[File], options: Options, logger: Logger): Extracts =
     files.flatMap { file =>
       extractFile(file, options, logger).map(file -> _)

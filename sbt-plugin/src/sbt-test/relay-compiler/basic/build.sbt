@@ -33,4 +33,4 @@ Compile / relayNpmDir := (Compile / npmInstallDependencies).value
 
 webpack / version := "5.75.0"
 
-relayCompile / logLevel := Level.Debug
+logLevel := Level.Debug

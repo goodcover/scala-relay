@@ -130,7 +130,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Include files in the base directory.
         */
       relayInclude :=
-        (relayExtractDirectory.value +: resourceDirectories.value)
+        (relayWrapDirectory.value +: resourceDirectories.value)
           .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
       /**
         * Set no use of persistence.
@@ -214,9 +214,8 @@ object RelayBasePlugin extends AutoPlugin {
     * GraphQL files, excluding the schema.
     */
   private def graphqlFilesTask = Def.task {
-    val schemaFile    = relaySchema.value
-    val resourceFiles = resources.value
-    // These should already be in resources but that could be changed so include them explicitly too.
+    val schemaFile     = relaySchema.value
+    val resourceFiles  = unmanagedResources.value
     val extractedFiles = relayExtract.value
     val filter         = new ExtensionFilter("gql", "graphql") -- new ExactFileFilter(schemaFile)
     resourceFiles.filter(filter.accept).toSet ++ extractedFiles.filter(filter.accept)

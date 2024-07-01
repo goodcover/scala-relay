@@ -147,6 +147,7 @@ object GraphQLConverter {
     }
   }
 
+  // TODO: Add parallelism.
   private def convertFiles(
     files: Iterable[File],
     schema: GraphQLSchema,
