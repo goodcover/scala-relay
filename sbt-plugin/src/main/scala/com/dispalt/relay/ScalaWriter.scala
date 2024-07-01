@@ -4,7 +4,7 @@ import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, ObjectTypeDefinition}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, OperationType, Selection, Type}
+import caliban.parsing.adt.{OperationType, Selection, Type}
 import com.dispalt.relay.GraphQLText.appendOperationText
 import sbt.*
 import sbt.io.Using.fileWriter
@@ -77,6 +77,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
          |
          |import _root_.scala.scalajs.js
          |import _root_.scala.scalajs.js.|
+         |import _root_.scala.scalajs.js.annotation.JSImport
          |
          |""".stripMargin)
     writer.write("/*\n")
@@ -188,8 +189,24 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     }
     writer.write(").asInstanceOf[")
     writer.write(operationName)
-    writer.write("]\n")
-    writer.write("}\n")
+    // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
+    // In v11 it is either ReaderFragment or ConcreteRequest.
+    writer.write("""]
+                   |
+                   |  type Query = _root_.relay.gql.ConcreteRequest
+                   |
+                   |  @js.native
+                   |  @JSImport("__generated__/""".stripMargin)
+    // The __generated__ import here should be setup as an alias to the output location of the relay compiler.
+    writer.write(operationName)
+    writer.write(""".graphql", JSImport.Default)
+                   |  private object node extends js.Object
+                   |
+                   |  lazy val query: Query = node.asInstanceOf[Query]
+                   |
+                   |  lazy val sourceHash: String = node.asInstanceOf[js.Dynamic].hash.asInstanceOf[String]
+                   |}
+                   |""".stripMargin)
   }
 
   private def writeQueryNestedTraits(writer: Writer, definition: OperationDefinition): Unit = {
@@ -260,72 +277,6 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       writer.write(" | Null")
     }
     writer.write("\n")
-  }
-
-  /**
-    * @param writer The writer to write the type to.
-    * @param documentType The type of artifact that this module represents.
-    * @param docText The actual document that this module represents.
-    * @param concreteText The IR for the document that this module represents.
-    * @param directives The directives from the definition.
-    * @param typeText The type information generated for the GraphQL selections made.
-    * @param hash A hash of the concrete node including the query text.
-    * @param sourceHash A hash of the document, which is used by relay-compiler to know if it needs to write a new version of the artifact.
-    */
-  private def writeThing(
-    writer: Writer,
-    documentType: String,
-    docText: String,
-    concreteText: String,
-    directives: List[Directive],
-    typeText: String,
-    hash: String,
-    sourceHash: String
-  ): Unit = {
-    // TODO: Test this.
-    val maybeRefetchableQueryName = directives.find(_.name == "refetchable").map(_.arguments("queryName").toInputString)
-
-    val queryTypeParams =
-      if (documentType == "ReaderFragment") "[Ctor, Out]"
-      else if (documentType == "ReaderInlineDataFragment") "[Ctor, Out]"
-      else ""
-
-    // TODO: Minify.
-    val code = concreteText;
-
-    writer.write("/*\n")
-    writer.write(docText.replace("*/", "*\\/"))
-    writer.write("\n*/\n")
-    writer.write(typeText)
-    writer.write("""
-                 |  // Used to differentiate between normal and inline query types.
-                 |  type Query = _root_.relay.gql.""".stripMargin)
-    writer.write(documentType)
-    writer.write(queryTypeParams)
-    writer.write("""
-                 |
-                 |  lazy val query: Query = {
-                 |    val defn = _root_.scala.scalajs.js.Function(""".stripMargin)
-    writer.write("\"\"\"return ")
-    writer.write(code)
-    writer.write("\"\"\"")
-    writer.write(""").call(null)
-                 |    """.stripMargin)
-    maybeRefetchableQueryName.foreach { queryName =>
-      writer.write("""// Refetchable query
-          |    defn.metadata.refetch.operation = _root_.relay.generated.""".stripMargin)
-      writer.write(queryName)
-      writer.write(".query")
-    }
-    writer.write("""
-                 |    defn.asInstanceOf[Query]
-                 |  }
-                 |  lazy val sourceHash: String = """".stripMargin)
-    writer.write(sourceHash)
-    writer.write(""""
-                 |
-                 |}
-                 |""".stripMargin)
   }
 
   private def operationFile(operation: OperationDefinition) =
