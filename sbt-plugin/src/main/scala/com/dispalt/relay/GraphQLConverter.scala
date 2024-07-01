@@ -77,12 +77,13 @@ object GraphQLConverter {
         Tracked.diffInputs(stores.schema, FileInfo.lastModified)(Set(schemaFile)) { schemaReport =>
           logger.debug(s"Schema:\n$schemaReport")
           // There are 5 cases to handle:
-          // 1) Version, schema, or options changed - delete all previous extracts and re-generate everything
-          // 2) Source removed - delete the extract
-          // 3) Source added - generate the extract
-          // 4) Source modified - generate the extract
-          // 5) Extract modified - generate the extract
+          // 1) Version, schema, or options changed - delete all previous conversions and re-convert everything
+          // 2) Resource removed - delete the conversion
+          // 3) Resource added - generate the conversion
+          // 4) Resource modified - generate the conversion
+          // 5) Conversion modified - generate the conversion
           val schema = GraphQLSchema(schemaFile)
+          // TODO: We should be converting the schema once instead of copying all the types into the operations.
           val (modifiedConversions, unmodifiedConversions) =
             convertModified(resourcesReport, schemaReport, schema, previousAnalysis, options, logger)
           val modifiedOutputs   = modifiedConversions.values.flatten.toSet
@@ -153,23 +154,12 @@ object GraphQLConverter {
     schema: GraphQLSchema,
     options: Options,
     logger: Logger
-  ): Conversions =
-    files.map { file =>
-      file -> convertFile(file, schema, options, logger)
-    }.toMap
-
-  private def convertFile(file: File, schema: GraphQLSchema, options: Options, logger: Logger): Set[File] = {
-    logger.debug(s"Checking file for graphql definitions: $file")
-    ???
-  }
-
-  private def writeSchema(options: Options, schema: GraphQLSchema): Set[File] = {
-    ???
-  }
-
-  private def writeScala(options: Options, schema: GraphQLSchema, definitions: Iterable[String]): Set[File] = {
+  ): Conversions = {
     val writer = new ScalaWriter(options.outputDir, schema)
-    definitions.flatMap(writer.write).toSet
+    files.map { file =>
+      logger.debug(s"Converting file: $file")
+      file -> writer.write(file)
+    }.toMap
   }
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {

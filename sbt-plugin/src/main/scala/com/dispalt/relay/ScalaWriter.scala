@@ -10,10 +10,15 @@ import sbt.io.Using.fileWriter
 import java.io.Writer
 import java.nio.charset.StandardCharsets
 
+// TODO: Rename
 class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
 
   // It would be nice to use Scalameta for this but it doesn't support comments which kinda sucks.
   // See https://github.com/scalameta/scalameta/issues/3372.
+
+  def write(file: File): Set[File] = {
+    write(IO.read(file, StandardCharsets.UTF_8))
+  }
 
   def write(documentText: String): Set[File] = {
     val document = Parser.parseQuery(documentText).right.get
@@ -30,43 +35,22 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
 
   private def writeQuery(documentText: String, operation: OperationDefinition): File = {
     // From: handleQuery and out
-    // TODO: When does an operation not have a name?
-    val file = outputDir / operation.name.get
+    val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText)
+      writer.write("\n")
       writeInputType(writer, operation)
+      writer.write("\n")
       writeQueryTrait(writer, operation)
+      writer.write("\n")
       writeQueryCompanion(writer, operation)
     }
     file
   }
 
-  private def writeQueryTrait(writer: Writer, operation: OperationDefinition): Unit = {
-    writer.write("trait ")
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
-    writer.write(operationName)
-    writer.write(" extends js.Object {\n")
-    operation.selectionSet.foreach {
-      case field: Selection.Field => writeField(writer, field, operationName)
-      case spread: Selection.FragmentSpread => ???
-      case fragment: Selection.InlineFragment => ???
-    }
-    writer.write("}")
-  }
-
-  private def writeQueryCompanion(writer: Writer, operation: OperationDefinition): Unit = {
-    writer.write("object ")
-    writer.write(operation.name.get)
-    writer.write(""" {
-                   |  def newInput""".stripMargin)
-    writer.write("}")
-  }
-
   private def writeMutation(documentText: String, operation: OperationDefinition): File = {
     // From: handleQuery and out
-    // TODO: When does an operation not have a name?
-    val file = outputDir / operation.name.get
+    val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText)
       writeInputType(writer, operation)
@@ -78,8 +62,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
 
   private def writeSubscription(documentText: String, operation: OperationDefinition): File = {
     // From: handleQuery and out
-    // TODO: When does an operation not have a name?
-    val file = outputDir / operation.name.get
+    val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText)
       ???
@@ -95,16 +78,39 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
          |import _root_.scala.scalajs.js.|
          |
          |""".stripMargin)
-    writer.write("/*")
+    writer.write("/*\n")
     writer.write(documentText.replace("*/", "*\\/"))
-    writer.write("*/")
+    writer.write("\n*/\n")
+  }
+
+  private def writeQueryTrait(writer: Writer, operation: OperationDefinition): Unit = {
+    writer.write("trait ")
+    // TODO: When does an operation not have a name?
+    val operationName = operation.name.get
+    writer.write(operationName)
+    writer.write(" extends js.Object {\n")
+    operation.selectionSet.foreach {
+      case field: Selection.Field => writeQueryField(writer, field, operationName)
+      case spread: Selection.FragmentSpread => ???
+      case fragment: Selection.InlineFragment => ???
+    }
+    writer.write("}\n")
+  }
+
+  private def writeQueryCompanion(writer: Writer, operation: OperationDefinition): Unit = {
+    writer.write("object ")
+    writer.write(operation.name.get)
+    writer.write(""" {
+                   |  def newInput""".stripMargin)
+    writer.write("}")
   }
 
   // TODO: Don't do this. We should create shared types from the schema.
   private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
-    val inputName = s"${operation.name.get}Input"
-    writer.write(s"""trait $inputName extends js.Object {
-         |""".stripMargin)
+    writer.write("trait ")
+    // TODO: When is the operation name None?
+    writer.write(operation.name.get)
+    writer.write("Input extends js.Object {\n")
     operation.variableDefinitions.foreach { variable =>
       // TODO: Handle directives.
       // TODO: Handle defaults.
@@ -125,11 +131,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       //      }
       writer.write(innerType(variable.variableType))
     }
-    writer.write("""}
-        |""".stripMargin)
+    writer.write("}\n")
   }
 
-  private def writeField(writer: Writer, field: Selection.Field, companionName: String): Unit = {
+  private def writeQueryField(writer: Writer, field: Selection.Field, companionName: String): Unit = {
+    // From: closeField
     // TODO: Handle directives
     // TODO: Handle alias
     // We ignore arguments since we only use this as an output type.
@@ -139,6 +145,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(companionName)
     writer.write(".")
     writer.write(field.name.capitalize)
+    if (!schema.queryField(field.name).ofType.nonNull) {
+      writer.write(" | Null")
+    }
     writer.write("\n")
   }
 
@@ -207,6 +216,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
                  |}
                  |""".stripMargin)
   }
+
+  private def operationFile(operation: OperationDefinition) =
+    // TODO: When does an operation not have a name?
+    outputDir / s"${operation.name.get}.scala"
 }
 
 object ScalaWriter {

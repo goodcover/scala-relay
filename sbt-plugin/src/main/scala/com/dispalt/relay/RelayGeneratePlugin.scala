@@ -21,7 +21,7 @@ object RelayGeneratePlugin extends AutoPlugin {
       /**
         * Hook the relay compiler into the compile pipeline.
         */
-      sourceGenerators += relayExtract.taskValue.map(_.toSeq),
+      sourceGenerators += relayConvert.taskValue.map(_.toSeq),
       resourceGenerators += relayCompile.taskValue.map(_.toSeq)
     )
 }

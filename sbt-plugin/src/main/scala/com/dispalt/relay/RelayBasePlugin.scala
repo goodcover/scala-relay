@@ -112,7 +112,7 @@ object RelayBasePlugin extends AutoPlugin {
       relayForceCompile := relayCompileTask(force = true).value,
       relayExtractDirectory := sourceManagedRoot.value / "relay" / "graphql",
       relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
-      relayConvertDirectory := sourceManaged.value / "relay" / "scala",
+      relayConvertDirectory := sourceManaged.value / "relay" / "generated",
       /**
         * Output path of the relay compiler. Necessary this is an empty directory as it will
         * assume that all files contained within it are artifacts from relay.
