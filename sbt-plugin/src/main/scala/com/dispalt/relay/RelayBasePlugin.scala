@@ -3,6 +3,7 @@ package com.dispalt.relay
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys.*
+import sbt.io.{ExactFileFilter, ExtensionFilter}
 import sbt.{AutoPlugin, Def, SettingKey, *}
 
 object RelayBasePlugin extends AutoPlugin {
@@ -12,7 +13,8 @@ object RelayBasePlugin extends AutoPlugin {
   override def trigger = noTrigger
 
   object autoImport {
-    val relaySchema: SettingKey[File]           = settingKey[File]("Path to schema file")
+    val relaySchema: SettingKey[File] = settingKey[File]("Path to schema file")
+    // TODO: Remove.
     val relayScalaJSVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-scalajs version")
     val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
     val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
@@ -21,15 +23,25 @@ object RelayBasePlugin extends AutoPlugin {
         "only really useful as a temporary step to compare against the generated Scala.js facades."
     )
     val relayExtract: TaskKey[Set[File]] =
-      taskKey[Set[File]]("Extracts the graphql definitions from the Scala sources. Returns the generated Scala.js facades.")
+      taskKey[Set[File]]("Extracts the graphql definitions from the Scala sources")
+    val relayWrap: TaskKey[Set[File]] =
+      taskKey[Set[File]](
+        "Wraps all the graphql definitions in graphql macros in the format expected by the relay compiler"
+      )
+    val relayConvert: TaskKey[Set[File]] =
+      taskKey[Set[File]](
+        "Converts the graphql definitions to Scala.js facades that match the output from the relay compiler"
+      )
     val relayCompile: TaskKey[Set[File]]      = taskKey[Set[File]]("Run the relay compiler")
     val relayForceCompile: TaskKey[Set[File]] = taskKey[Set[File]]("Run the relay compiler uncached")
-    val relayOutput: SettingKey[File]         = settingKey[File]("Output of the schema stuff")
-    val relayGraphQLOutput: SettingKey[File] = settingKey[File](
+    val relayExtractDirectory: SettingKey[File] =
+      settingKey[File]("Output directory for the extracted resources containing the graphql definitions")
+    val relayWrapDirectory: SettingKey[File] = settingKey[File](
       "Output directory for the generated JavaScript/TypeScript sources containing the graphql macros for the relay-compiler"
     )
-    val relayScalaOutput: SettingKey[File] =
+    val relayConvertDirectory: SettingKey[File] =
       settingKey[File]("Output directory for the generated Scala.js facades that match the generate")
+    val relayCompileDirectory: SettingKey[File] = settingKey[File]("Output of the schema stuff")
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
@@ -88,6 +100,8 @@ object RelayBasePlugin extends AutoPlugin {
   def perConfigSettings: Seq[Setting[_]] =
     Seq(
       relayExtract := relayExtractTask().value,
+      relayWrap := relayWrapTask().value,
+      relayConvert := relayConvertTask().value,
       /**
         * The big task that performs all the magic.
         */
@@ -96,13 +110,14 @@ object RelayBasePlugin extends AutoPlugin {
         * Run relay-compiler with no caching.
         */
       relayForceCompile := relayCompileTask(force = true).value,
+      relayExtractDirectory := sourceManagedRoot.value / "relay" / "graphql",
+      relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
+      relayConvertDirectory := sourceManaged.value / "relay" / "scala",
       /**
         * Output path of the relay compiler. Necessary this is an empty directory as it will
         * assume that all files contained within it are artifacts from relay.
         */
-      relayOutput := sourceManagedRoot.value / "relay" / "generated",
-      relayGraphQLOutput := sourceManagedRoot.value / "relay" / "graphql",
-      relayScalaOutput := sourceManaged.value / "relay" / "scala",
+      relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
       /**
         * Add the NPM Dev Dependency on the scalajs module.
         */
@@ -115,7 +130,7 @@ object RelayBasePlugin extends AutoPlugin {
         * Include files in the base directory.
         */
       relayInclude :=
-        (relayGraphQLOutput.value +: resourceDirectories.value)
+        (relayExtractDirectory.value +: resourceDirectories.value)
           .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
       /**
         * Set no use of persistence.
@@ -153,33 +168,64 @@ object RelayBasePlugin extends AutoPlugin {
     }
   }
 
+  // First step is to extract the graphql definitions from the Scala source files and output them as graphql files.
   def relayExtractTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
-    val typeScript       = relayTypeScript.value
-    val sourceFiles      = unmanagedSources.value.toSet
-    val schemaFile       = relaySchema.value
-    val graphqlOutputDir = relayGraphQLOutput.value
-    val scalaOutputDir   = relayScalaOutput.value
-    val s                = streams.value
-
-    // First step is to extract the graphql definitions from the Scala source files and output them as graphql relay
-    // JavaScript/TypeScript "macros" (we don't need the Babel stuff as we are doing that ourselves). Ideally these
-    // would be graphql files with the executable definitions but relay-compiler doesn't support that.
-    // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
-    val extractCacheStoreFactory = s.cacheStoreFactory / "relay-extract"
-
+    val sourceFiles       = unmanagedSources.value.toSet
+    val outputDir         = relayExtractDirectory.value
+    val s                 = streams.value
+    val cacheStoreFactory = s.cacheStoreFactory / "relay" / "extract"
     if (force) {
-      GraphQLExtractor.clean(extractCacheStoreFactory)
+      GraphQLExtractor.clean(cacheStoreFactory)
     }
+    val extractOptions = GraphQLExtractor.Options(outputDir)
+    GraphQLExtractor.extract(cacheStoreFactory, sourceFiles, extractOptions, s.log)
+  }
 
-    val extractOptions = GraphQLExtractor.Options(graphqlOutputDir, scalaOutputDir, typeScript)
-    val results = GraphQLExtractor.extract(extractCacheStoreFactory, sourceFiles, schemaFile, extractOptions, s.log)
-    results.scalaSources
+  // The next step is to wrap all the graphql definitions in graphql macros in the format expected by the relay
+  // compiler. The relay compiler is stupid and can't load from graphql files.
+  def relayWrapTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
+    val typeScript        = relayTypeScript.value
+    val outputDir         = relayWrapDirectory.value
+    val graphqlFiles      = graphqlFilesTask.value
+    val s                 = streams.value
+    val cacheStoreFactory = s.cacheStoreFactory / "relay" / "wrap"
+    if (force) {
+      GraphQLWrapper.clean(cacheStoreFactory)
+    }
+    val extractOptions = GraphQLWrapper.Options(outputDir, typeScript)
+    GraphQLWrapper.wrap(cacheStoreFactory, graphqlFiles, extractOptions, s.log)
+  }
+
+  def relayConvertTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
+    val schemaFile   = relaySchema.value
+    val outputDir    = relayConvertDirectory.value
+    val graphqlFiles = graphqlFilesTask.value
+    val s            = streams.value
+    // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
+    val cacheStoreFactory = s.cacheStoreFactory / "relay" / "convert"
+    if (force) {
+      GraphQLConverter.clean(cacheStoreFactory)
+    }
+    val extractOptions = GraphQLConverter.Options(outputDir)
+    GraphQLConverter.convert(cacheStoreFactory, graphqlFiles, schemaFile, extractOptions, s.log)
+  }
+
+  /**
+    * GraphQL files, excluding the schema.
+    */
+  private def graphqlFilesTask = Def.task {
+    val schemaFile    = relaySchema.value
+    val resourceFiles = resources.value
+    // These should already be in resources but that could be changed so include them explicitly too.
+    val extractedFiles = relayExtract.value
+    val filter         = new ExtensionFilter("gql", "graphql") -- new ExactFileFilter(schemaFile)
+    resourceFiles.filter(filter.accept).toSet ++ extractedFiles.filter(filter.accept)
   }
 
   def relayCompileTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
-    val _ = relayExtract.value
+    val _ = relayWrap.value
 
-    val outpath          = relayOutput.value
+    val outpath          = relayCompileDirectory.value
     val compilerCommand  = relayCompilerCommand.value
     val verbose          = relayDebug.value
     val schemaPath       = relaySchema.value
@@ -203,10 +249,10 @@ object RelayBasePlugin extends AutoPlugin {
 
     // We give the JavaScript/TypeScript files from above that contain the graphql "macros" to the relay-compiler and
     // get it to do its usual thing, completely unaware of Scala.js since it no longer supports language plugins.
-    val compileCacheStoreFactory = s.cacheStoreFactory / "relay-compile"
+    val cacheStoreFactory = s.cacheStoreFactory / "relay" / "compile"
 
     if (force) {
-      RelayCompiler.clean(compileCacheStoreFactory)
+      RelayCompiler.clean(cacheStoreFactory)
     }
 
     val compileOptions = RelayCompiler.Options(
@@ -222,6 +268,6 @@ object RelayBasePlugin extends AutoPlugin {
       displayOnFailure = displayOnFailure,
       typeScript = typeScript
     )
-    RelayCompiler.compile(compileCacheStoreFactory, compileOptions, s.log)
+    RelayCompiler.compile(cacheStoreFactory, compileOptions, s.log)
   }
 }

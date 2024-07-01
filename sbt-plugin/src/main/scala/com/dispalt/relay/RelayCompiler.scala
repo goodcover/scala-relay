@@ -9,7 +9,7 @@ import java.io.InputStream
 
 object RelayCompiler {
 
-  // Increment when the extraction code changes to bust the cache.
+  // Increment when the code changes to bust the cache.
   private val Version = 1
 
   private implicit class QuoteStr(val s: String) extends AnyVal {
