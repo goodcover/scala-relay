@@ -16,14 +16,19 @@ class GraphQLSchema(file: File, document: Document) {
   private lazy val objectTypes =
     document.objectTypeDefinitions.map(d => d.name -> d).toMap
 
-  private def objectType(name: String) =
+  def objectType(name: String): TypeDefinition.ObjectTypeDefinition =
     objectTypes.getOrElse(name, throw InvalidSchema(file, s"Object type $name undefined."))
 
-  private lazy val queryFields = {
+  lazy val queryObjectType: TypeDefinition.ObjectTypeDefinition = {
     // The query root operation type must be provided and must be an Object type.
     val queryObjectName =
       schemaDefinition.query.getOrElse(throw InvalidSchema(file, "Schema definition does not define query."))
-    objectType(queryObjectName).fields.map(d => d.name -> d).toMap
+    objectType(queryObjectName)
+  }
+
+  // TODO: Are these used?
+  private lazy val queryFields = {
+    queryObjectType.fields.map(d => d.name -> d).toMap
   }
 
   def queryField(name: String): TypeDefinition.FieldDefinition =

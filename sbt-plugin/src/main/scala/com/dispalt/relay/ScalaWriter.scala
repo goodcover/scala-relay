@@ -2,8 +2,9 @@ package com.dispalt.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, ObjectTypeDefinition}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, OperationType, Selection}
+import caliban.parsing.adt.{Directive, OperationType, Selection, Type}
 import com.dispalt.relay.GraphQLText.appendOperationText
 import sbt.*
 import sbt.io.Using.fileWriter
@@ -42,9 +43,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       writer.write("\n")
       writeInputType(writer, operation)
       writer.write("\n")
-      writeQueryTrait(writer, operation)
+      writeOperationTrait(writer, operation)
       writer.write("\n")
-      writeQueryObject(writer, operation)
+      writeOperationObject(writer, operation)
     }
     file
   }
@@ -119,21 +120,43 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write("}\n")
   }
 
-  private def writeQueryTrait(writer: Writer, operation: OperationDefinition): Unit = {
+  private def writeOperationTrait(writer: Writer, operation: OperationDefinition): Unit = {
     writer.write("trait ")
     // TODO: When does an operation not have a name?
     val operationName = operation.name.get
     writer.write(operationName)
     writer.write(" extends js.Object {\n")
     operation.selectionSet.foreach {
-      case field: Selection.Field             => writeQueryField(writer, field, operationName)
+      case field: Selection.Field =>
+        writeField(writer, field.name, operationName + ".", schema.queryField(field.name).ofType, "  ")
       case spread: Selection.FragmentSpread   => ???
       case fragment: Selection.InlineFragment => ???
     }
     writer.write("}\n")
   }
 
-  private def writeQueryObject(writer: Writer, operation: OperationDefinition): Unit = {
+  private def writeNestedTrait(
+    writer: Writer,
+    field: Selection.Field,
+    subFields: Map[String, FieldDefinition],
+    typeName: String,
+    typePrefix: String
+  ): Unit = {
+    def subFieldType(name: String) =
+      subFields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
+    writer.write("  trait ")
+    writer.write(field.name)
+    writer.write(" extends js.Object {\n")
+    field.selectionSet.foreach {
+      case subField: Selection.Field =>
+        writeField(writer, subField.name, typePrefix, subFieldType(subField.name).ofType, "    ")
+      case spread: Selection.FragmentSpread   => ???
+      case fragment: Selection.InlineFragment => ???
+    }
+    writer.write("  }\n")
+  }
+
+  private def writeOperationObject(writer: Writer, operation: OperationDefinition): Unit = {
     writer.write("object ")
     // TODO: When does an operation not have a name?
     val operationName = operation.name.get
@@ -142,25 +165,82 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(operationName)
     writer.write("Input, ")
     writer.write(operationName)
+    // TODO: Ctor is redundant for queries. Only fragments can be plural.
     writer.write("""] {
-                   |  def newInput(""".stripMargin)
+                   |  type Ctor[T] = T
+                   |
+                   |""".stripMargin)
+    writeQueryNestedTraits(writer, operation)
     // TODO: Parameters.
     writer.write(") = ???\n")
     writer.write("}\n")
   }
 
-  private def writeQueryField(writer: Writer, field: Selection.Field, companionName: String): Unit = {
+  private def writeQueryNestedTraits(writer: Writer, definition: OperationDefinition): Unit = {
+    definition.selectionSet.foreach {
+      case field: Selection.Field =>
+        if (field.selectionSet.nonEmpty) {
+          // TODO: Deduplicate
+          val tpe = schema.queryField(field.name).ofType match {
+            case named: Type.NamedType => schema.objectType(named.name)
+            case list: Type.ListType   => ???
+          }
+          writeNestedSelection(writer, field, tpe, "")
+        }
+      case spread: Selection.FragmentSpread   => ???
+      case fragment: Selection.InlineFragment => ???
+    }
+  }
+
+  private def writeNestedSelection(
+    writer: Writer,
+    selection: Selection,
+    tpe: ObjectTypeDefinition,
+    typePrefix: String
+  ): Unit = {
+    selection match {
+      case field: Selection.Field =>
+        // TODO: Cache these better?
+        // TODO: It is only worth doing this if there are at least 2 selections.
+        val subFields = tpe.fields.map(d => d.name -> d).toMap
+        // TODO: Deduplicate
+        def subFieldType(name: String) = {
+          val definition = subFields.getOrElse(
+            name,
+            throw new IllegalArgumentException(s"Type ${tpe.name} does not define field $name.")
+          )
+          definition.ofType match {
+            case named: Type.NamedType => schema.objectType(named.name)
+            case list: Type.ListType   => ???
+          }
+        }
+        field.selectionSet.foreach {
+          case subField: Selection.Field =>
+            if (subField.selectionSet.nonEmpty) {
+              writeNestedSelection(writer, subField, subFieldType(subField.name), field.name.capitalize + typePrefix)
+            }
+          case spread: Selection.FragmentSpread   => ???
+          case fragment: Selection.InlineFragment => ???
+        }
+        writeNestedTrait(writer, field, subFields, tpe.name, typePrefix)
+      case spread: Selection.FragmentSpread   => ???
+      case fragment: Selection.InlineFragment => ???
+    }
+  }
+
+  private def writeField(writer: Writer, name: String, typePrefix: String, tpe: Type, indent: String): Unit = {
     // From: closeField
-    // TODO: Handle directives
-    // TODO: Handle alias
-    // We ignore arguments since we only use this as an output type.
-    writer.write("  def ")
-    writer.write(field.name)
+    writer.write(indent)
+    writer.write("val ")
+    writer.write(name)
     writer.write(": ")
-    writer.write(companionName)
-    writer.write(".")
-    writer.write(field.name.capitalize)
-    if (!schema.queryField(field.name).ofType.nonNull) {
+    writer.write(typePrefix)
+    val typeName = tpe match {
+      case named: Type.NamedType => named.name
+      case list: Type.ListType   => ???
+    }
+    writer.write(typeName)
+    if (tpe.nullable) {
       writer.write(" | Null")
     }
     writer.write("\n")
@@ -235,9 +315,4 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def operationFile(operation: OperationDefinition) =
     // TODO: When does an operation not have a name?
     outputDir / s"${operation.name.get}.scala"
-}
-
-object ScalaWriter {
-
-  case class InvalidFieldSelection(fieldName: String) extends Exception(s"Invalid field selection: $fieldName")
 }
