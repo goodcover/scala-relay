@@ -171,8 +171,24 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
                    |
                    |""".stripMargin)
     writeQueryNestedTraits(writer, operation)
-    // TODO: Parameters.
-    writer.write(") = ???\n")
+    writer.write("\n")
+    writer.write("  def newInput(")
+    if (operation.variableDefinitions.nonEmpty) {
+      ???
+    }
+    writer.write(") =")
+    if (operation.variableDefinitions.nonEmpty) {
+      writer.write("\n    ")
+    } else {
+      writer.write(" ")
+    }
+    writer.write("js.Dynamic.literal(")
+    if (operation.variableDefinitions.nonEmpty) {
+      writer.write("\n    ")
+    }
+    writer.write(").asInstanceOf[")
+    writer.write(operationName)
+    writer.write("]\n")
     writer.write("}\n")
   }
 
