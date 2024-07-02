@@ -1,0 +1,4 @@
+> relayExtract
+$ pause
+$ exists target/scala-2.13/src_managed/relay/graphql/example/Test.scala.graphql
+$ exists target/scala-2.13/src_managed/relay/graphql/example2/Test.scala.graphql

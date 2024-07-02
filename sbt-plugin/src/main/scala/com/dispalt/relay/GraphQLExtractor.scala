@@ -86,9 +86,7 @@ object GraphQLExtractor {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val inverse = unmodifiedExtracts.map {
-              case (source, extract) => extract -> source
-            }
+            val inverse         = invertFiles(unmodifiedExtracts)
             val needsExtraction = unexpectedChanges.flatMap(inverse.get)
             extractFiles(needsExtraction, options, logger)
           }

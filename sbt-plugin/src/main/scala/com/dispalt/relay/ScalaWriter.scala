@@ -215,7 +215,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write("object ")
     val name = getOperationName(operation)
     writer.write(name)
-    writer.write(" extends _root_.relay.gql.QueryTaggedNode[")
+    writer.write(" extends _root_.relay.gql.")
+    operation.operationType match {
+      case OperationType.Query => writer.write("QueryTaggedNode[")
+      case OperationType.Mutation => writer.write("MutationTaggedNode[")
+      case OperationType.Subscription => ???
+    }
     writer.write(name)
     writer.write("Input, ")
     writer.write(name)

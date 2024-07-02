@@ -1,0 +1,42 @@
+# This test is strange. It isn't testing the persistence at all.
+
+> compile
+> resources
+$ copy-flat target/scala-2.13/src_managed/main/relay/generated generated
+$ copy-flat target/scala-2.13/src_managed/relay/generated generated
+$ exists generated/Main_foo.scala
+$ exists generated/MainMutation.scala
+$ exists generated/MainQuery.scala
+$ exists generated/Test_foo.scala
+$ exists generated/Main_foo.graphql.js
+$ exists generated/MainMutation.graphql.js
+$ exists generated/MainQuery.graphql.js
+$ exists generated/Test_foo.graphql.js
+#$ pause
+
+# Modifying
+$ exec echo "//" >> src/main/scala/example/Main.scala
+> compile
+> resources
+$ newer target/scala-2.13/src_managed/main/relay/generated/Main_foo.scala generated/Main_foo.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/MainMutation.scala generated/MainMutation.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/MainQuery.scala generated/MainQuery.scala
+-$ newer target/scala-2.13/src_managed/main/relay/generated/Test_foo.scala generated/Test_foo.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/Main_foo.graphql.js generated/Main_foo.graphql.js
+$ newer target/scala-2.13/src_managed/main/relay/generated/MainMutation.graphql.js generated/MainMutation.graphql.js
+$ newer target/scala-2.13/src_managed/main/relay/generated/MainQuery.graphql.js generated/MainQuery.graphql.js
+-$ newer target/scala-2.13/src_managed/main/relay/generated/Test_foo.graphql.js generated/Test_foo.graphql.js
+#$ pause
+
+$ copy-flat target/scala-2.13/src_managed/main/relay/generated generated
+$ copy-flat target/scala-2.13/src_managed/relay/generated generated
+$ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
+> compile
+> resources
+#$ pause
+
+$ delete src/main/scala/example/Test.scala
+$ exec echo "//" >> src/main/scala/example/Main.scala
+> Compile/relayCompile
+$ pause
+# > fastOptJS/webpack

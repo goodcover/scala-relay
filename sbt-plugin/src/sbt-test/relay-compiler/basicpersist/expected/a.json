@@ -1,0 +1,4 @@
+{
+  "02fa0ee609afe49b638bbf570eb6b5ca": "mutation MainMutation(\n  $input: ActorSubscribeInput!\n) {\n  actorSubscribe(input: $input) {\n    clientMutationId\n  }\n}\n",
+  "db82ef36778a3c0f5a21478582b035dc": "query MainQuery {\n  defaultSettings {\n    notificationSounds\n  }\n}\n"
+}

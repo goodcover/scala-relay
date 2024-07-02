@@ -92,9 +92,7 @@ object GraphQLWrapper {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val inverse = unmodifiedWrappers.map {
-              case (resource, wrapper) => wrapper -> resource
-            }
+            val inverse       = invertFiles(unmodifiedWrappers)
             val needsWrapping = unexpectedChanges.flatMap(inverse.get)
             wrapFiles(needsWrapping, options, logger)
           }
@@ -180,9 +178,9 @@ object GraphQLWrapper {
           writer.write(escape(nonComment))
           writer.write(comment)
           writer.write("\n")
-          val openSelectionSets = math.max(0, level - 1)
-          val hadContent = openSelectionSets > 0 || !nonComment.isBlank
-          val selectionSetDiff = countSelectionSetDiff(nonComment, hasComments = false)
+          val openSelectionSets     = math.max(0, level - 1)
+          val hadContent            = openSelectionSets > 0 || !nonComment.isBlank
+          val selectionSetDiff      = countSelectionSetDiff(nonComment, hasComments = false)
           val nextOpenSelectionSets = openSelectionSets + selectionSetDiff
           if (nextOpenSelectionSets == 0 && hadContent) {
             writer.write("`\n")

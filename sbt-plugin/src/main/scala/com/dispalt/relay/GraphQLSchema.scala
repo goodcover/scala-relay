@@ -45,7 +45,9 @@ class GraphQLSchema(file: File, document: Document) {
     // The mutation root operation type is optional; if it is not provided, the service does not support mutations.
     // If it is provided, it must be an Object type.
     val mutationObjectName =
-      schemaDefinition.mutation.getOrElse(throw UnsupportedOperation(file, "Schema does not define a mutation root operation type."))
+      schemaDefinition.mutation.getOrElse(
+        throw UnsupportedOperation(file, "Schema does not define a mutation root operation type.")
+      )
     objectType(mutationObjectName)
   }
 
@@ -60,7 +62,9 @@ class GraphQLSchema(file: File, document: Document) {
     // The subscription root operation type is optional; if it is not provided, the service does not support subscriptions.
     // If it is provided, it must be an Object type.
     val subscriptionObjectName =
-      schemaDefinition.subscription.getOrElse(throw UnsupportedOperation(file, "Schema does not define a subscription root operation type."))
+      schemaDefinition.subscription.getOrElse(
+        throw UnsupportedOperation(file, "Schema does not define a subscription root operation type.")
+      )
     objectType(subscriptionObjectName)
   }
 
@@ -83,5 +87,5 @@ object GraphQLSchema {
       extends Exception(s"Invalid schema file: $file", new Exception(message))
 
   final case class UnsupportedOperation(file: File, message: String)
-    extends Exception(s"Unsupported operation in schema file: $file", new Exception(message))
+      extends Exception(s"Unsupported operation in schema file: $file", new Exception(message))
 }

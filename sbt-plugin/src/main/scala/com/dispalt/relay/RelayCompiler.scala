@@ -252,7 +252,8 @@ object RelayCompiler {
       case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
     }.toSeq
 
-    val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ persistedList ++ customScalarsArgs).mkString(" ")
+    val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ persistedList ++ customScalarsArgs)
+      .mkString(" ")
 
     var output = Vector.empty[String]
 

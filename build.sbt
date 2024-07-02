@@ -203,7 +203,6 @@ releaseProcess :=
     releaseStepCommandAndRemaining("^ sbt-relay-compiler/publishSigned"),
     releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-    ReleaseCustom.doReleaseYarn,
     setNextVersion,
     ReleaseCustom.commitNextVersion,
     pushChanges
