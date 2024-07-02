@@ -3,7 +3,6 @@ package com.dispalt.relay
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, ObjectTypeDefinition}
-import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{OperationType, Selection, Type}
 import com.dispalt.relay.GraphQLText.appendOperationText
 import sbt.*
@@ -36,14 +35,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   }
 
   private def writeQuery(documentText: String, operation: OperationDefinition): File = {
-    // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText, operation)
       writer.write("\n")
       writeInputType(writer, operation)
       writer.write("\n")
-      writeOperationTrait(writer, operation)
+      writeOperationTrait(writer, operation, schema.queryField)
       writer.write("\n")
       writeOperationObject(writer, operation)
     }
@@ -51,19 +49,20 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   }
 
   private def writeMutation(documentText: String, operation: OperationDefinition): File = {
-    // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText, operation)
+      writer.write("\n")
       writeInputType(writer, operation)
-    // TODO
-    //writeMutationCompanion(writer, operation)
+      writer.write("\n")
+      writeOperationTrait(writer, operation, schema.mutationField)
+      writer.write("\n")
+      writeOperationObject(writer, operation)
     }
     file
   }
 
   private def writeSubscription(documentText: String, operation: OperationDefinition): File = {
-    // From: handleQuery and out
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writePreamble(writer, documentText, operation)
@@ -97,31 +96,33 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     // TODO: When does an operation not have a name?
     val operationName = operation.name.get
     writer.write(operationName)
-    writer.write("Input extends js.Object {\n")
-    operation.variableDefinitions.foreach { variable =>
-      // TODO: Handle directives.
-      // TODO: Handle defaults.
-      writer.write("  val ")
-      writer.write(variable.name)
-      writer.write(": ")
-      // TODO: Type
-      //  1) transformInputType
-      //  2) makeTypeFromMember
-      // TODO: transformInputType used to ask the schema if this was nonNull.
-      //      if (variable.variableType.nonNull) {
-      //        variable.variableType match {
-      //          case Type.NamedType(name, nonNull) => ???
-      //          case Type.ListType(ofType, nonNull) => ???
-      //        }
-      //      } else {
-      //
-      //      }
-      writer.write(innerType(variable.variableType))
+    writer.write("Input extends js.Object")
+    if (operation.variableDefinitions.nonEmpty) {
+      writer.write(" {\n")
+      operation.variableDefinitions match {
+        case input :: Nil =>
+          input.variableType match {
+            // TODO: Handle non-object types.
+            case named: Type.NamedType =>
+              schema.inputObjectType(named.name).fields.foreach { field =>
+                // TODO: Handle non-object types.
+                writeInputField(writer, field.name, field.ofType)
+              }
+            case list: Type.ListType => ???
+          }
+        case head :: tail => ???
+        case Nil          => ()
+      }
+      writer.write("}")
     }
-    writer.write("}\n")
+    writer.write("\n")
   }
 
-  private def writeOperationTrait(writer: Writer, operation: OperationDefinition): Unit = {
+  private def writeOperationTrait(
+    writer: Writer,
+    operation: OperationDefinition,
+    operationField: String => FieldDefinition
+  ): Unit = {
     writer.write("trait ")
     // TODO: When does an operation not have a name?
     val operationName = operation.name.get
@@ -129,7 +130,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(" extends js.Object {\n")
     operation.selectionSet.foreach {
       case field: Selection.Field =>
-        writeField(writer, field.name, operationName + ".", schema.queryField(field.name).ofType, "  ")
+        writeOperationField(writer, field.name, operationField(field.name).ofType, operationName)
       case spread: Selection.FragmentSpread   => ???
       case fragment: Selection.InlineFragment => ???
     }
@@ -150,7 +151,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(" extends js.Object {\n")
     field.selectionSet.foreach {
       case subField: Selection.Field =>
-        writeField(writer, subField.name, typePrefix, subFieldType(subField.name).ofType, "    ")
+        writeNestedField(
+          writer,
+          subField.name,
+          subFieldType(subField.name).ofType,
+          typePrefix,
+          hasSelections = subField.selectionSet.nonEmpty
+        )
       case spread: Selection.FragmentSpread   => ???
       case fragment: Selection.InlineFragment => ???
     }
@@ -177,7 +184,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     if (operation.variableDefinitions.nonEmpty) {
       ???
     }
-    writer.write(") =")
+    writer.write("): ")
+    writer.write(operationName)
+    writer.write(" =")
     if (operation.variableDefinitions.nonEmpty) {
       writer.write("\n    ")
     } else {
@@ -215,6 +224,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
         if (field.selectionSet.nonEmpty) {
           // TODO: Deduplicate
           val tpe = schema.queryField(field.name).ofType match {
+            // TODO: Handle non-object types.
             case named: Type.NamedType => schema.objectType(named.name)
             case list: Type.ListType   => ???
           }
@@ -243,6 +253,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
             throw new IllegalArgumentException(s"Type ${tpe.name} does not define field $name.")
           )
           definition.ofType match {
+            // TODO: Handle non-object types.
             case named: Type.NamedType => schema.objectType(named.name)
             case list: Type.ListType   => ???
           }
@@ -261,23 +272,49 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     }
   }
 
-  private def writeField(writer: Writer, name: String, typePrefix: String, tpe: Type, indent: String): Unit = {
-    // From: closeField
+  private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
+    writeField(writer, name, tpe, nameOfType(tpe), "  ")
+
+  private def writeOperationField(writer: Writer, name: String, tpe: Type, operationName: String): Unit = {
+    val typeName = s"$operationName.${name.capitalize}"
+    writeField(writer, name, tpe, typeName, "  ")
+  }
+
+  private def writeNestedField(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    typePrefix: String,
+    hasSelections: Boolean
+  ): Unit = {
+    val typeName = if (hasSelections) typePrefix + name.capitalize else nameOfType(tpe)
+    writeField(writer, name, tpe, typeName, "    ")
+  }
+
+  private def writeField(writer: Writer, name: String, tpe: Type, typeName: String, indent: String): Unit = {
     writer.write(indent)
     writer.write("val ")
     writer.write(name)
     writer.write(": ")
-    writer.write(typePrefix)
-    val typeName = tpe match {
-      case named: Type.NamedType => named.name
-      case list: Type.ListType   => ???
-    }
-    writer.write(typeName)
+    writer.write(convertType(typeName))
     if (tpe.nullable) {
       writer.write(" | Null")
     }
     writer.write("\n")
   }
+
+  private def nameOfType(tpe: Type): String =
+    tpe match {
+      case named: Type.NamedType => named.name
+      case list: Type.ListType   => ???
+    }
+
+  private def convertType(typeName: String): String =
+    typeName match {
+      // TODO: Do something better with ID.
+      case "ID"  => "String"
+      case other => other
+    }
 
   private def operationFile(operation: OperationDefinition) =
     // TODO: When does an operation not have a name?
