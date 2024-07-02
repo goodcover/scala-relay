@@ -6,8 +6,6 @@ target/
 .ensime
 .ensime_cache/
 .idea/
-node-compiler/lib/
-node-compiler/realex/
 
 # Metals
 .metals/

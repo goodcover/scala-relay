@@ -26,18 +26,6 @@ object ReleaseCustom {
       .getOrElse(sys.error("Aborting release. Working directory is not a repository of a recognized VCS."))
   }
 
-  lazy val doReleaseYarn = { st: State =>
-    val v             = Project.extract(st)
-    val pl            = toProcessLogger(st)
-    val versionString = v.get(version)
-    val bd            = v.get(baseDirectory)
-
-    Process(s"yarn", bd / "node-compiler").!
-    val cmd = Process(s"yarn publish --new-version $versionString --no-git-tag-version", bd / "node-compiler")
-    cmd.!(pl)
-    st
-  }
-
   lazy val commitNextVersion = { st: State =>
     commitVersion(st, releaseNextCommitMessage)
   }
@@ -52,12 +40,7 @@ object ReleaseCustom {
       .relativize(base, file)
       .getOrElse("Version file [%s] is outside of this VCS repository with base directory [%s]!" format (file, base))
 
-    val packageJson = IO
-      .relativize(base, st.extract.get(baseDirectory) / "node-compiler" / "package.json")
-      .getOrElse("Version file [%s] is outside of this VCS repository with base directory [%s]!" format (file, base))
-
     vcs(st).add(relativePath) !! log
-    vcs(st).add(packageJson) !! log
     val status = vcs(st).status.!!.trim
 
     val newState = if (status.nonEmpty) {

@@ -14,11 +14,10 @@ object RelayBasePlugin extends AutoPlugin {
 
   object autoImport {
     val relaySchema: SettingKey[File] = settingKey[File]("Path to schema file")
-    // TODO: Remove.
-    val relayScalaJSVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-scalajs version")
-    val relayTypeScriptVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-typescript version")
-    val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
-    val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
+    val relayTypeScriptVersion: SettingKey[String] =
+      settingKey[String]("Set the relay-compiler-language-typescript version")
+    val relayVersion: SettingKey[String] = settingKey[String]("Set the Relay version")
+    val relayDebug: SettingKey[Boolean]  = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayTypeScript: SettingKey[Boolean] = settingKey[Boolean](
       "If true, sets the language to TypeScript. If false, sets the language to JavaScript. Defaults to false. This is" +
         "only really useful as a temporary step to compare against the generated Scala.js facades."
@@ -72,7 +71,6 @@ object RelayBasePlugin extends AutoPlugin {
       relayBaseDirectory := baseDirectory.value,
       relayWorkingDirectory := file(sys.props("user.dir")),
       relayCompilerCommand := "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js",
-      relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
       // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
       relayTypeScriptVersion := "14.1.0",
       relayVersion := "11.0.0"
@@ -89,15 +87,10 @@ object RelayBasePlugin extends AutoPlugin {
       relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
       relayConvertDirectory := sourceManaged.value / "relay" / "generated",
       relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
-      relayDependencies := Seq(
-        // TODO: Remove.
-        "relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
-        "relay-compiler"                  -> relayVersion.value
-      ),
+      relayDependencies := Seq("relay-compiler" -> relayVersion.value),
       relayDependencies ++= {
-        if (relayTypeScript.value) Seq(
-          "relay-compiler-language-typescript" -> relayTypeScriptVersion.value,
-        ) else Seq.empty
+        if (relayTypeScript.value) Seq("relay-compiler-language-typescript" -> relayTypeScriptVersion.value)
+        else Seq.empty
       },
       relayInclude :=
         (relayWrapDirectory.value +: resourceDirectories.value)

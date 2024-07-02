@@ -41,31 +41,7 @@ lazy val `sbt-relay-compiler` = project
     scriptedBufferLog := false,
     scriptedDependencies := {
       scriptedDependencies.value
-
       (`relay-macro` / publishLocal).value
-
-      val rootDir     = (LocalRootProject / baseDirectory).value
-      val sourceDir   = "node-compiler"
-      val packageName = "relay-compiler-language-scalajs"
-      val cwd         = rootDir / sourceDir
-      require(Process(Seq("yarn", "install"), cwd).! == 0)
-      require(Process(Seq("yarn", "build"), cwd).! == 0)
-
-      // Create a link in each test directory to the plugin so that it will get copied into the test.
-      // Be careful of https://github.com/sbt/sbt/issues/7331.
-      val testGroups = sbtTestDirectory.value.listFiles()
-      testGroups.foreach { group =>
-        val tests = group.listFiles()
-        tests.foreach { test =>
-          val nodeModulesDir = test / "node_modules"
-          nodeModulesDir.mkdirs()
-          val link = nodeModulesDir / packageName
-          if (!link.exists()) {
-            val target = rootDir / sourceDir
-            Files.createSymbolicLink(link.toPath, target.toPath)
-          }
-        }
-      }
     },
     scalaVersion := {
       (pluginCrossBuild / sbtBinaryVersion).value match {

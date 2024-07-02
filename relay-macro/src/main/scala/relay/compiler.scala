@@ -24,7 +24,7 @@ object compiler {
     *  4) !IMPORTANT! THE WORD graphql in all lowercase must show up in the file.
     *
     * @param s plan old graphql string.
-    * @return Type of the Object generated from the relay-compiler-language-scalajs
+    * @return Type of the Object generated from the relay-compiler
     */
   def graphqlGen(s: String): Any = macro genGraphqlMacrosImpl.impl
 

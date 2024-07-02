@@ -8,10 +8,9 @@ def commonSettings = Seq(
   relayCompilerCommand := s"node ${(Compile / npmInstallDependencies).value}/node_modules/.bin/relay-compiler",
   relaySchema := (LocalRootProject / baseDirectory).value / "testschema.graphql",
   relayDebug := true,
-  Compile / npmDevDependencies ++= Seq(
-    "relay-compiler-language-scalajs" -> s"link:${(Compile / npmUpdate / crossTarget).value.absolutePath}/node_modules/relay-compiler-language-scalajs",
-    "relay-compiler"                  -> "11.0.0",
-    "graphql"                         -> "^15.4.0"
+  Compile / npmDevDependencies ++= Seq( //
+    "relay-compiler" -> "11.0.0",
+    "graphql"        -> "^15.4.0"
   ),
   Compile / relayDisplayOnlyOnFailure := true,
   Compile / relayNpmDir := (Compile / npmInstallDependencies).value,
@@ -27,3 +26,5 @@ lazy val b = project
   .dependsOn(a)
   .settings(commonSettings)
   .settings(inConfig(Compile)(relayInclude += (a / sourceDirectory).value))
+
+logLevel := Level.Debug
