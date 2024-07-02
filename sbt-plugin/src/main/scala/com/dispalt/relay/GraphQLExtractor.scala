@@ -118,6 +118,11 @@ object GraphQLExtractor {
       val outputsOfRemoved = previousAnalysis.extracts.filterKeys(sourceReport.removed.contains).values
       IO.delete(outputsOfRemoved)
       val addedOrChangedSources = sourceReport.modified -- sourceReport.removed
+      // We can have multiple sources extracting to the same file since the output structure is flat.
+      // So we need to delete any previous extracts and then append during extraction.
+      addedOrChangedSources.foreach { source =>
+        previousAnalysis.extracts.get(source).foreach(IO.delete)
+      }
       val modifiedExtracts      = extractFiles(addedOrChangedSources, options, logger)
       val unmodifiedExtracts    = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
       (modifiedExtracts, unmodifiedExtracts)
@@ -183,10 +188,40 @@ object GraphQLExtractor {
 
   private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
     val graphqlFile = options.outputDir / s"${source.base}.graphql"
-    fileWriter(StandardCharsets.UTF_8)(graphqlFile) { writer =>
-      definitions.foreach(writer.write)
+    fileWriter(StandardCharsets.UTF_8, append = true)(graphqlFile) { writer =>
+      definitions.foreach { definition =>
+        writer.write("# Extracted from ")
+        writer.write(source.absolutePath)
+        writer.write('\n')
+        val trimmed = trimBlankLines(definition)
+        val lines = trimmed.linesIterator
+        val prefix = {
+          if (lines.hasNext) {
+            val firstLine = lines.next()
+            val indent = firstLine.takeWhile(_.isWhitespace)
+            writer.write(firstLine.drop(indent.length))
+            writer.write('\n')
+            indent
+          } else ""
+        }
+        lines.foreach { line =>
+          writer.write(removeLongestPrefix(line, prefix))
+          writer.write('\n')
+        }
+        writer.write('\n')
+      }
     }
     graphqlFile
+  }
+
+  private def trimBlankLines(s: String): String =
+    s.replaceFirst("""^\s*(\R+|$)""", "").replaceFirst("""\R\s*$""", "")
+
+  private def removeLongestPrefix(s: String, prefix: String): String = {
+    val n = prefix.indices.find { i =>
+      s.charAt(i) != prefix.charAt(i)
+    }.getOrElse(prefix.length)
+    s.drop(n)
   }
 
   private def positionText(position: Position): String = {

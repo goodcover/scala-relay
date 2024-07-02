@@ -43,11 +43,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writer.write("\n")
+      writer.write('\n')
       writeInputType(writer, operation)
-      writer.write("\n")
+      writer.write('\n')
       writeOperationTrait(writer, operation, schema.queryField)
-      writer.write("\n")
+      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.queryField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
     }
@@ -58,11 +58,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writer.write("\n")
+      writer.write('\n')
       writeInputType(writer, operation)
-      writer.write("\n")
+      writer.write('\n')
       writeOperationTrait(writer, operation, schema.mutationField)
-      writer.write("\n")
+      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.mutationField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
     }
@@ -82,14 +82,14 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     val file = fragmentFile(fragment)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeFragmentPreamble(writer, documentText, fragment)
-      writer.write("\n")
+      writer.write('\n')
       // TODO: Deduplicate
       val typeName = fragment.typeCondition.name
       val fields   = schema.objectType(fragment.typeCondition.name).fields.map(d => d.name -> d).toMap
       def selectionDefinition(name: String) =
         fields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
       writeFragmentTrait(writer, fragment, selectionDefinition)
-      writer.write("\n")
+      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(selectionDefinition(name))
       writeFragmentObject(writer, fragment, fieldTypeDefinition)
     }
@@ -113,7 +113,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(line.replace("*/", "*\\/"))
     val last = line.lastOption
     if (!last.contains('\n') && !last.contains('\f')) {
-      writer.write("\n")
+      writer.write('\n')
     }
   }
 
@@ -138,9 +138,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       inputFields.foreach { field =>
         writeInputField(writer, field.name, field.ofType)
       }
-      writer.write("}")
+      writer.write('}')
     }
-    writer.write("\n")
+    writer.write('\n')
   }
 
   private def writeOperationTrait(
@@ -230,7 +230,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
                    |
                    |""".stripMargin)
     writeNestedTraits(writer, operation, fieldTypeDefinition)
-    writer.write("\n")
+    writer.write('\n')
     writeNewInputMethod(writer, operation)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
@@ -251,8 +251,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write("] {\n")
     writer.write("  type Ctor[T] = ")
     if (isPluralFragment(fragment)) writer.write("js.Array[T]")
-    else writer.write("T")
-    writer.write("\n")
+    else writer.write('T')
+    writer.write('\n')
     writeFragmentImplicits(writer, fragment)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
@@ -347,12 +347,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
 
     writer.write("  def newInput(")
     if (inputFields.nonEmpty) {
-      writer.write("\n")
+      writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
           writeInputFieldParameter(writer, field.name, field.ofType)
-          if (hasMore) writer.write(",")
-          writer.write("\n")
+          if (hasMore) writer.write(',')
+          writer.write('\n')
       }
       writer.write("  ")
     }
@@ -362,11 +362,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     if (inputFields.nonEmpty) {
       writer.write("\n    ")
     } else {
-      writer.write(" ")
+      writer.write(' ')
     }
     writer.write("js.Dynamic.literal(")
     if (inputFields.nonEmpty) {
-      writer.write("\n")
+      writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
           writer.write("""      """")
@@ -374,8 +374,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
           writer.write("""" -> """)
           writer.write(field.name)
           writer.write(".asInstanceOf[js.Any]")
-          if (hasMore) writer.write(",")
-          writer.write("\n")
+          if (hasMore) writer.write(',')
+          writer.write('\n')
       }
       writer.write("    ")
     }
@@ -389,7 +389,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       case spread: Selection.FragmentSpread =>
         writer.write("\n  implicit class ")
         writer.write(fragment.name)
-        writer.write("2")
+        writer.write('2')
         writer.write(spread.name)
         writer.write("Ref(f: ")
         writer.write(fragment.name)
@@ -407,7 +407,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       case inline: Selection.InlineFragment => throw new NotImplementedError(inline.toString)
       case _                                => ()
     }
-    writer.write("\n")
+    writer.write('\n')
   }
 
   private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
@@ -439,7 +439,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(indent)
     writer.write("val ")
     writeNameAndType(writer, name, tpe, typeName)
-    writer.write("\n")
+    writer.write('\n')
   }
 
   // TODO: Can we not use this?

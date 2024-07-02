@@ -168,7 +168,7 @@ object GraphQLWrapper {
       Option(reader.readLine()) match {
         case Some(line) if line.isBlank =>
           writer.write(line)
-          writer.write("\n")
+          writer.write('\n')
           loop(level)
         case Some(line) =>
           if (level == 0) {
@@ -177,7 +177,7 @@ object GraphQLWrapper {
           val (nonComment, comment) = splitComment(line)
           writer.write(escape(nonComment))
           writer.write(comment)
-          writer.write("\n")
+          writer.write('\n')
           val openSelectionSets     = math.max(0, level - 1)
           val hadContent            = openSelectionSets > 0 || !nonComment.isBlank
           val selectionSetDiff      = countSelectionSetDiff(nonComment, hasComments = false)

@@ -1,4 +1,14 @@
+# Ensure that if there are multiple sources with the same name they can extract to the same file.
 > relayExtract
-$ pause
-$ exists target/scala-2.13/src_managed/relay/graphql/example/Test.scala.graphql
-$ exists target/scala-2.13/src_managed/relay/graphql/example2/Test.scala.graphql
+$ exec grep -E '# Extracted from .*/src/main/scala/example/Test\.scala' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ exec grep -E '# Extracted from .*/src/main/scala/example2/Test\.scala' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ exec grep 'query TestQuery {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ exec grep 'query TestQuery2 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+-$ exec grep 'query TestQuery3 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+
+# Changing a source should replace the old extract.
+$ copy-file src/main/scala/example2/Test.bak src/main/scala/example2/Test.scala
+> relayExtract
+$ exec grep 'query TestQuery {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+-$ exec grep 'query TestQuery2 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ exec grep 'query TestQuery3 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
