@@ -190,7 +190,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     def subFieldDefinition(name: String) =
       subFields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
     writer.write("  trait ")
-    writer.write(field.name)
+    // TODO: I think this is missing a prefix.
+    writer.write(field.name.capitalize)
     writer.write(" extends js.Object {\n")
     field.selectionSet.foreach {
       case subField: Selection.Field =>
