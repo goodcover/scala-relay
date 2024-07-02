@@ -1,10 +1,10 @@
 package com.dispalt.relay
 
 import caliban.parsing.Parser
-import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
+import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition, ObjectTypeDefinition}
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
-import com.dispalt.relay.GraphQLText.appendOperationText
+import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
 import sbt.*
 import sbt.io.Using.fileWriter
 
@@ -15,6 +15,8 @@ import scala.annotation.tailrec
 // TODO: Rename
 class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
 
+  // TODO: Remove strip margins
+
   // It would be nice to use Scalameta for this but it doesn't support comments which kinda sucks.
   // See https://github.com/scalameta/scalameta/issues/3372.
 
@@ -23,8 +25,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   }
 
   def write(documentText: String): Set[File] = {
-    val document = Parser.parseQuery(documentText).right.get
-    document.operationDefinitions.map(writeOperation(documentText, _)).toSet
+    val document   = Parser.parseQuery(documentText).right.get
+    val operations = document.operationDefinitions.map(writeOperation(documentText, _)).toSet
+    val fragments  = document.fragmentDefinitions.map(writeFragment(documentText, _)).toSet
+    operations ++ fragments
   }
 
   private def writeOperation(documentText: String, operation: OperationDefinition): File = {
@@ -38,7 +42,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def writeQuery(documentText: String, operation: OperationDefinition): File = {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText, operation)
+      writeOperationPreamble(writer, documentText, operation)
       writer.write("\n")
       writeInputType(writer, operation)
       writer.write("\n")
@@ -53,7 +57,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def writeMutation(documentText: String, operation: OperationDefinition): File = {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText, operation)
+      writeOperationPreamble(writer, documentText, operation)
       writer.write("\n")
       writeInputType(writer, operation)
       writer.write("\n")
@@ -68,13 +72,52 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def writeSubscription(documentText: String, operation: OperationDefinition): File = {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
-      writePreamble(writer, documentText, operation)
+      writeOperationPreamble(writer, documentText, operation)
       ???
     }
     file
   }
 
-  private def writePreamble(writer: Writer, documentText: String, operation: OperationDefinition): Unit = {
+  private def writeFragment(documentText: String, fragment: FragmentDefinition): File = {
+    val file = fragmentFile(fragment)
+    fileWriter(StandardCharsets.UTF_8)(file) { writer =>
+      writeFragmentPreamble(writer, documentText, fragment)
+      writer.write("\n")
+      // TODO: Deduplicate
+      val typeName = fragment.typeCondition.name
+      val fields   = schema.objectType(fragment.typeCondition.name).fields.map(d => d.name -> d).toMap
+      def selectionDefinition(name: String) =
+        fields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
+      writeFragmentTrait(writer, fragment, selectionDefinition)
+      writer.write("\n")
+      def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(selectionDefinition(name))
+      writeFragmentObject(writer, fragment, fieldTypeDefinition)
+    }
+    file
+  }
+
+  private def writeOperationPreamble(writer: Writer, documentText: String, operation: OperationDefinition): Unit =
+    writePreamble(writer, appendOperationText(documentText, operation))
+
+  private def writeFragmentPreamble(writer: Writer, documentText: String, fragment: FragmentDefinition): Unit =
+    writePreamble(writer, appendFragmentText(documentText, fragment))
+
+  private def writePreamble(writer: Writer, writeDocumentText: (String => Unit) => Unit): Unit = {
+    writePackageAndImports(writer)
+    writer.write("/*\n")
+    writeDocumentText(writeDefinitionTextLine(writer))
+    writer.write("*/\n")
+  }
+
+  private def writeDefinitionTextLine(writer: Writer)(line: String): Unit = {
+    writer.write(line.replace("*/", "*\\/"))
+    val last = line.lastOption
+    if (!last.contains('\n') && !last.contains('\f')) {
+      writer.write("\n")
+    }
+  }
+
+  private def writePackageAndImports(writer: Writer): Unit =
     writer.write(s"""package relay.generated
          |
          |import _root_.scala.scalajs.js
@@ -82,22 +125,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
          |import _root_.scala.scalajs.js.annotation.JSImport
          |
          |""".stripMargin)
-    writer.write("/*\n")
-    appendOperationText(documentText, operation) { line =>
-      writer.write(line.replace("*/", "*\\/"))
-      val last = line.lastOption
-      if (!last.contains('\n') && !last.contains('\f')) {
-        writer.write("\n")
-      }
-    }
-    writer.write("*/\n")
-  }
 
   // TODO: Don't do this. We should create shared types from the schema.
   private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
     writer.write("trait ")
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
+    val operationName = getOperationName(operation)
     writer.write(operationName)
     writer.write("Input extends js.Object")
     val inputFields = operationInputFields(operation)
@@ -114,18 +146,36 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def writeOperationTrait(
     writer: Writer,
     operation: OperationDefinition,
-    operationField: String => FieldDefinition
+    selectionField: String => FieldDefinition
+  ): Unit =
+    writeDefinitionTrait(writer, getOperationName(operation), operation.selectionSet, selectionField)
+
+  private def writeFragmentTrait(
+    writer: Writer,
+    fragment: FragmentDefinition,
+    selectionField: String => FieldDefinition
+  ): Unit =
+    writeDefinitionTrait(writer, fragment.name, fragment.selectionSet, selectionField)
+
+  private def writeDefinitionTrait(
+    writer: Writer,
+    name: String,
+    selections: List[Selection],
+    selectionField: String => FieldDefinition
   ): Unit = {
     writer.write("trait ")
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
-    writer.write(operationName)
+    writer.write(name)
     writer.write(" extends js.Object {\n")
-    operation.selectionSet.foreach {
+    selections.foreach {
       case field: Selection.Field =>
-        writeOperationField(writer, field.name, operationField(field.name).ofType, operationName)
-      case spread: Selection.FragmentSpread   => ???
-      case fragment: Selection.InlineFragment => ???
+        writeOperationField(
+          writer,
+          field.name,
+          selectionField(field.name).ofType,
+          name,
+          hasSelections = field.selectionSet.nonEmpty
+        )
+      case _ => () // Fragments are handled as implicit conversions.
     }
     writer.write("}\n")
   }
@@ -137,7 +187,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     typeName: String,
     typePrefix: String
   ): Unit = {
-    def subFieldType(name: String) =
+    def subFieldDefinition(name: String) =
       subFields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
     writer.write("  trait ")
     writer.write(field.name)
@@ -147,12 +197,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
         writeNestedField(
           writer,
           subField.name,
-          subFieldType(subField.name).ofType,
+          subFieldDefinition(subField.name).ofType,
           typePrefix,
           hasSelections = subField.selectionSet.nonEmpty
         )
-      case spread: Selection.FragmentSpread   => ???
-      case fragment: Selection.InlineFragment => ???
+      case _ => () // Fragments are handled as implicit conversions.
     }
     writer.write("  }\n")
   }
@@ -163,13 +212,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     fieldTypeDefinition: String => ObjectTypeDefinition
   ): Unit = {
     writer.write("object ")
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
-    writer.write(operationName)
-    writer.write(" _root_.relay.gql.QueryTaggedNode[")
-    writer.write(operationName)
+    val name = getOperationName(operation)
+    writer.write(name)
+    writer.write(" extends _root_.relay.gql.QueryTaggedNode[")
+    writer.write(name)
     writer.write("Input, ")
-    writer.write(operationName)
+    writer.write(name)
     // TODO: Ctor is redundant for queries. Only fragments can be plural.
     writer.write("""] {
                    |  type Ctor[T] = T
@@ -180,13 +228,39 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writeNewInputMethod(writer, operation)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
+    writer.write("\n  type Query = _root_.relay.gql.ConcreteRequest\n")
+    writeGeneratedMapping(writer, name)
+  }
+
+  private def writeFragmentObject(
+    writer: Writer,
+    fragment: FragmentDefinition,
+    fieldTypeDefinition: String => ObjectTypeDefinition
+  ): Unit = {
+    writer.write("object ")
+    val name = fragment.name
+    writer.write(name)
+    writer.write(" extends _root_.relay.gql.FragmentTaggedNode[")
+    writer.write(name)
+    writer.write("] {\n")
+    writer.write("  type Ctor[T] = ")
+    if (isPluralFragment(fragment)) writer.write("js.Array[T]")
+    else writer.write("T")
+    writer.write("\n")
+    writeFragmentImplicits(writer, fragment)
+    // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
+    // In v11 it is either ReaderFragment or ConcreteRequest.
+    writer.write("  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]\n")
+    writeGeneratedMapping(writer, name)
+  }
+
+  private def writeGeneratedMapping(writer: Writer, name: String): Unit = {
     writer.write("""
-                   |  type Query = _root_.relay.gql.ConcreteRequest
-                   |
                    |  @js.native
                    |  @JSImport("__generated__/""".stripMargin)
+    // TODO: Make this configurable.
     // The __generated__ import here should be setup as an alias to the output location of the relay compiler.
-    writer.write(operationName)
+    writer.write(name)
     writer.write(""".graphql", JSImport.Default)
                    |  private object node extends js.Object
                    |
@@ -207,8 +281,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
         if (field.selectionSet.nonEmpty) {
           writeNestedSelection(writer, field, fieldTypeDefinition(field.name), "")
         }
-      case spread: Selection.FragmentSpread   => ???
-      case fragment: Selection.InlineFragment => ???
+      case _ => () // Fragments are handled as implicit conversions.
     }
   }
 
@@ -222,6 +295,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       case field: Selection.Field =>
         // TODO: Cache these better?
         // TODO: It is only worth doing this if there are at least 2 selections.
+        // TODO: Deduplicate
         val subFields = typeDefinition.fields.map(d => d.name -> d).toMap
         def subFieldTypeDefinition(name: String) =
           fieldDefinitionTypeDefinition(
@@ -240,18 +314,15 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
                 field.name.capitalize + typePrefix
               )
             }
-          case spread: Selection.FragmentSpread   => ???
-          case fragment: Selection.InlineFragment => ???
+          case _ => () // Fragments are handled as implicit conversions.
         }
         writeNestedTrait(writer, field, subFields, typeDefinition.name, typePrefix)
-      case spread: Selection.FragmentSpread   => ???
-      case fragment: Selection.InlineFragment => ???
+      case _ => () // Fragments are handled as implicit conversions.
     }
   }
 
   private def writeNewInputMethod(writer: Writer, operation: OperationDefinition): Unit = {
-    // TODO: When does an operation not have a name?
-    val operationName = operation.name.get
+    val operationName = getOperationName(operation)
 
     val inputFields = operationInputFields(operation)
 
@@ -307,11 +378,43 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write("Input]\n")
   }
 
+  private def writeFragmentImplicits(writer: Writer, fragment: FragmentDefinition): Unit = {
+    fragment.selectionSet.foreach {
+      case spread: Selection.FragmentSpread =>
+        writer.write("\n  implicit class ")
+        writer.write(fragment.name)
+        writer.write("2")
+        writer.write(spread.name)
+        writer.write("Ref(f: ")
+        writer.write(fragment.name)
+        writer.write(") extends _root_.relay.gql.CastToFragmentRef[")
+        writer.write(fragment.name)
+        writer.write(", ")
+        writer.write(spread.name)
+        writer.write("](f) {\n")
+        writer.write("    def to")
+        writer.write(spread.name)
+        writer.write(": _root_.relay.gql.FragmentRef[")
+        writer.write(spread.name)
+        writer.write("] = castToRef\n")
+        writer.write("  }\n")
+      case inline: Selection.InlineFragment => throw new NotImplementedError(inline.toString)
+      case _                                => ()
+    }
+    writer.write("\n")
+  }
+
   private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
     writeField(writer, name, tpe, nameOfType(tpe), "  ")
 
-  private def writeOperationField(writer: Writer, name: String, tpe: Type, operationName: String): Unit = {
-    val typeName = s"$operationName.${name.capitalize}"
+  private def writeOperationField(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    operationName: String,
+    hasSelections: Boolean
+  ): Unit = {
+    val typeName = if (hasSelections) s"$operationName.${name.capitalize}" else nameOfType(tpe)
     writeField(writer, name, tpe, typeName, "  ")
   }
 
@@ -367,10 +470,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
         variable.variableType match {
           // TODO: Handle non-object types.
           case named: Type.NamedType => schema.inputObjectType(named.name).fields
-          case list: Type.ListType   => ???
+          case list: Type.ListType   => throw new NotImplementedError(list.toString)
         }
-      case head :: tail => ???
-      case Nil          => Nil
+      case Nil       => Nil
+      case variables => throw new NotImplementedError(variables.toString)
     }
   }
 
@@ -378,13 +481,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
   private def fieldDefinitionTypeDefinition(field: FieldDefinition): ObjectTypeDefinition =
     field.ofType match {
       case named: Type.NamedType => schema.objectType(named.name)
-      case list: Type.ListType   => ???
+      case list: Type.ListType   => throw new NotImplementedError(list.toString)
     }
 
   private def nameOfType(tpe: Type): String =
     tpe match {
       case named: Type.NamedType => named.name
-      case list: Type.ListType   => ???
+      case list: Type.ListType   => throw new NotImplementedError(list.toString)
     }
 
   private def convertType(typeName: String): String =
@@ -394,7 +497,17 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       case other => other
     }
 
+  private def isPluralFragment(fragment: FragmentDefinition) =
+    fragment.directives.exists { directive =>
+      directive.name == "relay" && directive.arguments.get("plural").exists(_.toInputString == "true")
+    }
+
   private def operationFile(operation: OperationDefinition) =
-    // TODO: When does an operation not have a name?
-    outputDir / s"${operation.name.get}.scala"
+    outputDir / s"${getOperationName(operation)}.scala"
+
+  private def fragmentFile(fragment: FragmentDefinition) =
+    outputDir / s"${fragment.name}.scala"
+
+  private def getOperationName(operation: OperationDefinition) =
+    operation.name.getOrElse(throw new UnsupportedOperationException("Anonymous queries are not not supported."))
 }

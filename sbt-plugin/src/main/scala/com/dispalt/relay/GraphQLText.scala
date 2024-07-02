@@ -1,6 +1,6 @@
 package com.dispalt.relay
 
-import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
+import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.OperationType
 
 import scala.annotation.tailrec
@@ -31,7 +31,13 @@ object GraphQLText {
       countSelectionSetOpens(s) - countSelectionSetCloses(s)
     }
 
-  def appendOperationText(documentText: String, operation: OperationDefinition)(append: String => Unit): Unit = {
+  def appendOperationText(documentText: String, operation: OperationDefinition)(append: String => Unit): Unit =
+    appendSelectionText(documentText, startOfOperation(_, operation))(append)
+
+  def appendFragmentText(documentText: String, fragment: FragmentDefinition)(append: String => Unit): Unit =
+    appendSelectionText(documentText, startOfFragment(_, fragment))(append)
+
+  def appendSelectionText(documentText: String, startOfText: String => Boolean)(append: String => Unit): Unit = {
     val lines = documentText.linesWithSeparators
     @tailrec
     def loop(foundStart: Boolean, opens: Int): Unit = {
@@ -47,7 +53,7 @@ object GraphQLText {
         } else {
           // TODO: This assumes that the query starts on a single line which is not true.
           // TODO: This also looses any preceding comments.
-          if (startOfOperation(line, operation)) {
+          if (startOfText(line)) {
             append(line)
             val (nonComment, _) = splitComment(line)
             val opens           = countSelectionSetOpens(nonComment)
@@ -72,13 +78,17 @@ object GraphQLText {
       case OperationType.Mutation     => "mutation"
       case OperationType.Subscription => "subscription"
     }
-    // TODO: This ought to use matcher.find().
-    val regex = operation.name match {
-      case Some(name) =>
-        s"""(?s).*(?:^|[\n\t ])+$operationType[\n\t ]*$name(?![a-zA-Z0-9]).*"""
-      case None =>
-        s"""(?s).*(?:^|[\n\t ])+$operationType.*"""
+    operation.name match {
+      case Some(name) => startOfNamed(s, operationType, name)
+      // TODO: This ought to use matcher.find().
+      case None => s.matches(s"""(?s).*\\{.*""")
     }
-    s.matches(regex)
   }
+
+  def startOfFragment(s: String, fragment: FragmentDefinition): Boolean =
+    startOfNamed(s, "fragment", fragment.name)
+
+  def startOfNamed(s: String, kind: String, name: String): Boolean =
+    // TODO: This ought to use matcher.find().
+    s.matches(s"""(?s).*(?:^|[\\n\\t ])+$kind[\\n\\t ]*$name(?![a-zA-Z0-9]).*""")
 }
