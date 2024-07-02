@@ -16,6 +16,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relaySchema: SettingKey[File] = settingKey[File]("Path to schema file")
     // TODO: Remove.
     val relayScalaJSVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-scalajs version")
+    val relayTypeScriptVersion: SettingKey[String] = settingKey[String]("Set the relay-compiler-language-typescript version")
     val relayVersion: SettingKey[String]        = settingKey[String]("Set the Relay version")
     val relayDebug: SettingKey[Boolean]         = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayTypeScript: SettingKey[Boolean] = settingKey[Boolean](
@@ -67,12 +68,13 @@ object RelayBasePlugin extends AutoPlugin {
     Seq(
       libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
       relayDebug := false,
-      // TODO: Change this back to false.
-      relayTypeScript := true,
+      relayTypeScript := false,
       relayBaseDirectory := baseDirectory.value,
       relayWorkingDirectory := file(sys.props("user.dir")),
       relayCompilerCommand := "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js",
       relayScalaJSVersion := com.dispalt.relay.core.SRCVersion.current,
+      // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
+      relayTypeScriptVersion := "14.1.0",
       relayVersion := "11.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
@@ -92,6 +94,11 @@ object RelayBasePlugin extends AutoPlugin {
         "relay-compiler-language-scalajs" -> relayScalaJSVersion.value,
         "relay-compiler"                  -> relayVersion.value
       ),
+      relayDependencies ++= {
+        if (relayTypeScript.value) Seq(
+          "relay-compiler-language-typescript" -> relayTypeScriptVersion.value,
+        ) else Seq.empty
+      },
       relayInclude :=
         (relayWrapDirectory.value +: resourceDirectories.value)
           .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
