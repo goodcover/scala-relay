@@ -72,7 +72,7 @@ object GraphQLExtractor {
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
         logger.debug(s"Sources:\n$sourcesReport")
         // There are 5 cases to handle:
-        // 1) Version, schema, or options changed - delete all previous extracts and re-generate everything
+        // 1) Version, schema, or options changed - delete all previous extracts and re-extract everything
         // 2) Source removed - delete the extract
         // 3) Source added - generate the extract
         // 4) Source modified - generate the extract
@@ -189,7 +189,7 @@ object GraphQLExtractor {
   private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
     val graphqlFile = options.outputDir / s"${source.base}.graphql"
     fileWriter(StandardCharsets.UTF_8, append = true)(graphqlFile) { writer =>
-      definitions.foreach { definition =>
+      definitions.zipWithIndex.foreach { case (definition, i) =>
         writer.write("# Extracted from ")
         writer.write(source.absolutePath)
         writer.write('\n')

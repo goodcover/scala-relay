@@ -1,0 +1,17 @@
+# Create the caches.
+> relayExtract
+
+# Running again should do nothing.
+> relayExtract
+
+# Changing the version should re-extract everything.
+
+# Removing a source should delete its extract.
+
+# Adding a source should extract it.
+
+# Modifying a source should extract it.
+
+# Deleting an extract should extract it.
+
+# Modifying an extract should extract it.
