@@ -1,5 +1,4 @@
 # Create the caches.
-$ pause
 > relayCompile
 $ copy-file target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
 $ copy-file target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
@@ -14,6 +13,7 @@ $ must-mirror target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.j
 # Changing the version should re-compile everything.
 $ exec ./replace-version.sh
 > relayCompile
+$ pause
 $ newer target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
 $ newer target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
 $ must-mirror target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js

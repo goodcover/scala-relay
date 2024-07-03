@@ -159,12 +159,9 @@ object RelayCompiler {
   }
 
   private def findSources(options: Options): Set[File] = {
-    val includes =absoluteGlobs(options.includes, options.sourceDirectory)
-    val excludes =absoluteGlobs(options.excludes, options.sourceDirectory)
-    val files = FileTreeView.default.list(includes, !PathFilter(excludes: _*)).map(_._1.toFile).toSet
-//    val includes = globsToPathFinder(options.includes, options.sourceDirectory)
-//    val excludes = globsToPathFinder(options.excludes, options.sourceDirectory)
-//    (includes --- excludes).get().toSet
+    val includes = absoluteGlobs(options.includes, options.sourceDirectory)
+    val excludes = absoluteGlobs(options.excludes, options.sourceDirectory)
+    val files    = FileTreeView.default.list(includes, !PathFilter(excludes: _*)).map(_._1.toFile).toSet
     files
   }
 
@@ -172,33 +169,9 @@ object RelayCompiler {
     globs.map { glob =>
       Glob(glob) match {
         case relative: RelativeGlob => Glob(baseDir, relative)
-        case nonRelative => nonRelative
+        case nonRelative            => nonRelative
       }
     }
-
-  private def globsToPathFinder(globs: Seq[String], baseDir: File): PathFinder = {
-    // Here be dragons 🐉.
-    // PathFinder kinda sucks. You have to build it up manually with little help since
-    // If it isn't running on changes then it is probably because of this.
-    // Use debug logging to see what is in the sources report.
-    val baseFinder = PathFinder(baseDir)
-    globs.foldLeft(PathFinder.empty) { (acc, globString) =>
-      val parts = globString.split("""(?<=(^|/)\*\*)/|/(?=\*\*$)""")
-      parts.foldLeft((Option.empty[PathFinder], false)) {
-        case ((None, _), "**") if globString.startsWith("/") => (Some(PathFinder(file("/"))), true)
-        case ((None, _), "**")                               => (Some(baseFinder), true)
-        case ((None, _), part) if globString.startsWith("/") => (Some(PathFinder(file(part))), false)
-        case ((None, _), part)                               => (Some(baseFinder / part), false)
-        case ((Some(finder), _), "**")                       => (Some(finder), true)
-        case ((Some(finder), true), part)                    => (Some(finder ** part), false)
-        case ((Some(finder), false), part)                   => (Some(finder / part), false)
-      } match {
-        case (Some(finder), true)  => acc +++ (finder ** AllPassFilter)
-        case (Some(finder), false) => acc +++ finder
-        case (None, _)             => acc
-      }
-    }
-  }
 
   private def findArtifacts(options: Options): Set[File] = {
     val finder = options.outputPath ** (if (options.typeScript) "*.ts" else "*.js")
