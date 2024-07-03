@@ -141,7 +141,6 @@ object GraphQLExtractor {
   }
 
   // TODO: Add parallelism.
-
   /**
     * Extracts the graphql definitions from the files.
     *

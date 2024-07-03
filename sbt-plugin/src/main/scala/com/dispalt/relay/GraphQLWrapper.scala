@@ -92,8 +92,10 @@ object GraphQLWrapper {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val inverse       = invertOneToOneOrThrow(unmodifiedWrappers)
-            val needsWrapping = unexpectedChanges.flatMap(inverse.get)
+            val inverse       = invertOneToOne(previousAnalysis.wrappers)
+            val needsWrapping = unexpectedChanges.flatMap(inverse.get).flatten
+            // Don't forget to delete the old ones since this appends.
+            IO.delete(unexpectedChanges)
             wrapFiles(needsWrapping, options, logger)
           }
         }
@@ -124,6 +126,11 @@ object GraphQLWrapper {
       val outputsOfRemoved = previousAnalysis.wrappers.filterKeys(resourceReport.removed.contains).values
       IO.delete(outputsOfRemoved)
       val addedOrChangedResources = resourceReport.modified -- resourceReport.removed
+      // We can have multiple resources wrapped to the same file since the output structure is flat.
+      // So we need to delete any previous wrappers and then append during wrapping.
+      addedOrChangedResources.foreach { resource =>
+        previousAnalysis.wrappers.get(resource).foreach(IO.delete)
+      }
       val modifiedWrappers        = wrapFiles(addedOrChangedResources, options, logger)
       val unmodifiedWrappers      = previousAnalysis.wrappers.filterKeys(resourceReport.unmodified.contains)
       (modifiedWrappers, unmodifiedWrappers)
@@ -140,6 +147,12 @@ object GraphQLWrapper {
   }
 
   // TODO: Add parallelism.
+  /**
+    * Wraps the graphql definitions with the graphql interpolator and writes it to a JavaScript/TypeScript file.
+    *
+    * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
+    * existing wrappers are deleted beforehand if required.
+    */
   private def wrapFiles(files: Iterable[File], options: Options, logger: Logger): Wrappers =
     files.map { file =>
       file -> wrapFile(file, options, logger)
@@ -150,7 +163,7 @@ object GraphQLWrapper {
     val extension   = if (options.typeScript) "ts" else "js"
     val wrapperFile = options.outputDir / s"${file.base}.$extension"
     fileReader(StandardCharsets.UTF_8)(file) { reader =>
-      fileWriter(StandardCharsets.UTF_8)(wrapperFile) { writer =>
+      fileWriter(StandardCharsets.UTF_8, append = true)(wrapperFile) { writer =>
         writeWrapper(reader, writer, logger)
       }
     }

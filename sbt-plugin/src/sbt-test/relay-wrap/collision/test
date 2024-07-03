@@ -1,2 +1,17 @@
+$ exec ./make-expected.sh
+
+# Ensure that if there are multiple resources with the same name they can extract to the same file.
 > relayWrap
-$ pause
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test.js expected1.js
+
+# Changing a resource should replace the old wrapper.
+$ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
+> relayWrap
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test.js expected2.js
+$ copy-file target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+
+# Modifying a wrapper should replace the old wrapper from all sources.
+$ touch src/main/scala/example/Test.scala
+> relayWrap
+$ newer target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test.js expected2.js
