@@ -94,7 +94,7 @@ object GraphQLConverter {
             logger.debug(s"Outputs:\n$outputsReport")
             val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
             if (unexpectedChanges.nonEmpty) {
-              val inverse         = invertFilesMulti(unmodifiedConversions)
+              val inverse         = invertOneToManyOrThrow(unmodifiedConversions)
               val needsConversion = unexpectedChanges.flatMap(inverse.get)
               convertFiles(needsConversion, schema, options, logger)
             }

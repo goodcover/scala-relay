@@ -8,6 +8,6 @@ package example2
       }
     }
   """)
-object TestQ2 {
+object Test3 {
 
 }

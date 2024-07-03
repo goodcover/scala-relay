@@ -92,7 +92,7 @@ object GraphQLWrapper {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val inverse       = invertFiles(unmodifiedWrappers)
+            val inverse       = invertOneToOneOrThrow(unmodifiedWrappers)
             val needsWrapping = unexpectedChanges.flatMap(inverse.get)
             wrapFiles(needsWrapping, options, logger)
           }

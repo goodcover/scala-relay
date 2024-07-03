@@ -1,13 +1,13 @@
 package example
 
 @graphql("""
-    query TestQuery {
+    query TestQuery2 {
       defaultSettings {
         notificationSounds
         cache_id
       }
     }
   """)
-object Test {
+object Test2 {
 
 }

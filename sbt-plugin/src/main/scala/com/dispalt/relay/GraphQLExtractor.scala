@@ -86,8 +86,10 @@ object GraphQLExtractor {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
-            val inverse         = invertFiles(unmodifiedExtracts)
-            val needsExtraction = unexpectedChanges.flatMap(inverse.get)
+            val inverse         = invertOneToOne(previousAnalysis.extracts)
+            val needsExtraction = unexpectedChanges.flatMap(inverse.get).flatten
+            // Don't forget to delete the old ones since this appends.
+            IO.delete(unexpectedChanges)
             extractFiles(needsExtraction, options, logger)
           }
         }
@@ -123,8 +125,8 @@ object GraphQLExtractor {
       addedOrChangedSources.foreach { source =>
         previousAnalysis.extracts.get(source).foreach(IO.delete)
       }
-      val modifiedExtracts      = extractFiles(addedOrChangedSources, options, logger)
-      val unmodifiedExtracts    = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
+      val modifiedExtracts   = extractFiles(addedOrChangedSources, options, logger)
+      val unmodifiedExtracts = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
       (modifiedExtracts, unmodifiedExtracts)
     } else {
       def whatChanged =
@@ -139,6 +141,13 @@ object GraphQLExtractor {
   }
 
   // TODO: Add parallelism.
+
+  /**
+    * Extracts the graphql definitions from the files.
+    *
+    * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
+    * existing extracts are deleted beforehand if required.
+    */
   private def extractFiles(files: Iterable[File], options: Options, logger: Logger): Extracts =
     files.flatMap { file =>
       extractFile(file, options, logger).map(file -> _)
@@ -189,26 +198,27 @@ object GraphQLExtractor {
   private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
     val graphqlFile = options.outputDir / s"${source.base}.graphql"
     fileWriter(StandardCharsets.UTF_8, append = true)(graphqlFile) { writer =>
-      definitions.zipWithIndex.foreach { case (definition, i) =>
-        writer.write("# Extracted from ")
-        writer.write(source.absolutePath)
-        writer.write('\n')
-        val trimmed = trimBlankLines(definition)
-        val lines = trimmed.linesIterator
-        val prefix = {
-          if (lines.hasNext) {
-            val firstLine = lines.next()
-            val indent = firstLine.takeWhile(_.isWhitespace)
-            writer.write(firstLine.drop(indent.length))
-            writer.write('\n')
-            indent
-          } else ""
-        }
-        lines.foreach { line =>
-          writer.write(removeLongestPrefix(line, prefix))
+      definitions.zipWithIndex.foreach {
+        case (definition, i) =>
+          writer.write("# Extracted from ")
+          writer.write(source.absolutePath)
           writer.write('\n')
-        }
-        writer.write('\n')
+          val trimmed = trimBlankLines(definition)
+          val lines   = trimmed.linesIterator
+          val prefix = {
+            if (lines.hasNext) {
+              val firstLine = lines.next()
+              val indent    = firstLine.takeWhile(_.isWhitespace)
+              writer.write(firstLine.drop(indent.length))
+              writer.write('\n')
+              indent
+            } else ""
+          }
+          lines.foreach { line =>
+            writer.write(removeLongestPrefix(line, prefix))
+            writer.write('\n')
+          }
+          writer.write('\n')
       }
     }
     graphqlFile
@@ -218,9 +228,11 @@ object GraphQLExtractor {
     s.replaceFirst("""^\s*(\R+|$)""", "").replaceFirst("""\R\s*$""", "")
 
   private def removeLongestPrefix(s: String, prefix: String): String = {
-    val n = prefix.indices.find { i =>
-      s.charAt(i) != prefix.charAt(i)
-    }.getOrElse(prefix.length)
+    val n = prefix.indices
+      .find { i =>
+        s.charAt(i) != prefix.charAt(i)
+      }
+      .getOrElse(prefix.length)
     s.drop(n)
   }
 

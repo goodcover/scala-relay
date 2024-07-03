@@ -12,3 +12,12 @@ $ copy-file src/main/scala/example2/Test.bak src/main/scala/example2/Test.scala
 $ exec grep 'query TestQuery {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
 -$ exec grep 'query TestQuery2 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
 $ exec grep 'query TestQuery3 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ copy-file target/scala-2.13/src_managed/relay/graphql/Test.graphql graphql/Test.graphql
+
+# Modifying an extract should replace the old extract from all sources.
+$ touch src/main/scala/example2/Test.scala
+> relayExtract
+$ newer target/scala-2.13/src_managed/relay/graphql/Test.graphql graphql/Test.graphql
+$ exec grep 'query TestQuery {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+-$ exec grep 'query TestQuery2 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ exec grep 'query TestQuery3 {' target/scala-2.13/src_managed/relay/graphql/Test.graphql
