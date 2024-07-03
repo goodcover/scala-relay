@@ -94,6 +94,11 @@ object GraphQLConverter {
             logger.debug(s"Outputs:\n$outputsReport")
             val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
             if (unexpectedChanges.nonEmpty) {
+              logger.warn("Unexpected modifications found to files:")
+              unexpectedChanges.foreach { file =>
+                logger.warn(s" ${file.absolutePath}")
+              }
+              logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
               val inverse         = invertOneToManyOrThrow(unmodifiedConversions)
               val needsConversion = unexpectedChanges.flatMap(inverse.get)
               convertFiles(needsConversion, schema, options, logger)

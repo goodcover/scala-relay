@@ -89,9 +89,13 @@ object GraphQLWrapper {
         val outputs                                = modifiedOutputs ++ unmodifiedOutputs
         // NOTE: Update clean if you change this.
         Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
-          logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
+            logger.warn("Unexpected modifications found to files:")
+            unexpectedChanges.foreach { file =>
+              logger.warn(s" ${file.absolutePath}")
+            }
+            logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             val inverse       = invertOneToOne(previousAnalysis.wrappers)
             val needsWrapping = unexpectedChanges.flatMap(inverse.get).flatten
             // Don't forget to delete the old ones since this appends.
@@ -161,7 +165,8 @@ object GraphQLWrapper {
   private def wrapFile(file: File, options: Options, logger: Logger): File = {
     logger.debug(s"Wrapping graphql definitions: $file")
     val extension   = if (options.typeScript) "ts" else "js"
-    val wrapperFile = options.outputDir / s"${file.base}.$extension"
+    // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
+    val wrapperFile = options.outputDir.getAbsoluteFile / s"${file.base}.$extension"
     fileReader(StandardCharsets.UTF_8)(file) { reader =>
       fileWriter(StandardCharsets.UTF_8, append = true)(wrapperFile) { writer =>
         writeWrapper(reader, writer, logger)

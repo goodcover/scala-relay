@@ -72,7 +72,7 @@ object GraphQLExtractor {
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
         logger.debug(s"Sources:\n$sourcesReport")
         // There are 5 cases to handle:
-        // 1) Version, schema, or options changed - delete all previous extracts and re-extract everything
+        // 1) Version or options changed - delete all previous extracts and re-extract everything
         // 2) Source removed - delete the extract
         // 3) Source added - generate the extract
         // 4) Source modified - generate the extract
@@ -86,6 +86,11 @@ object GraphQLExtractor {
           logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
+            logger.warn("Unexpected modifications found to files:")
+            unexpectedChanges.foreach { file =>
+              logger.warn(s" ${file.absolutePath}")
+            }
+            logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             val inverse         = invertOneToOne(previousAnalysis.extracts)
             val needsExtraction = unexpectedChanges.flatMap(inverse.get).flatten
             // Don't forget to delete the old ones since this appends.
@@ -195,7 +200,8 @@ object GraphQLExtractor {
   }
 
   private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
-    val graphqlFile = options.outputDir / s"${source.base}.graphql"
+    // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
+    val graphqlFile = options.outputDir.getAbsoluteFile / s"${source.base}.graphql"
     fileWriter(StandardCharsets.UTF_8, append = true)(graphqlFile) { writer =>
       definitions.zipWithIndex.foreach {
         case (definition, i) =>

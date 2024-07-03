@@ -1,0 +1,67 @@
+# Create the caches.
+> relayWrap
+$ copy-file target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ copy-file target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+
+# Running again should do nothing.
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+-$ newer target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+
+# Changing the version should re-wrap everything.
+$ exec ./replace-version.sh
+> relayWrap
+$ newer target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ newer target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+$ copy-file target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
+$ copy-file target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+
+# Changing the options should re-wrap everything.
+> set relayWrapDirectory in Compile := file("target/scala-2.13/src_managed/relay/js2")
+> relayWrap
+$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ newer target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ copy-file target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ copy-file target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+
+# Removing a resource should delete its wrapper.
+$ exec mv src/main/resources/graphql/Test2.graphql src/main/resources/graphql/Test2.bak
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ absent target/scala-2.13/src_managed/relay/js2/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+
+# Adding a resource should wrap it.
+$ exec mv src/main/resources/graphql/Test2.bak src/main/resources/graphql/Test2.graphql
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ copy-file target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+
+# Modifying a resource should wrap it.
+$ touch src/main/resources/graphql/Test2.graphql
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ newer target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+
+# Deleting a wrapper should wrap it.
+$ delete target/scala-2.13/src_managed/relay/js2/Test2.js
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ newer target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+
+# Modifying a wrapper should re-wrap it.
+$ touch target/scala-2.13/src_managed/relay/js2/Test2.js
+> relayWrap
+-$ newer target/scala-2.13/src_managed/relay/js2/Test.js js/Test.js
+$ newer target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js
+$ must-mirror target/scala-2.13/src_managed/relay/js2/Test2.js js/Test2.js

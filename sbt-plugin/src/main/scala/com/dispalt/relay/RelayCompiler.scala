@@ -135,6 +135,13 @@ object RelayCompiler {
           // If anything changes we need to delete all artifacts and recompile everything.
           // We could potentially run relay-compile in watch mode if necessary.
           if (Version != previousAnalysis.version || sourcesReport.modified.nonEmpty || outputsReport.modified.nonEmpty) {
+            if (outputsReport.modified.nonEmpty) {
+              logger.warn("Unexpected modifications found to files:")
+              outputsReport.modified.foreach { file =>
+                logger.warn(s" ${file.absolutePath}")
+              }
+              logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
+            }
             IO.delete(previousAnalysis.artifacts)
             run(options, logger)
             findArtifacts(options)
