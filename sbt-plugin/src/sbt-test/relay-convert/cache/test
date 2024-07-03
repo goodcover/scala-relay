@@ -1,0 +1,77 @@
+# Create the caches.
+> relayConvert
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala generated/TestQuery.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala generated/TestQuery2.scala
+
+# Running again should do nothing.
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
+-$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+
+# Changing the version should re-convert everything.
+$ exec ./replace-version.sh
+> relayConvert
+$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+
+# Changing the schema should re-convert everything.
+$ touch src/main/resources/graphql/Schema.graphqls
+> relayConvert
+$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+
+# Changing the options should re-convert everything.
+> set relayConvertDirectory in Compile := file("target/scala-2.13/src_managed/main/relay/generated2")
+> relayConvert
+$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+
+# Removing a resource should delete its conversions.
+$ exec mv src/main/resources/graphql/Test2.graphql src/main/resources/graphql/Test2.bak
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ absent target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+
+# Adding a resource should convert it.
+$ exec mv src/main/resources/graphql/Test2.bak src/main/resources/graphql/Test2.graphql
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+
+# Modifying a resource should convert it.
+$ touch src/main/resources/graphql/Test2.graphql
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+
+# Deleting a conversion should convert it.
+$ delete target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+
+# Modifying a conversion should re-convert it.
+$ touch target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala
+> relayConvert
+-$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala

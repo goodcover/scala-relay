@@ -93,7 +93,7 @@ object GraphQLExtractor {
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             val inverse         = invertOneToOne(previousAnalysis.extracts)
             val needsExtraction = unexpectedChanges.flatMap(inverse.get).flatten
-            // Don't forget to delete the old ones since this appends.
+            // Don't forget to delete the old ones since extract appends.
             IO.delete(unexpectedChanges)
             extractFiles(needsExtraction, options, logger)
           }

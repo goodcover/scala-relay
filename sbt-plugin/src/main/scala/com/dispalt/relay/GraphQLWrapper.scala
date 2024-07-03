@@ -98,7 +98,7 @@ object GraphQLWrapper {
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             val inverse       = invertOneToOne(previousAnalysis.wrappers)
             val needsWrapping = unexpectedChanges.flatMap(inverse.get).flatten
-            // Don't forget to delete the old ones since this appends.
+            // Don't forget to delete the old ones since wrap appends.
             IO.delete(unexpectedChanges)
             wrapFiles(needsWrapping, options, logger)
           }

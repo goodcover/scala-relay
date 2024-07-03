@@ -101,6 +101,8 @@ object GraphQLConverter {
               logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
               val inverse         = invertOneToManyOrThrow(unmodifiedConversions)
               val needsConversion = unexpectedChanges.flatMap(inverse.get)
+              // Don't forget to delete the old ones since convert fails if it exists.
+              IO.delete(unexpectedChanges)
               convertFiles(needsConversion, schema, options, logger)
             }
           }
@@ -135,6 +137,12 @@ object GraphQLConverter {
       val outputsOfRemoved = previousAnalysis.conversions.filterKeys(resourceReport.removed.contains).values.flatten
       IO.delete(outputsOfRemoved)
       val addedOrChangedResources = resourceReport.modified -- resourceReport.removed
+      // If we find multiple resources converting to the same file then this means there are two operations or
+      // fragments with the same name which is not allowed.
+      // So we need to delete any previous conversions.
+      addedOrChangedResources.foreach { source =>
+        previousAnalysis.conversions.get(source).foreach(IO.delete)
+      }
       val modifiedConversions     = convertFiles(addedOrChangedResources, schema, options, logger)
       val unmodifiedConversions   = previousAnalysis.conversions.filterKeys(resourceReport.unmodified.contains)
       (modifiedConversions, unmodifiedConversions)

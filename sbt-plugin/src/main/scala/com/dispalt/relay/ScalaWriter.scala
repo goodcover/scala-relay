@@ -508,11 +508,23 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       directive.name == "relay" && directive.arguments.get("plural").exists(_.toInputString == "true")
     }
 
-  private def operationFile(operation: OperationDefinition) =
-    outputDir / s"${getOperationName(operation)}.scala"
+  private def operationFile(operation: OperationDefinition) = {
+    val name = getOperationName(operation)
+    val file = outputDir.getAbsoluteFile / s"$name.scala"
+    if (file.exists()) {
+      throw new IllegalArgumentException(s"File $file already exists. Ensure that you only have one operation named $name.")
+    }
+    file
+  }
 
-  private def fragmentFile(fragment: FragmentDefinition) =
-    outputDir / s"${fragment.name}.scala"
+  private def fragmentFile(fragment: FragmentDefinition) = {
+    val name = fragment.name
+    val file = outputDir.getAbsoluteFile / s"$name.scala"
+    if (file.exists()) {
+      throw new IllegalArgumentException(s"File $file already exists. Ensure that you only have one fragment named $name.")
+    }
+    file
+  }
 
   private def getOperationName(operation: OperationDefinition) =
     operation.name.getOrElse(throw new UnsupportedOperationException("Anonymous queries are not not supported."))
