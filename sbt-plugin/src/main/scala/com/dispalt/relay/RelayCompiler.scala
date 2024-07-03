@@ -1,6 +1,7 @@
 package com.dispalt.relay
 
 import sbt.*
+import sbt.nio.file.FileTreeView
 import sbt.util.CacheImplicits.*
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew.*
@@ -27,26 +28,23 @@ object RelayCompiler {
     outputPath: File,
     verbose: Boolean,
     includes: Seq[String],
+    excludes: Seq[String],
     persisted: Option[File],
     customScalars: Map[String, String],
     displayOnFailure: Boolean,
     typeScript: Boolean
   ) {
     def language: String = if (typeScript) "typescript" else "javascript"
-
-    def excludes: Seq[String] =
-      Seq("**/node_modules/**", "**/__mocks__/**", "**/__generated__/**", outputPath.getAbsolutePath)
   }
 
   object Options {
 
     //noinspection TypeAnnotation
     implicit val iso = LList
-      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Option[File] :*: Map[
-        String,
-        String
-      ] :*: Boolean :*: Boolean :*: LNil]( //
-        { o: Options =>                    //
+      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Seq[String] :*: Option[
+        File
+      ] :*: Map[String, String] :*: Boolean :*: Boolean :*: LNil]( //
+        { o: Options =>                                            //
           ("workingDir"         -> o.workingDir) :*:
             ("compilerCommand"  -> o.compilerCommand) :*:
             ("schemaPath"       -> o.schemaPath) :*:
@@ -54,6 +52,7 @@ object RelayCompiler {
             ("outputPath"       -> o.outputPath) :*:
             ("verbose"          -> o.verbose) :*:
             ("includes"         -> o.includes) :*:
+            ("excludes"         -> o.excludes) :*:
             ("persisted"        -> o.persisted) :*:
             ("customScalars"    -> o.customScalars) :*:
             ("displayOnFailure" -> o.displayOnFailure) :*:
@@ -66,7 +65,8 @@ object RelayCompiler {
                 (_, sourceDirectory) :*:
                 (_, outputPath) :*:
                 (_, verbose) :*:
-                (_, extras) :*:
+                (_, includes) :*:
+                (_, excludes) :*:
                 (_, persisted) :*:
                 (_, customScalars) :*:
                 (_, displayOnFailure) :*:
@@ -79,7 +79,8 @@ object RelayCompiler {
               sourceDirectory,
               outputPath,
               verbose,
-              extras,
+              includes,
+              excludes,
               persisted,
               customScalars,
               displayOnFailure,
@@ -120,7 +121,6 @@ object RelayCompiler {
   }
 
   def compile(cacheStoreFactory: CacheStoreFactory, options: Options, logger: Logger): Results = {
-    logger.info("Running relay-compiler...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -134,7 +134,10 @@ object RelayCompiler {
           logger.debug(s"Previous outputs:\n$outputsReport")
           // If anything changes we need to delete all artifacts and recompile everything.
           // We could potentially run relay-compile in watch mode if necessary.
-          if (Version != previousAnalysis.version || sourcesReport.modified.nonEmpty || outputsReport.modified.nonEmpty) {
+          if (Version != previousAnalysis.version ||
+              options != previousAnalysis.options ||
+              sourcesReport.modified.nonEmpty ||
+              outputsReport.modified.nonEmpty) {
             if (outputsReport.modified.nonEmpty) {
               logger.warn("Unexpected modifications found to files:")
               outputsReport.modified.foreach { file =>
@@ -156,15 +159,45 @@ object RelayCompiler {
   }
 
   private def findSources(options: Options): Set[File] = {
-    val includes = options.sourceDirectory **
-      ("*.gql" || "*.graphql" || "*.graphqls" || (if (options.typeScript) "*.ts" else "*.js"))
-    // TODO: It would be nice to use options.excludes but how do we do that?
-    //  Ideally we could use sbt.io.PathFinder.GlobPathFinder.GlobPathFinder but it is private.
-    // Exclude the default excludes.
-    val excludes = options.sourceDirectory **
-      ("node_modules" || "__mocks__" || "__generated__") ** "*"
-    val output = options.outputPath ** "*"
-    (includes --- excludes --- output).get().toSet
+    val includes =absoluteGlobs(options.includes, options.sourceDirectory)
+    val excludes =absoluteGlobs(options.excludes, options.sourceDirectory)
+    val files = FileTreeView.default.list(includes, !PathFilter(excludes: _*)).map(_._1.toFile).toSet
+//    val includes = globsToPathFinder(options.includes, options.sourceDirectory)
+//    val excludes = globsToPathFinder(options.excludes, options.sourceDirectory)
+//    (includes --- excludes).get().toSet
+    files
+  }
+
+  private def absoluteGlobs(globs: Seq[String], baseDir: File): Seq[Glob] =
+    globs.map { glob =>
+      Glob(glob) match {
+        case relative: RelativeGlob => Glob(baseDir, relative)
+        case nonRelative => nonRelative
+      }
+    }
+
+  private def globsToPathFinder(globs: Seq[String], baseDir: File): PathFinder = {
+    // Here be dragons 🐉.
+    // PathFinder kinda sucks. You have to build it up manually with little help since
+    // If it isn't running on changes then it is probably because of this.
+    // Use debug logging to see what is in the sources report.
+    val baseFinder = PathFinder(baseDir)
+    globs.foldLeft(PathFinder.empty) { (acc, globString) =>
+      val parts = globString.split("""(?<=(^|/)\*\*)/|/(?=\*\*$)""")
+      parts.foldLeft((Option.empty[PathFinder], false)) {
+        case ((None, _), "**") if globString.startsWith("/") => (Some(PathFinder(file("/"))), true)
+        case ((None, _), "**")                               => (Some(baseFinder), true)
+        case ((None, _), part) if globString.startsWith("/") => (Some(PathFinder(file(part))), false)
+        case ((None, _), part)                               => (Some(baseFinder / part), false)
+        case ((Some(finder), _), "**")                       => (Some(finder), true)
+        case ((Some(finder), true), part)                    => (Some(finder ** part), false)
+        case ((Some(finder), false), part)                   => (Some(finder / part), false)
+      } match {
+        case (Some(finder), true)  => acc +++ (finder ** AllPassFilter)
+        case (Some(finder), false) => acc +++ finder
+        case (None, _)             => acc
+      }
+    }
   }
 
   private def findArtifacts(options: Options): Set[File] = {
@@ -263,6 +296,8 @@ object RelayCompiler {
       .mkString(" ")
 
     var output = Vector.empty[String]
+
+    logger.info("Running relay-compiler...")
 
     Commands.run(
       cmd,

@@ -1,4 +1,0 @@
-# graphql
-fragment Test_foo on Task {
-  title
-}

@@ -69,7 +69,6 @@ object GraphQLWrapper {
   }
 
   def wrap(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
-    logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -100,7 +99,9 @@ object GraphQLWrapper {
             val needsWrapping = unexpectedChanges.flatMap(inverse.get).flatten
             // Don't forget to delete the old ones since wrap appends.
             IO.delete(unexpectedChanges)
-            wrapFiles(needsWrapping, options, logger)
+            val unexpectedWrappings = wrapFiles(needsWrapping, options, logger)
+            logger.warn(s"Wrapped an additional ${unexpectedWrappings.size} GraphQL definitions.")
+            unexpectedWrappings
           }
         }
         val wrappers = modifiedWrappers ++ unmodifiedWrappers
@@ -135,8 +136,10 @@ object GraphQLWrapper {
       addedOrChangedResources.foreach { resource =>
         previousAnalysis.wrappers.get(resource).foreach(IO.delete)
       }
-      val modifiedWrappers        = wrapFiles(addedOrChangedResources, options, logger)
-      val unmodifiedWrappers      = previousAnalysis.wrappers.filterKeys(resourceReport.unmodified.contains)
+      if (addedOrChangedResources.nonEmpty) logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
+      val modifiedWrappers = wrapFiles(addedOrChangedResources, options, logger)
+      if (addedOrChangedResources.nonEmpty) logger.info(s"Wrapped ${modifiedWrappers.size} GraphQL documents.")
+      val unmodifiedWrappers = previousAnalysis.wrappers.filterKeys(resourceReport.unmodified.contains)
       (modifiedWrappers, unmodifiedWrappers)
     } else {
       def whatChanged =
@@ -164,7 +167,7 @@ object GraphQLWrapper {
 
   private def wrapFile(file: File, options: Options, logger: Logger): File = {
     logger.debug(s"Wrapping graphql definitions: $file")
-    val extension   = if (options.typeScript) "ts" else "js"
+    val extension = if (options.typeScript) "ts" else "js"
     // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
     val wrapperFile = options.outputDir.getAbsoluteFile / s"${file.base}.$extension"
     fileReader(StandardCharsets.UTF_8)(file) { reader =>

@@ -47,6 +47,8 @@ object RelayBasePlugin extends AutoPlugin {
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
     val relayInclude: SettingKey[Seq[String]] =
       settingKey[Seq[String]]("Globs of files to include, relative to the relayBaseDirectory")
+    val relayExclude: SettingKey[Seq[String]] =
+      settingKey[Seq[String]]("Globs of files to exclude, relative to the relayBaseDirectory")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -92,9 +94,9 @@ object RelayBasePlugin extends AutoPlugin {
         if (relayTypeScript.value) Seq("relay-compiler-language-typescript" -> relayTypeScriptVersion.value)
         else Seq.empty
       },
-      relayInclude :=
-        (relayWrapDirectory.value +: resourceDirectories.value)
-          .map(_.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
+      relayInclude := Seq(relayWrapDirectory.value.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
+      relayExclude := Seq("**/node_modules/**", "**/__mocks__/**", "**/__generated__/**"),
+      relayExclude ++= relayCompileDirectory.value.relativeTo(relayBaseDirectory.value).map(_.getPath + "/**"),
       relayPersistedPath := None,
       // Display output only on a failure, this works well with persisted queries because they delete all the files
       // before outputting them.
@@ -183,6 +185,7 @@ object RelayBasePlugin extends AutoPlugin {
     val source           = relayBaseDirectory.value
     val customScalars    = relayCustomScalars.value
     val included         = relayInclude.value
+    val excluded         = relayExclude.value
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
     val workingDir       = relayWorkingDirectory.value
@@ -214,6 +217,7 @@ object RelayBasePlugin extends AutoPlugin {
       outputPath = outpath,
       verbose = verbose,
       includes = included,
+      excludes = excluded,
       persisted = persisted,
       customScalars = customScalars,
       displayOnFailure = displayOnFailure,

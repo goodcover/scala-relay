@@ -65,7 +65,6 @@ object GraphQLConverter {
     options: Options,
     logger: Logger
   ): Results = {
-    logger.info("Converting GraphQL to Scala.js...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -103,7 +102,9 @@ object GraphQLConverter {
               val needsConversion = unexpectedChanges.flatMap(inverse.get)
               // Don't forget to delete the old ones since convert fails if it exists.
               IO.delete(unexpectedChanges)
-              convertFiles(needsConversion, schema, options, logger)
+              val unexpectedConversions = convertFiles(needsConversion, schema, options, logger)
+              logger.warn(s"Converted an additional ${unexpectedConversions.size} GraphQL documents.")
+              unexpectedConversions
             }
           }
           val extracts = modifiedConversions ++ unmodifiedConversions
@@ -143,7 +144,9 @@ object GraphQLConverter {
       addedOrChangedResources.foreach { source =>
         previousAnalysis.conversions.get(source).foreach(IO.delete)
       }
+      if (addedOrChangedResources.nonEmpty) logger.info("Converting GraphQL to Scala.js...")
       val modifiedConversions     = convertFiles(addedOrChangedResources, schema, options, logger)
+      if (addedOrChangedResources.nonEmpty) logger.info(s"Converted ${modifiedConversions.size} GraphQL documents.")
       val unmodifiedConversions   = previousAnalysis.conversions.filterKeys(resourceReport.unmodified.contains)
       (modifiedConversions, unmodifiedConversions)
     } else {

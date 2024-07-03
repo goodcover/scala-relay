@@ -63,7 +63,6 @@ object GraphQLExtractor {
   }
 
   def extract(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
-    logger.info("Extracting GraphQL...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -95,7 +94,9 @@ object GraphQLExtractor {
             val needsExtraction = unexpectedChanges.flatMap(inverse.get).flatten
             // Don't forget to delete the old ones since extract appends.
             IO.delete(unexpectedChanges)
-            extractFiles(needsExtraction, options, logger)
+            val unexpectedExtracts = extractFiles(needsExtraction, options, logger)
+            logger.warn(s"Extracted an additional ${unexpectedExtracts.size} GraphQL documents.")
+            unexpectedExtracts
           }
         }
         val extracts = modifiedExtracts ++ unmodifiedExtracts
@@ -130,7 +131,9 @@ object GraphQLExtractor {
       addedOrChangedSources.foreach { source =>
         previousAnalysis.extracts.get(source).foreach(IO.delete)
       }
-      val modifiedExtracts   = extractFiles(addedOrChangedSources, options, logger)
+      if (addedOrChangedSources.nonEmpty) logger.info("Extracting GraphQL...")
+      val modifiedExtracts = extractFiles(addedOrChangedSources, options, logger)
+      if (addedOrChangedSources.nonEmpty) logger.info(s"Extracted ${modifiedExtracts.size} GraphQL documents.")
       val unmodifiedExtracts = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
       (modifiedExtracts, unmodifiedExtracts)
     } else {
