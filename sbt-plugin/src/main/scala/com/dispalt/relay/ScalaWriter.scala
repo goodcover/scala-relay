@@ -21,6 +21,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   // It would be nice to use Scalameta for this but it doesn't support comments which kinda sucks.
   // See https://github.com/scalameta/scalameta/issues/3372.
 
+  private type FieldLookup     = String => Option[FieldDefinition]
+  private type FieldTypeLookup = String => Option[ObjectTypeDefinition]
+
   def write(file: File): Set[File] = {
     write(IO.read(file, StandardCharsets.UTF_8))
   }
@@ -47,7 +50,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       writer.write('\n')
       writeInputType(writer, operation)
       writer.write('\n')
-      writeOperationTrait(writer, operation, schema.queryField)
+      def queryField(name: String) =
+        if (isMetaField(name)) None
+        else Some(schema.queryField(name))
+      writeOperationTrait(writer, operation, queryField)
       writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.queryField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
@@ -62,7 +68,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       writer.write('\n')
       writeInputType(writer, operation)
       writer.write('\n')
-      writeOperationTrait(writer, operation, schema.mutationField)
+      def mutationField(name: String) =
+        if (isMetaField(name)) None
+        else Some(schema.mutationField(name))
+      writeOperationTrait(writer, operation, mutationField)
       writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.mutationField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
@@ -88,11 +97,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       val typeName = fragment.typeCondition.name
       val fields =
         schema.objectOrInterfaceType(typeName).fields.map(d => d.name -> d).toMap
-      def selectionDefinition(name: String) =
-        fields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
+      def selectionDefinition(name: String) = getFieldDefinition(typeName, fields, name)
       writeFragmentTrait(writer, fragment, selectionDefinition)
       writer.write('\n')
-      def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(selectionDefinition(name))
+      def fieldTypeDefinition(name: String) = selectionDefinition(name).map(fieldDefinitionTypeDefinition)
       writeFragmentObject(writer, fragment, fieldTypeDefinition)
     }
     file
@@ -145,38 +153,26 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write('\n')
   }
 
-  private def writeOperationTrait(
-    writer: Writer,
-    operation: OperationDefinition,
-    selectionField: String => FieldDefinition
-  ): Unit =
+  private def writeOperationTrait(writer: Writer, operation: OperationDefinition, selectionField: FieldLookup): Unit =
     writeDefinitionTrait(writer, getOperationName(operation), operation.selectionSet, selectionField)
 
-  private def writeFragmentTrait(
-    writer: Writer,
-    fragment: FragmentDefinition,
-    selectionField: String => FieldDefinition
-  ): Unit =
+  private def writeFragmentTrait(writer: Writer, fragment: FragmentDefinition, selectionField: FieldLookup): Unit =
     writeDefinitionTrait(writer, fragment.name, fragment.selectionSet, selectionField)
 
   private def writeDefinitionTrait(
     writer: Writer,
     name: String,
     selections: List[Selection],
-    selectionField: String => FieldDefinition
+    selectionField: FieldLookup
   ): Unit = {
     writer.write("trait ")
     writer.write(name)
     writer.write(" extends js.Object {\n")
     selections.foreach {
       case field: Selection.Field =>
-        writeOperationField(
-          writer,
-          field.name,
-          selectionField(field.name).ofType,
-          name,
-          hasSelections = field.selectionSet.nonEmpty
-        )
+        selectionField(field.name).foreach { definition =>
+          writeOperationField(writer, field.name, definition.ofType, name, hasSelections = field.selectionSet.nonEmpty)
+        }
       case _ => () // Fragments are handled as implicit conversions.
     }
     writer.write("}\n")
@@ -189,21 +185,22 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     typeName: String,
     typePrefix: String
   ): Unit = {
-    def subFieldDefinition(name: String) =
-      subFields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
+    def subFieldDefinition(name: String) = getFieldDefinition(typeName, subFields, name)
     writer.write("  trait ")
     // TODO: I think this is missing a prefix.
     writer.write(field.name.capitalize)
     writer.write(" extends js.Object {\n")
     field.selectionSet.foreach {
       case subField: Selection.Field =>
-        writeNestedField(
-          writer,
-          subField.name,
-          subFieldDefinition(subField.name).ofType,
-          typePrefix,
-          hasSelections = subField.selectionSet.nonEmpty
-        )
+        subFieldDefinition(subField.name).foreach { definition =>
+          writeNestedField(
+            writer,
+            subField.name,
+            definition.ofType,
+            typePrefix,
+            hasSelections = subField.selectionSet.nonEmpty
+          )
+        }
       case _ => () // Fragments are handled as implicit conversions.
     }
     writer.write("  }\n")
@@ -243,7 +240,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   private def writeFragmentObject(
     writer: Writer,
     fragment: FragmentDefinition,
-    fieldTypeDefinition: String => ObjectTypeDefinition
+    // TODO: Remove?
+    fieldTypeDefinition: FieldTypeLookup
   ): Unit = {
     writer.write("object ")
     val name = fragment.name
@@ -306,21 +304,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         // TODO: Deduplicate
         val subFields = typeDefinition.fields.map(d => d.name -> d).toMap
         def subFieldTypeDefinition(name: String) =
-          fieldDefinitionTypeDefinition(
-            subFields.getOrElse(
-              name,
-              throw new IllegalArgumentException(s"Type ${typeDefinition.name} does not define field $name.")
-            )
-          )
+          getFieldDefinition(typeDefinition.name, subFields, name).map(fieldDefinitionTypeDefinition)
         field.selectionSet.foreach {
           case subField: Selection.Field =>
             if (subField.selectionSet.nonEmpty) {
-              writeNestedSelection(
-                writer,
-                subField,
-                subFieldTypeDefinition(subField.name),
-                field.name.capitalize + typePrefix
-              )
+              subFieldTypeDefinition(subField.name).foreach { definition =>
+                writeNestedSelection(writer, subField, definition, field.name.capitalize + typePrefix)
+              }
             }
           case _ => () // Fragments are handled as implicit conversions.
         }
@@ -488,6 +478,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   // TODO: Return None if it is not an object?
   private def fieldDefinitionTypeDefinition(field: FieldDefinition): ObjectTypeDefinition =
     field.ofType match {
+      // TODO: What if it is an interface?
       case named: Type.NamedType => schema.objectType(named.name)
       case list: Type.ListType   => throw new NotImplementedError(list.toString)
     }
@@ -509,6 +500,21 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     fragment.directives.exists { directive =>
       directive.name == "relay" && directive.arguments.get("plural").exists(_.toInputString == "true")
     }
+
+  private def getFieldDefinition(
+    typeName: String,
+    fields: Map[String, FieldDefinition],
+    fieldName: String
+  ): Option[FieldDefinition] =
+    if (isMetaField(fieldName)) None
+    else
+      Some(
+        fields
+          .getOrElse(fieldName, throw new IllegalArgumentException(s"Type $typeName does not define field $fieldName."))
+      )
+
+  private def isMetaField(name: String) =
+    name.startsWith("__")
 
   private def operationFile(operation: OperationDefinition) = {
     val name = getOperationName(operation)

@@ -13,8 +13,15 @@ mutation TestMutation($input: ActorSubscribeInput!) {
   }
 }
 
-fragment Test_task on Task {
+fragment Test_fragment on Task {
   title
+}
+
+fragment Test_fragmentInterface on Node {
+  __typename
+  ... on Page {
+    name
+  }
 }
 
 # TODO: Subscription
