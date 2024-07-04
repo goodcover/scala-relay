@@ -124,7 +124,7 @@ object RelayCompiler {
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
-      logger.debug(s"Previous analysis:\n$previousAnalysis")
+      logger.debug(s"Previous analysis:\n$maybePreviousAnalysis")
       val sources = findSources(options)
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
@@ -132,9 +132,16 @@ object RelayCompiler {
         // NOTE: Update clean if you change this.
         val artifacts = Tracked.diffOutputs(stores.outputs, FileInfo.lastModified) { outputsReport =>
           logger.debug(s"Previous outputs:\n$outputsReport")
-          // If anything changes we need to delete all artifacts and recompile everything.
-          // We could potentially run relay-compile in watch mode if necessary.
-          if (Version != previousAnalysis.version ||
+          // We have no way of knowing which source maps to which output so we should really delete everything when
+          // anything changes but that is a bit too heavy handed.
+          // For now we delete things ad hoc when we know they need to be deleted.
+          // Running relay compiler in watch mode might do a better job.
+          val versionChanged = Version != previousAnalysis.version
+          val outputDirChanged = options.outputPath != previousAnalysis.options.outputPath
+          if (versionChanged || outputDirChanged) {
+            IO.delete(previousAnalysis.artifacts)
+          }
+          if (versionChanged ||
               options != previousAnalysis.options ||
               sourcesReport.modified.nonEmpty ||
               outputsReport.modified.nonEmpty) {
@@ -145,7 +152,6 @@ object RelayCompiler {
               }
               logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             }
-            IO.delete(previousAnalysis.artifacts)
             run(options, logger)
             findArtifacts(options)
           } else {

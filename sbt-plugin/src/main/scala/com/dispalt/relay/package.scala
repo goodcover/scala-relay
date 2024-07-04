@@ -1,6 +1,35 @@
 package com.dispalt
 
+import sbt.util.CacheImplicits
+import sjsonnew.*
+
+import scala.annotation.tailrec
+
 package object relay {
+
+  // Workaround for https://github.com/sbt/sbt/issues/7594.
+  implicit def mapFormat[K, V](
+    implicit keyFormat: JsonKeyFormat[K],
+    valueFormat: JsonFormat[V]
+  ): RootJsonFormat[Map[K, V]] =
+    new RootJsonFormat[Map[K, V]] {
+      private val delegate = CacheImplicits.mapFormat[K, V]
+      override def read[J](jsOpt: Option[J], unbuilder: Unbuilder[J]): Map[K, V] = {
+        require(unbuilder.state == UnbuilderState.InObject)
+        @tailrec
+        def loop(acc: Map[K, V]): Map[K, V] = {
+          if (unbuilder.hasNextField) {
+            val (k, v) = unbuilder.nextFieldOpt()
+            loop(acc.updated(keyFormat.read(k), valueFormat.read(v, unbuilder)))
+          } else acc
+        }
+        val result = loop(Map.empty)
+        unbuilder.endObject()
+        result
+      }
+      override def write[J](obj: Map[K, V], builder: Builder[J]): Unit =
+        delegate.write(obj, builder)
+    }
 
   /**
     * Inverts a map and ensures that it was a lossless conversion.

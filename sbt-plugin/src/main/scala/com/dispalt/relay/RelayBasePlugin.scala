@@ -14,10 +14,11 @@ object RelayBasePlugin extends AutoPlugin {
 
   object autoImport {
     val relaySchema: SettingKey[File] = settingKey[File]("Path to schema file")
-    val relayTypeScriptVersion: SettingKey[String] =
+    val relayTypeScriptPluginVersion: SettingKey[String] =
       settingKey[String]("Set the relay-compiler-language-typescript version")
-    val relayVersion: SettingKey[String] = settingKey[String]("Set the Relay version")
-    val relayDebug: SettingKey[Boolean]  = settingKey[Boolean]("Set the debug flag for the relay compiler")
+    val relayTypeScriptVersion: SettingKey[String] = settingKey[String]("Set the typescript version")
+    val relayVersion: SettingKey[String]           = settingKey[String]("Set the Relay version")
+    val relayDebug: SettingKey[Boolean]            = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayTypeScript: SettingKey[Boolean] = settingKey[Boolean](
       "If true, sets the language to TypeScript. If false, sets the language to JavaScript. Defaults to false. This is" +
         "only really useful as a temporary step to compare against the generated Scala.js facades."
@@ -74,7 +75,8 @@ object RelayBasePlugin extends AutoPlugin {
       relayWorkingDirectory := file(sys.props("user.dir")),
       relayCompilerCommand := "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js",
       // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
-      relayTypeScriptVersion := "14.1.0",
+      relayTypeScriptPluginVersion := "14.1.0",
+      relayTypeScriptVersion := "^4.2.4",
       relayVersion := "11.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
@@ -91,7 +93,10 @@ object RelayBasePlugin extends AutoPlugin {
       relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
       relayDependencies := Seq("relay-compiler" -> relayVersion.value),
       relayDependencies ++= {
-        if (relayTypeScript.value) Seq("relay-compiler-language-typescript" -> relayTypeScriptVersion.value)
+        if (relayTypeScript.value) Seq(
+          "relay-compiler-language-typescript" -> relayTypeScriptPluginVersion.value,
+          "typescript" -> relayTypeScriptVersion.value
+        )
         else Seq.empty
       },
       relayInclude := Seq(relayWrapDirectory.value.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),

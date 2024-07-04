@@ -30,9 +30,11 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scal
 $ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
 $ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
 
-# Changing the options should re-convert everything.
+# Changing the output directory should re-convert everything.
 > set relayConvertDirectory in Compile := file("target/scala-2.13/src_managed/main/relay/generated2")
 > relayConvert
+$ absent target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala
+$ absent target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala
 $ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
 $ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
@@ -56,11 +58,12 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.sca
 $ copy-file target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
 
 # Modifying a resource should convert it.
-$ touch src/main/resources/graphql/Test2.graphql
+$ copy-file src/main/resources/graphql/Test2.graphql.bak src/main/resources/graphql/Test2.graphql
 > relayConvert
 -$ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery.scala  generated/TestQuery.scala
 $ newer target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+-$ must-mirror target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala  generated/TestQuery2.scala
 
 # Deleting a conversion should convert it.
 $ delete target/scala-2.13/src_managed/main/relay/generated2/TestQuery2.scala

@@ -20,9 +20,11 @@ $ must-mirror target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/
 $ copy-file target/scala-2.13/src_managed/relay/graphql/Test.graphql graphql/Test.graphql
 $ copy-file target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/Test2.graphql
 
-# Changing the options should re-extract everything.
+# Changing the output directory should re-extract everything.
 > set relayExtractDirectory in Compile := file("target/scala-2.13/src_managed/relay/graphql2")
 > relayExtract
+$ absent target/scala-2.13/src_managed/relay/graphql/Test.graphql
+$ absent target/scala-2.13/src_managed/relay/graphql/Test2.graphql
 $ newer target/scala-2.13/src_managed/relay/graphql2/Test.graphql graphql/Test.graphql
 $ newer target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
 $ must-mirror target/scala-2.13/src_managed/relay/graphql2/Test.graphql graphql/Test.graphql
@@ -46,11 +48,12 @@ $ must-mirror target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql
 $ copy-file target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
 
 # Modifying a source should extract it.
-$ touch src/main/scala/example/Test2.scala
+$ copy-file src/main/scala/example/Test2.scala.bak src/main/scala/example/Test2.scala
 > relayExtract
 -$ newer target/scala-2.13/src_managed/relay/graphql2/Test.graphql graphql/Test.graphql
 $ newer target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
-$ must-mirror target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
+-$ must-mirror target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ copy-file target/scala-2.13/src_managed/relay/graphql2/Test2.graphql graphql/Test2.graphql
 
 # Deleting an extract should extract it.
 $ delete target/scala-2.13/src_managed/relay/graphql2/Test2.graphql

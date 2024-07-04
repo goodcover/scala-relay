@@ -68,7 +68,7 @@ object GraphQLConverter {
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
-      logger.debug(s"Previous analysis:\n$previousAnalysis")
+      logger.debug(s"Previous analysis:\n$maybePreviousAnalysis")
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.resources, FileInfo.lastModified)(sources) { resourcesReport =>
         logger.debug(s"Resources:\n$resourcesReport")
