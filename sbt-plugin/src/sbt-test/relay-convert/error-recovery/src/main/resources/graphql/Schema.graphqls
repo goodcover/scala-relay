@@ -775,6 +775,7 @@ enum TopLevelCommentsOrdering {
 
 type Settings {
   cache_id: ID
+  notificationSounds: Boolean
   notifications(environment: Environment): Boolean
 }
 

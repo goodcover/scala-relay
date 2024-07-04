@@ -92,7 +92,7 @@ object GraphQLExtractor {
               logger.warn(s" ${file.absolutePath}")
             }
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
-            val outputSources   = invertOneToOne(previousAnalysis.extracts)
+            val outputSources = invertOneToOne(previousAnalysis.extracts)
             val needsExtraction = unexpectedChanges.foldLeft(Map.empty[File, File]) {
               case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
             }

@@ -31,6 +31,10 @@ object GraphQLConverter {
 
   private type Conversions = Map[File, Set[File]]
 
+  object Conversions {
+    def empty: Conversions = Map.empty
+  }
+
   private final case class Analysis(version: Int, options: Options, conversions: Conversions)
 
   private object Analysis {
@@ -146,9 +150,9 @@ object GraphQLConverter {
         previousAnalysis.conversions.get(source).foreach(IO.delete)
       }
       if (addedOrChangedResources.nonEmpty) logger.info("Converting GraphQL to Scala.js...")
-      val modifiedConversions     = convertFiles(addedOrChangedResources, schema, options, logger)
+      val modifiedConversions = convertFiles(addedOrChangedResources, schema, options, logger)
       if (addedOrChangedResources.nonEmpty) logger.info(s"Converted ${modifiedConversions.size} GraphQL documents.")
-      val unmodifiedConversions   = previousAnalysis.conversions.filterKeys(resourceReport.unmodified.contains)
+      val unmodifiedConversions = previousAnalysis.conversions.filterKeys(resourceReport.unmodified.contains)
       (modifiedConversions, unmodifiedConversions)
     } else {
       if (!versionUnchanged) logger.debug(s"Version changed:\n$Version")
@@ -168,11 +172,16 @@ object GraphQLConverter {
     options: Options,
     logger: Logger
   ): Conversions = {
-    val writer = new ScalaWriter(options.outputDir, schema)
-    files.map { file =>
-      logger.debug(s"Converting file: $file")
-      file -> writer.write(file)
-    }.toMap
+    val (conversions, _) = files.foldLeft((Conversions.empty, Set.empty[File])) {
+      case ((conversions, outputs), file) =>
+        val writer = new ScalaWriter(options.outputDir, schema, outputs)
+        logger.debug(s"Converting file: $file")
+        val newOutputs      = writer.write(file)
+        val nextConversions = conversions + (file -> newOutputs)
+        val nextOutputs     = outputs ++ newOutputs
+        (nextConversions, nextOutputs)
+    }
+    conversions
   }
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {

@@ -5,7 +5,7 @@ import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition, ObjectTypeDefinition}
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
-import sbt.*
+import sbt._
 import sbt.io.Using.fileWriter
 
 import java.io.Writer
@@ -13,7 +13,8 @@ import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 
 // TODO: Rename
-class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
+
+class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
 
   // TODO: Remove strip margins
 
@@ -85,7 +86,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
       writer.write('\n')
       // TODO: Deduplicate
       val typeName = fragment.typeCondition.name
-      val fields   = schema.objectType(fragment.typeCondition.name).fields.map(d => d.name -> d).toMap
+      val fields =
+        schema.objectOrInterfaceType(typeName).fields.map(d => d.name -> d).toMap
       def selectionDefinition(name: String) =
         fields.getOrElse(name, throw new IllegalArgumentException(s"Type $typeName does not define field $name."))
       writeFragmentTrait(writer, fragment, selectionDefinition)
@@ -217,8 +219,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     writer.write(name)
     writer.write(" extends _root_.relay.gql.")
     operation.operationType match {
-      case OperationType.Query => writer.write("QueryTaggedNode[")
-      case OperationType.Mutation => writer.write("MutationTaggedNode[")
+      case OperationType.Query        => writer.write("QueryTaggedNode[")
+      case OperationType.Mutation     => writer.write("MutationTaggedNode[")
       case OperationType.Subscription => ???
     }
     writer.write(name)
@@ -512,7 +514,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     val name = getOperationName(operation)
     val file = outputDir.getAbsoluteFile / s"$name.scala"
     if (file.exists()) {
-      throw new IllegalArgumentException(s"File $file already exists. Ensure that you only have one operation named $name.")
+      if (outputs.contains(file))
+        throw new IllegalArgumentException(
+          s"File $file already exists. Ensure that you only have one operation named $name."
+        )
+      else file.delete()
     }
     file
   }
@@ -521,7 +527,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema) {
     val name = fragment.name
     val file = outputDir.getAbsoluteFile / s"$name.scala"
     if (file.exists()) {
-      throw new IllegalArgumentException(s"File $file already exists. Ensure that you only have one fragment named $name.")
+      if (outputs.contains(file))
+        throw new IllegalArgumentException(
+          s"File $file already exists. Ensure that you only have one fragment named $name."
+        )
+      else file.delete()
     }
     file
   }
