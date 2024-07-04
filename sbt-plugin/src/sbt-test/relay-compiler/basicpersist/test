@@ -9,6 +9,8 @@ $ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
 #$ pause
 $ delete src/main/scala/example/Test.scala
 $ exec echo "//" >> src/main/scala/example/Main.scala
-> Compile/relayCompile
+> show Compile/relayExtract
+> show Compile/relayWrap
+> show Compile/relayCompile
 #$ pause
 # > fastOptJS/webpack

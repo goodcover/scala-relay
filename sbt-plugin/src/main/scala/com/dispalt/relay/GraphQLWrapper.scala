@@ -1,11 +1,11 @@
 package com.dispalt.relay
 
 import com.dispalt.relay.GraphQLText.{countSelectionSetDiff, splitComment}
-import sbt.*
+import sbt._
 import sbt.io.Using.{fileReader, fileWriter}
-import sbt.util.CacheImplicits.*
+import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
-import sjsonnew.*
+import sjsonnew._
 
 import java.io.{BufferedReader, BufferedWriter}
 import java.nio.charset.StandardCharsets
@@ -42,6 +42,7 @@ object GraphQLWrapper {
 
   private type Wrappers = Map[File, File]
 
+  // TODO: Get rid of wrappers.
   private final case class Analysis(version: Int, options: Options, wrappers: Wrappers)
 
   private object Analysis {
@@ -69,6 +70,7 @@ object GraphQLWrapper {
   }
 
   def wrap(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
+    logger.debug("Running GraphqlWrapper...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -88,6 +90,7 @@ object GraphQLWrapper {
         val outputs                                = modifiedOutputs ++ unmodifiedOutputs
         // NOTE: Update clean if you change this.
         Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
+          logger.debug(s"Outputs:\n$outputsReport")
           val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
           if (unexpectedChanges.nonEmpty) {
             logger.warn("Unexpected modifications found to files:")
@@ -95,13 +98,15 @@ object GraphQLWrapper {
               logger.warn(s" ${file.absolutePath}")
             }
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
-            val inverse       = invertOneToOne(previousAnalysis.wrappers)
-            val needsWrapping = unexpectedChanges.flatMap(inverse.get).flatten
+            val outputSources = invertOneToOne(previousAnalysis.wrappers)
+            val needsWrapping = unexpectedChanges.foldLeft(Map.empty[File, File]) {
+              case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
+            }
             // Don't forget to delete the old ones since wrap appends.
             IO.delete(unexpectedChanges)
-            val unexpectedWrappings = wrapFiles(needsWrapping, options, logger)
-            logger.warn(s"Wrapped an additional ${unexpectedWrappings.size} GraphQL definitions.")
-            unexpectedWrappings
+            wrapFiles(needsWrapping, logger)
+            logger.warn(s"Wrapped an additional ${needsWrapping.size} GraphQL definitions.")
+            needsWrapping
           }
         }
         val wrappers = modifiedWrappers ++ unmodifiedWrappers
@@ -128,29 +133,41 @@ object GraphQLWrapper {
     def optionsUnchanged = options == previousAnalysis.options
     if (versionUnchanged && optionsUnchanged) {
       logger.debug("Version and options have not changed")
-      val outputsOfRemoved = previousAnalysis.wrappers.filterKeys(resourceReport.removed.contains).values
-      IO.delete(outputsOfRemoved)
-      val addedOrChangedResources = resourceReport.modified -- resourceReport.removed
-      // We can have multiple resources wrapped to the same file since the output structure is flat.
-      // So we need to delete any previous wrappers and then append during wrapping.
-      addedOrChangedResources.foreach { resource =>
-        previousAnalysis.wrappers.get(resource).foreach(IO.delete)
+      // We have to be careful here because we can have multiple resources wrapping to the same output.
+      // When something is modified we need to re-wrap not just those modifications but also the other resources that
+      // wrap to the same output.
+      val modifiedOutputs = resourceOutputs(resourceReport.modified.toSeq, options)
+      IO.delete(modifiedOutputs.values)
+      val unmodifiedResources = invertOneToOne(resourceOutputs(resourceReport.unmodified.toSeq, options))
+      val modifiedAndTransitiveOutputs = modifiedOutputs.flatMap {
+        case entry @ (_, output) => entry +: unmodifiedResources.getOrElse(output, Vector.empty).map(_ -> output)
       }
-      if (addedOrChangedResources.nonEmpty) logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
-      val modifiedWrappers = wrapFiles(addedOrChangedResources, options, logger)
-      if (addedOrChangedResources.nonEmpty) logger.info(s"Wrapped ${modifiedWrappers.size} GraphQL documents.")
-      val unmodifiedWrappers = previousAnalysis.wrappers.filterKeys(resourceReport.unmodified.contains)
-      (modifiedWrappers, unmodifiedWrappers)
+      val needsWrapping = modifiedAndTransitiveOutputs.filterKeys(!resourceReport.removed.contains(_))
+      if (needsWrapping.nonEmpty)
+        logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
+      wrapFiles(needsWrapping, logger)
+      if (needsWrapping.nonEmpty) logger.info(s"Wrapped ${needsWrapping.size} GraphQL documents.")
+      val unchangedWrappers =
+        resourceOutputs(resourceReport.unmodified.toSeq, options).filterKeys(!needsWrapping.contains(_))
+      (needsWrapping, unchangedWrappers)
     } else {
-      def whatChanged =
-        if (!versionUnchanged) "Version"
-        else "Options"
-      logger.debug(s"$whatChanged changed")
+      if (!versionUnchanged) logger.debug(s"Version changed:\n$Version")
+      else logger.debug(s"Options changed:\n$options")
       val previousOutputs = previousAnalysis.wrappers.values
       IO.delete(previousOutputs)
-      val modifiedWrappers = wrapFiles(resourceReport.checked, options, logger)
-      (modifiedWrappers, Map.empty)
+      val needsExtraction = resourceOutputs(resourceReport.checked.toSeq, options)
+      wrapFiles(needsExtraction, logger)
+      (needsExtraction, Map.empty)
     }
+  }
+
+  private def resourceOutputs(resources: Seq[File], options: Options) =
+    resources.map(source => source -> resourceOutput(source, options)).toMap
+
+  private def resourceOutput(resource: File, options: Options) = {
+    val extension = if (options.typeScript) "ts" else "js"
+    // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
+    options.outputDir.getAbsoluteFile / s"${resource.base}.$extension"
   }
 
   // TODO: Add parallelism.
@@ -160,22 +177,18 @@ object GraphQLWrapper {
     * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
     * existing wrappers are deleted beforehand if required.
     */
-  private def wrapFiles(files: Iterable[File], options: Options, logger: Logger): Wrappers =
-    files.map { file =>
-      file -> wrapFile(file, options, logger)
-    }.toMap
+  private def wrapFiles(files: Map[File, File], logger: Logger): Unit =
+    files.foreach {
+      case (file, output) => wrapFile(file, output, logger)
+    }
 
-  private def wrapFile(file: File, options: Options, logger: Logger): File = {
+  private def wrapFile(file: File, output: File, logger: Logger): Unit = {
     logger.debug(s"Wrapping graphql definitions: $file")
-    val extension = if (options.typeScript) "ts" else "js"
-    // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
-    val wrapperFile = options.outputDir.getAbsoluteFile / s"${file.base}.$extension"
     fileReader(StandardCharsets.UTF_8)(file) { reader =>
-      fileWriter(StandardCharsets.UTF_8, append = true)(wrapperFile) { writer =>
+      fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
         writeWrapper(reader, writer, logger)
       }
     }
-    wrapperFile
   }
 
   private def writeWrapper(reader: BufferedReader, writer: BufferedWriter, logger: Logger): Unit = {

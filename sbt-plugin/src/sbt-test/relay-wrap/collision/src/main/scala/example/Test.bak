@@ -1,7 +1,7 @@
 package example
 
 @graphql("""
-    query TestQuery3 {
+    query Test3Query {
       defaultSettings {
         notificationSounds
         cache_id

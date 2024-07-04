@@ -1,13 +1,13 @@
 package com.dispalt.relay
 
-import sbt.*
+import sbt._
 import sbt.io.Using.fileWriter
-import sbt.util.CacheImplicits.*
+import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
-import sjsonnew.*
+import sjsonnew._
 
 import java.nio.charset.StandardCharsets
-import scala.meta.*
+import scala.meta._
 import scala.meta.inputs.Input
 
 /**
@@ -36,6 +36,7 @@ object GraphQLExtractor {
 
   private type Extracts = Map[File, File]
 
+  // TODO: Get rid of extracts.
   private final case class Analysis(version: Int, options: Options, extracts: Extracts)
 
   private object Analysis {
@@ -63,6 +64,7 @@ object GraphQLExtractor {
   }
 
   def extract(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
+    logger.debug("Running GraphqlExtractor...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -90,11 +92,13 @@ object GraphQLExtractor {
               logger.warn(s" ${file.absolutePath}")
             }
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
-            val inverse         = invertOneToOne(previousAnalysis.extracts)
-            val needsExtraction = unexpectedChanges.flatMap(inverse.get).flatten
+            val outputSources   = invertOneToOne(previousAnalysis.extracts)
+            val needsExtraction = unexpectedChanges.foldLeft(Map.empty[File, File]) {
+              case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
+            }
             // Don't forget to delete the old ones since extract appends.
             IO.delete(unexpectedChanges)
-            val unexpectedExtracts = extractFiles(needsExtraction, options, logger)
+            val unexpectedExtracts = extractFiles(needsExtraction, logger)
             logger.warn(s"Extracted an additional ${unexpectedExtracts.size} GraphQL documents.")
             unexpectedExtracts
           }
@@ -123,30 +127,39 @@ object GraphQLExtractor {
     def optionsUnchanged = options == previousAnalysis.options
     if (versionUnchanged && optionsUnchanged) {
       logger.debug("Version and options have not changed")
-      val outputsOfRemoved = previousAnalysis.extracts.filterKeys(sourceReport.removed.contains).values
-      IO.delete(outputsOfRemoved)
-      val addedOrChangedSources = sourceReport.modified -- sourceReport.removed
-      // We can have multiple sources extracting to the same file since the output structure is flat.
-      // So we need to delete any previous extracts and then append during extraction.
-      addedOrChangedSources.foreach { source =>
-        previousAnalysis.extracts.get(source).foreach(IO.delete)
+      // We have to be careful here because we can have multiple sources extracting to the same output.
+      // When something is modified we need to re-extract not just those modifications but also the other sources that
+      // extracted to the same output.
+      val modifiedOutputs = sourceOutputs(sourceReport.modified.toSeq, options)
+      IO.delete(modifiedOutputs.values)
+      val unmodifiedSources = invertOneToOne(sourceOutputs(sourceReport.unmodified.toSeq, options))
+      val modifiedAndTransitiveOutputs = modifiedOutputs.flatMap {
+        case entry @ (_, output) => entry +: unmodifiedSources.getOrElse(output, Vector.empty).map(_ -> output)
       }
-      if (addedOrChangedSources.nonEmpty) logger.info("Extracting GraphQL...")
-      val modifiedExtracts = extractFiles(addedOrChangedSources, options, logger)
-      if (addedOrChangedSources.nonEmpty) logger.info(s"Extracted ${modifiedExtracts.size} GraphQL documents.")
-      val unmodifiedExtracts = previousAnalysis.extracts.filterKeys(sourceReport.unmodified.contains)
-      (modifiedExtracts, unmodifiedExtracts)
+      val needsExtracting = modifiedAndTransitiveOutputs.filterKeys(!sourceReport.removed.contains(_))
+      if (needsExtracting.nonEmpty) logger.info("Extracting GraphQL...")
+      val changedExtracts = extractFiles(needsExtracting, logger)
+      if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
+      val unchangedExtracts =
+        sourceOutputs(sourceReport.unmodified.toSeq, options).filterKeys(!needsExtracting.contains(_))
+      (changedExtracts, unchangedExtracts)
     } else {
-      def whatChanged =
-        if (!versionUnchanged) "Version"
-        else "Options"
-      logger.debug(s"$whatChanged changed")
+      if (!versionUnchanged) logger.debug(s"Version changed:\n$Version")
+      else logger.debug(s"Options changed:\n$options")
       val previousOutputs = previousAnalysis.extracts.values
       IO.delete(previousOutputs)
-      val modifiedExtracts = extractFiles(sourceReport.checked, options, logger)
-      (modifiedExtracts, Map.empty)
+      val needsExtraction = sourceOutputs(sourceReport.checked.toSeq, options)
+      val changedExtracts = extractFiles(needsExtraction, logger)
+      (changedExtracts, Map.empty)
     }
   }
+
+  private def sourceOutputs(sources: Seq[File], options: Options) =
+    sources.map(source => source -> sourceOutput(source, options)).toMap
+
+  private def sourceOutput(source: File, options: Options) =
+    // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
+    options.outputDir.getAbsoluteFile / s"${source.base}.graphql"
 
   // TODO: Add parallelism.
   /**
@@ -155,12 +168,12 @@ object GraphQLExtractor {
     * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
     * existing extracts are deleted beforehand if required.
     */
-  private def extractFiles(files: Iterable[File], options: Options, logger: Logger): Extracts =
-    files.flatMap { file =>
-      extractFile(file, options, logger).map(file -> _)
-    }.toMap
+  private def extractFiles(files: Map[File, File], logger: Logger): Extracts =
+    files.filter {
+      case (file, output) => extractFile(file, output, logger)
+    }
 
-  private def extractFile(file: File, options: Options, logger: Logger): Option[File] = {
+  private def extractFile(file: File, output: File, logger: Logger): Boolean = {
     logger.debug(s"Checking file for graphql definitions: $file")
     val input   = Input.File(file)
     val source  = input.parse[Source].get
@@ -193,43 +206,40 @@ object GraphQLExtractor {
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
-      val graphqlFile = writeGraphql(file, options, definitions)
-      logger.debug(s"Extracted ${definitions.size} definitions to: $graphqlFile")
-      Some(graphqlFile)
+      writeGraphql(file, output, definitions)
+      logger.debug(s"Extracted ${definitions.size} definitions to: $output")
+      true
     } else {
       logger.debug("No definitions found")
-      None
+      false
     }
   }
 
-  private def writeGraphql(source: File, options: Options, definitions: Iterable[String]): File = {
+  private def writeGraphql(source: File, output: File, definitions: Iterable[String]): Unit = {
     // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
-    val graphqlFile = options.outputDir.getAbsoluteFile / s"${source.base}.graphql"
-    fileWriter(StandardCharsets.UTF_8, append = true)(graphqlFile) { writer =>
-      definitions.zipWithIndex.foreach {
-        case (definition, i) =>
-          writer.write("# Extracted from ")
-          writer.write(source.absolutePath)
-          writer.write('\n')
-          val trimmed = trimBlankLines(definition)
-          val lines   = trimmed.linesIterator
-          val prefix = {
-            if (lines.hasNext) {
-              val firstLine = lines.next()
-              val indent    = firstLine.takeWhile(_.isWhitespace)
-              writer.write(firstLine.drop(indent.length))
-              writer.write('\n')
-              indent
-            } else ""
-          }
-          lines.foreach { line =>
-            writer.write(removeLongestPrefix(line, prefix))
+    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
+      definitions.foreach { definition =>
+        writer.write("# Extracted from ")
+        writer.write(source.absolutePath)
+        writer.write('\n')
+        val trimmed = trimBlankLines(definition)
+        val lines   = trimmed.linesIterator
+        val prefix = {
+          if (lines.hasNext) {
+            val firstLine = lines.next()
+            val indent    = firstLine.takeWhile(_.isWhitespace)
+            writer.write(firstLine.drop(indent.length))
             writer.write('\n')
-          }
+            indent
+          } else ""
+        }
+        lines.foreach { line =>
+          writer.write(removeLongestPrefix(line, prefix))
           writer.write('\n')
+        }
+        writer.write('\n')
       }
     }
-    graphqlFile
   }
 
   private def trimBlankLines(s: String): String =

@@ -1,10 +1,10 @@
 package com.dispalt.relay
 
-import sbt.*
+import sbt._
 import sbt.nio.file.FileTreeView
-import sbt.util.CacheImplicits.*
+import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
-import sjsonnew.*
+import sjsonnew._
 
 import java.io.InputStream
 
@@ -121,6 +121,7 @@ object RelayCompiler {
   }
 
   def compile(cacheStoreFactory: CacheStoreFactory, options: Options, logger: Logger): Results = {
+    logger.debug("Running RelayCompiler...")
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -136,15 +137,18 @@ object RelayCompiler {
           // anything changes but that is a bit too heavy handed.
           // For now we delete things ad hoc when we know they need to be deleted.
           // Running relay compiler in watch mode might do a better job.
-          val versionChanged = Version != previousAnalysis.version
+          val versionChanged   = Version != previousAnalysis.version
+          val optionsChanged = options != previousAnalysis.options
           val outputDirChanged = options.outputPath != previousAnalysis.options.outputPath
           if (versionChanged || outputDirChanged) {
             IO.delete(previousAnalysis.artifacts)
           }
           if (versionChanged ||
-              options != previousAnalysis.options ||
+              optionsChanged ||
               sourcesReport.modified.nonEmpty ||
               outputsReport.modified.nonEmpty) {
+            if (versionChanged) logger.debug(s"Version changed:\n$Version")
+            else if (optionsChanged) logger.debug(s"Options changed:\n$options")
             if (outputsReport.modified.nonEmpty) {
               logger.warn("Unexpected modifications found to files:")
               outputsReport.modified.foreach { file =>
@@ -185,7 +189,7 @@ object RelayCompiler {
   }
 
   private def run(options: Options, logger: Logger): Unit = {
-    import options.*
+    import options._
 
     // Version 11 Help:
     //

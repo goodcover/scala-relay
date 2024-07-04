@@ -72,12 +72,12 @@ package object relay {
     }
   }
 
-  def invertOneToOne[A, B](map: Map[A, B]): Map[B, Iterable[A]] =
+  def invertOneToOne[A, B](map: Map[A, B]): Map[B, Vector[A]] =
     map.foldLeft(Map.empty[B, Vector[A]]) {
       case (acc, (a, b)) => acc.updated(b, acc.get(b).fold(Vector(a))(_ :+ a))
     }
 
-  def invertOneToMany[A, B](map: Map[A, Iterable[B]]): Map[B, Iterable[A]] =
+  def invertOneToMany[A, B](map: Map[A, Iterable[B]]): Map[B, Vector[A]] =
     map.foldLeft(Map.empty[B, Vector[A]]) {
       case (acc, (a, bs)) =>
         bs.foldLeft(acc) { (acc, b) =>
