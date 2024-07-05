@@ -1,6 +1,16 @@
 fragment Test_node on Node {
-  __typename
-  ... on Page {
-    name
-  }
+    __typename
+    ... on User {
+        name
+    }
+    ... on Page {
+        name
+        actor {
+            __typename
+            id
+            ... on User {
+                name
+            }
+        }
+    }
 }
