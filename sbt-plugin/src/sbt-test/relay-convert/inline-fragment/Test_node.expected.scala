@@ -17,6 +17,7 @@ fragment Test_node on Node {
             id
             ... on User {
                 name
+                ...Test_user
             }
         }
     }
@@ -60,6 +61,7 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
       @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable[Test_node.PageActor]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
+
   }
 
   @js.native
@@ -68,13 +70,17 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
     val actor: PageActor | Null
   }
 
+  implicit class PageActorUser2Test_userRef(f: PageActorUser) extends _root_.relay.gql.CastToFragmentRef[PageActorUser, Test_user](f) {
+    def toTest_user: _root_.relay.gql.FragmentRef[Test_user] = castToRef
+  }
+
   implicit class PageActor_Ops(f: PageActor) {
     def asUser: Option[PageActorUser] = _root_.relay.gql.Introspectable.as(f, PageActor.__typename.User)
   }
 
   implicit class Test_node_Ops(f: Test_node) {
-    def asUser: Option[User] = _root_.relay.gql.Introspectable.as(f, __typename.User)
-    def asPage: Option[Page] = _root_.relay.gql.Introspectable.as(f, __typename.Page)
+    def asUser: Option[User] = _root_.relay.gql.Introspectable.as(f, Test_node.__typename.User)
+    def asPage: Option[Page] = _root_.relay.gql.Introspectable.as(f, Test_node.__typename.Page)
   }
 
   type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]

@@ -10,7 +10,12 @@ fragment Test_node on Node {
             id
             ... on User {
                 name
+                ...Test_user
             }
         }
     }
+}
+
+fragment Test_user on User {
+    message
 }

@@ -181,7 +181,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
                    |""".stripMargin)
     writeNestedTypeNameObject(writer, None, operation.selectionSet, name, "  ")
     writeNestedTraits(writer, name, operation.selectionSet, fieldTypeDefinition, name)
-    writeFragmentImplicits(writer, name, operation.selectionSet)
+    writeFragmentImplicits(writer, name, operation.selectionSet, name)
     writeNewInputMethod(writer, operation)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
@@ -206,7 +206,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write("\n\n")
     writeNestedTypeNameObject(writer, None, fragment.selectionSet, name, "  ")
     writeNestedTraits(writer, fragment.typeCondition.name, fragment.selectionSet, fieldTypeDefinition, name)
-    writeFragmentImplicits(writer, fragment.name, fragment.selectionSet)
+    writeFragmentImplicits(writer, fragment.name, fragment.selectionSet, name)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
     writer.write("  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]\n")
@@ -490,17 +490,22 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer: Writer,
     name: String,
     selections: List[Selection],
+    outerObjectName: String,
     outer: Boolean = true
   ): Unit = {
+    val typePrefix =  if (outer) "" else name
     selections.foreach {
       case field: Selection.Field =>
-        val nextName = (if (outer) "" else name) + field.name.capitalize
-        writeFragmentImplicits(writer, nextName, field.selectionSet, outer = false)
+        val nextName = typePrefix + field.name.capitalize
+        writeFragmentImplicits(writer, nextName, field.selectionSet, outerObjectName, outer = false)
       case spread: Selection.FragmentSpread =>
         writeImplicitCastToFragmentRef(writer, name, spread)
       case inline: Selection.InlineFragment =>
-        writer.write("TODO")
+        val nextName = typePrefix + inline.typeCondition.fold(name)(_.name)
+        writeFragmentImplicits(writer, nextName, inline.selectionSet, outerObjectName, outer = false)
     }
+    val inlines = inlineFragmentSelections(selections)
+    writeInlineFragmentOps(writer, name, inlines, typePrefix)
   }
 
   private def writeImplicitCastToFragmentRef(writer: Writer, name: String, spread: Selection.FragmentSpread): Unit = {
@@ -521,6 +526,32 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write(spread.name)
     writer.write("] = castToRef\n")
     writer.write("  }\n\n")
+  }
+
+  private def writeInlineFragmentOps(writer: Writer, name: String, inlines: List[Selection.InlineFragment], typePrefix: String): Unit = {
+    if (inlines.nonEmpty) {
+      writer.write("  implicit class ")
+      writer.write(name)
+      // TODO: This underscore is ugly...
+      writer.write("_Ops(f: ")
+      writer.write(name)
+      writer.write(") {\n")
+      inlines.foreach { inline =>
+        // FIXME: If there are multiple inline fragments without a type condition we will generate conflicting members.
+        val to = inline.typeCondition.fold(name)(_.name)
+        writer.write("    def as")
+        writer.write(to)
+        writer.write(": Option[")
+        writer.write(typePrefix)
+        writer.write(to)
+        writer.write("] = _root_.relay.gql.Introspectable.as(f, ")
+        writer.write(name)
+        writer.write(".__typename.")
+        writer.write(to)
+        writer.write(")\n")
+      }
+      writer.write("  }\n\n")
+    }
   }
 
   private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
