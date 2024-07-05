@@ -9,5 +9,5 @@ fragment Test_fragment on Settings {
 }
 
 fragment Test_fragment2 on Settings {
-    notificationSounds
+  notificationSounds
 }

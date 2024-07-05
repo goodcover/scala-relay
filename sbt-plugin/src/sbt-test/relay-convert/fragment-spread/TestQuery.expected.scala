@@ -14,6 +14,7 @@ query TestQuery {
 
 trait TestQueryInput extends js.Object
 
+@js.native
 trait TestQuery extends js.Object {
   val defaultSettings: TestQuery.DefaultSettings | Null
 }
@@ -21,8 +22,8 @@ trait TestQuery extends js.Object {
 object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQuery] {
   type Ctor[T] = T
 
-  trait DefaultSettings extends js.Object {
-  }
+  @js.native
+  trait DefaultSettings extends js.Object
 
   implicit class defaultSettings2Test_fragmentRef(f: DefaultSettings) extends _root_.relay.gql.CastToFragmentRef[DefaultSettings, Test_fragment](f) {
     def toTest_fragment: _root_.relay.gql.FragmentRef[Test_fragment] = castToRef

@@ -2,7 +2,7 @@ package com.dispalt.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition, ObjectTypeDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition}
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema.ObjectOrInterfaceTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
@@ -48,11 +48,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writer.write('\n')
       writeInputType(writer, operation)
-      writer.write('\n')
       writeOperationTrait(writer, operation, getFieldDefinition(schema.queryField))
-      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.queryField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
     }
@@ -63,11 +60,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writer.write('\n')
       writeInputType(writer, operation)
-      writer.write('\n')
       writeOperationTrait(writer, operation, getFieldDefinition(schema.mutationField))
-      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(schema.mutationField(name))
       writeOperationObject(writer, operation, fieldTypeDefinition)
     }
@@ -87,14 +81,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val file = fragmentFile(fragment)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeFragmentPreamble(writer, documentText, fragment)
-      writer.write('\n')
       // TODO: Deduplicate
       val typeName = fragment.typeCondition.name
       val fields =
         schema.objectOrInterfaceType(typeName).fields.map(d => d.name -> d).toMap
       val selectionDefinition = getFieldDefinition(typeName, fields)(_)
       writeFragmentTrait(writer, fragment, selectionDefinition)
-      writer.write('\n')
       def fieldTypeDefinition(name: String) = fieldDefinitionTypeDefinition(selectionDefinition(name))
       writeFragmentObject(writer, fragment, fieldTypeDefinition)
     }
@@ -111,7 +103,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writePackageAndImports(writer)
     writer.write("/*\n")
     writeDocumentText(writeDefinitionTextLine(writer))
-    writer.write("*/\n")
+    writer.write("*/\n\n")
   }
 
   private def writeDefinitionTextLine(writer: Writer)(line: String): Unit = {
@@ -133,19 +125,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
 
   // TODO: Don't do this. We should create shared types from the schema.
   private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
-    writer.write("trait ")
-    val operationName = getOperationName(operation)
-    writer.write(operationName)
-    writer.write("Input extends js.Object")
+    val name        = getOperationName(operation) + "Input"
     val inputFields = operationInputFields(operation)
-    if (inputFields.nonEmpty) {
-      writer.write(" {\n")
-      inputFields.foreach { field =>
-        writeInputField(writer, field.name, field.ofType)
-      }
-      writer.write('}')
+    writeTrait(writer, name, inputFields, "", jsNative = false) { field =>
+      writeInputField(writer, field.name, field.ofType)
     }
-    writer.write('\n')
   }
 
   private def writeOperationTrait(writer: Writer, operation: OperationDefinition, selectionField: FieldLookup): Unit =
@@ -161,22 +145,16 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     selections: List[Selection],
     selectionField: FieldLookup
   ): Unit = {
-    writer.write("@js.native\n")
-    writer.write("trait ")
-    writer.write(name)
-    writer.write(" extends js.Object {\n")
-    selections.foreach {
-      case field: Selection.Field =>
-        writeOperationField(
-          writer,
-          field.name,
-          selectionField(field.name).ofType,
-          name,
-          hasSelections = field.selectionSet.nonEmpty
-        )
-      case _ => () // Fragments are handled as implicit conversions.
+    val fieldSelections = selections.collect { case selection: Selection.Field => selection }
+    writeTrait(writer, name, fieldSelections, "", jsNative = true) { field =>
+      writeOperationField(
+        writer,
+        field.name,
+        selectionField(field.name).ofType,
+        name,
+        hasSelections = field.selectionSet.nonEmpty
+      )
     }
-    writer.write("}\n")
   }
 
   // Not to be used for input types since it is @js.native.
@@ -187,24 +165,38 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     typeName: String,
     typePrefix: String
   ): Unit = {
-    val name = typePrefix + field.name.capitalize
+    val name               = typePrefix + field.name.capitalize
     val subFieldDefinition = getFieldDefinition(typeName, subFields)(_)
-    writer.write("  @js.native\n")
-    writer.write("  trait ")
-    writer.write(name)
-    writer.write(" extends js.Object {\n")
-    field.selectionSet.foreach {
-      case subField: Selection.Field =>
-        writeNestedField(
-          writer,
-          subField.name,
-          subFieldDefinition(subField.name).ofType,
-          name,
-          hasSelections = subField.selectionSet.nonEmpty
-        )
-      case _ => () // Fragments are handled as implicit conversions.
+    val fieldSelections    = field.selectionSet.collect { case selection: Selection.Field => selection }
+    writeTrait(writer, name, fieldSelections, "  ", jsNative = true) { subField =>
+      writeNestedField(
+        writer,
+        subField.name,
+        subFieldDefinition(subField.name).ofType,
+        name,
+        hasSelections = subField.selectionSet.nonEmpty
+      )
     }
-    writer.write("  }\n\n")
+  }
+
+  private def writeTrait[A](writer: Writer, name: String, fields: Iterable[A], indent: String, jsNative: Boolean)(
+    f: A => Unit
+  ): Unit = {
+    if (jsNative) {
+      writer.write(indent)
+      writer.write("@js.native\n")
+    }
+    writer.write(indent)
+    writer.write("trait ")
+    writer.write(name)
+    writer.write(" extends js.Object")
+    if (fields.nonEmpty) {
+      writer.write(" {\n")
+      fields.foreach(f)
+      writer.write(indent)
+      writer.write('}')
+    }
+    writer.write("\n\n")
   }
 
   private def writeOperationObject(
