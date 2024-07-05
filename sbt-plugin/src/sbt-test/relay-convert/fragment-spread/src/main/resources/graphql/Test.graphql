@@ -1,13 +1,52 @@
 query TestQuery {
-  defaultSettings {
-    ...Test_fragment
-  }
+    viewer {
+        ...Test_viewer
+        actor {
+            address {
+                ...Test_address
+            }
+        }
+    }
 }
 
-fragment Test_fragment on Settings {
-  ...Test_fragment2
+mutation TestMutation($input: ActorSubscribeInput!) {
+    actorSubscribe(input: $input) {
+        clientMutationId
+        ...Test_payload
+        subscribee {
+            address {
+                ...Test_address
+            }
+        }
+    }
 }
 
-fragment Test_fragment2 on Settings {
-  notificationSounds
+fragment Test_payload on ActorSubscribeResponsePayload {
+    subscribee {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_viewer on Viewer {
+    ...Test_viewer2
+    actor {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_viewer2 on Viewer {
+    actor {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_address on StreetAddress {
+    city
+    country
 }

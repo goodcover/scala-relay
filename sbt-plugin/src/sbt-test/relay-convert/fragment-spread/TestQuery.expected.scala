@@ -6,9 +6,14 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
 query TestQuery {
-  defaultSettings {
-    ...Test_fragment
-  }
+    viewer {
+        ...Test_viewer
+        actor {
+            address {
+                ...Test_address
+            }
+        }
+    }
 }
 */
 
@@ -16,17 +21,31 @@ trait TestQueryInput extends js.Object
 
 @js.native
 trait TestQuery extends js.Object {
-  val defaultSettings: TestQuery.DefaultSettings | Null
+  val viewer: TestQuery.Viewer | Null
 }
 
 object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQuery] {
   type Ctor[T] = T
 
   @js.native
-  trait DefaultSettings extends js.Object
+  trait ViewerActorAddress extends js.Object
 
-  implicit class defaultSettings2Test_fragmentRef(f: DefaultSettings) extends _root_.relay.gql.CastToFragmentRef[DefaultSettings, Test_fragment](f) {
-    def toTest_fragment: _root_.relay.gql.FragmentRef[Test_fragment] = castToRef
+  @js.native
+  trait ViewerActor extends js.Object {
+    val address: ViewerActorAddress | Null
+  }
+
+  @js.native
+  trait Viewer extends js.Object {
+    val actor: ViewerActor | Null
+  }
+
+  implicit class Viewer2Test_viewerRef(f: Viewer) extends _root_.relay.gql.CastToFragmentRef[Viewer, Test_viewer](f) {
+    def toTest_viewer: _root_.relay.gql.FragmentRef[Test_viewer] = castToRef
+  }
+
+  implicit class ViewerActorAddress2Test_addressRef(f: ViewerActorAddress) extends _root_.relay.gql.CastToFragmentRef[ViewerActorAddress, Test_address](f) {
+    def toTest_address: _root_.relay.gql.FragmentRef[Test_address] = castToRef
   }
 
   def newInput(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]

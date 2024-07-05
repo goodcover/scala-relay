@@ -222,6 +222,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
                    |
                    |""".stripMargin)
     writeNestedTraits(writer, operation.selectionSet, fieldTypeDefinition)
+    writeFragmentImplicits(writer, name, operation.selectionSet)
     writeNewInputMethod(writer, operation)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
@@ -246,7 +247,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     else writer.write('T')
     writer.write("\n\n")
     writeNestedTraits(writer, fragment.selectionSet, fieldTypeDefinition)
-    writeFragmentImplicits(writer, fragment)
+    writeFragmentImplicits(writer, fragment.name, fragment.selectionSet)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
     writer.write("  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]\n")
@@ -372,17 +373,25 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write("Input]\n")
   }
 
-  private def writeFragmentImplicits(writer: Writer, fragment: FragmentDefinition): Unit = {
-    fragment.selectionSet.foreach {
+  private def writeFragmentImplicits(
+    writer: Writer,
+    name: String,
+    selections: List[Selection],
+    outer: Boolean = true
+  ): Unit = {
+    selections.foreach {
+      case field: Selection.Field =>
+        val nextName = (if (outer) "" else name) + field.name.capitalize
+        writeFragmentImplicits(writer, nextName, field.selectionSet, outer = false)
       case spread: Selection.FragmentSpread =>
         writer.write("  implicit class ")
-        writer.write(fragment.name)
+        writer.write(name)
         writer.write('2')
         writer.write(spread.name)
         writer.write("Ref(f: ")
-        writer.write(fragment.name)
+        writer.write(name)
         writer.write(") extends _root_.relay.gql.CastToFragmentRef[")
-        writer.write(fragment.name)
+        writer.write(name)
         writer.write(", ")
         writer.write(spread.name)
         writer.write("](f) {\n")
@@ -393,7 +402,6 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         writer.write("] = castToRef\n")
         writer.write("  }\n\n")
       case inline: Selection.InlineFragment => throw new NotImplementedError(inline.toString)
-      case _                                => ()
     }
   }
 
