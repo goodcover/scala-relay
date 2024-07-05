@@ -1,0 +1,6 @@
+fragment Test_node on Node {
+  __typename
+  ... on Page {
+    name
+  }
+}

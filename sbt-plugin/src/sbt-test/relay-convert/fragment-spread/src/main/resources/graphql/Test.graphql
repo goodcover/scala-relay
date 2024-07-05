@@ -1,0 +1,13 @@
+query TestQuery {
+  defaultSettings {
+    ...Test_fragment
+  }
+}
+
+fragment Test_fragment on Settings {
+  ...Test_fragment2
+}
+
+fragment Test_fragment2 on Settings {
+    notificationSounds
+}

@@ -5,35 +5,19 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-fragment Test_fragment on Viewer {
-  actor {
-    id
-    address {
-      city
-      country
-    }
-  }
+fragment Test_fragment on Settings {
+  ...Test_fragment2
 }
 */
 
-@js.native
 trait Test_fragment extends js.Object {
-  val actor: Test_fragment.Actor | Null
 }
 
 object Test_fragment extends _root_.relay.gql.FragmentTaggedNode[Test_fragment] {
   type Ctor[T] = T
 
-  @js.native
-  trait ActorAddress extends js.Object {
-    val city: String | Null
-    val country: String | Null
-  }
-
-  @js.native
-  trait Actor extends js.Object {
-    val id: String
-    val address: ActorAddress | Null
+  implicit class Test_fragment2Test_fragment2Ref(f: Test_fragment) extends _root_.relay.gql.CastToFragmentRef[Test_fragment, Test_fragment2](f) {
+    def toTest_fragment2: _root_.relay.gql.FragmentRef[Test_fragment2] = castToRef
   }
 
   type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]

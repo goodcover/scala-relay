@@ -18,10 +18,7 @@ relayDebug := true
 
 Compile / relayPersistedPath := Some((Compile / resourceDirectory).value / "persist.json")
 
-Compile / npmDevDependencies ++= Seq( //
-  "relay-compiler" -> "11.0.0",
-  "graphql"        -> "^15.4.0"
-)
+Compile / npmDevDependencies ++= (Compile / relayDependencies).value
 
 Compile / relayDisplayOnlyOnFailure := true
 

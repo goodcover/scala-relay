@@ -16,13 +16,7 @@ relaySchema := (Compile / resourceDirectory).value / "graphql" / "Schema.graphql
 
 relayDebug := true
 
-Compile / npmDevDependencies ++= Seq( //
-  "relay-compiler-language-typescript" -> relayTypeScriptVersion.value,
-  "typescript"                         -> "^4.2.4",
-  "relay-compiler"                     -> "11.0.0",
-  // TODO: Where is this required? Should it be part of the plugin?
-  "graphql" -> "^15.4.0"
-)
+Compile / npmDevDependencies ++= (Compile / relayDependencies).value
 
 Compile / relayDisplayOnlyOnFailure := true
 

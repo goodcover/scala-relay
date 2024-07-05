@@ -1,10 +1,10 @@
 package com.dispalt.relay
 
-import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport.*
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import sbt.Keys.*
+import sbt.Keys._
 import sbt.io.{ExactFileFilter, ExtensionFilter}
-import sbt.{AutoPlugin, Def, SettingKey, *}
+import sbt.{AutoPlugin, Def, SettingKey, _}
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -17,6 +17,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayTypeScriptPluginVersion: SettingKey[String] =
       settingKey[String]("Set the relay-compiler-language-typescript version")
     val relayTypeScriptVersion: SettingKey[String] = settingKey[String]("Set the typescript version")
+    val relayGraphQLVersion: SettingKey[String]    = settingKey[String]("Set the graphql version")
     val relayVersion: SettingKey[String]           = settingKey[String]("Set the Relay version")
     val relayDebug: SettingKey[Boolean]            = settingKey[Boolean]("Set the debug flag for the relay compiler")
     val relayTypeScript: SettingKey[Boolean] = settingKey[Boolean](
@@ -64,7 +65,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayNpmDir: TaskKey[File] = taskKey[File]("Set the directory to the parent of node_modules")
   }
 
-  import autoImport.*
+  import autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
@@ -74,9 +75,11 @@ object RelayBasePlugin extends AutoPlugin {
       relayBaseDirectory := baseDirectory.value,
       relayWorkingDirectory := file(sys.props("user.dir")),
       relayCompilerCommand := "node node_modules/relay-compiler/lib/bin/RelayCompilerBin.js",
+      // TODO: Make these all conditional based on one another.
       // Version 14.1.0 uses relay >=10.1.3 and 14.1.1 uses >=12.0.0.
       relayTypeScriptPluginVersion := "14.1.0",
       relayTypeScriptVersion := "^4.2.4",
+      relayGraphQLVersion := "^15.0.0",
       relayVersion := "11.0.0"
     ) ++ inConfig(Compile)(perConfigSettings)
 
@@ -91,12 +94,16 @@ object RelayBasePlugin extends AutoPlugin {
       relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
       relayConvertDirectory := sourceManaged.value / "relay" / "generated",
       relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
-      relayDependencies := Seq("relay-compiler" -> relayVersion.value),
+      relayDependencies := Seq( //
+        "relay-compiler" -> relayVersion.value,
+        "graphql"        -> relayGraphQLVersion.value
+      ),
       relayDependencies ++= {
-        if (relayTypeScript.value) Seq(
-          "relay-compiler-language-typescript" -> relayTypeScriptPluginVersion.value,
-          "typescript" -> relayTypeScriptVersion.value
-        )
+        if (relayTypeScript.value)
+          Seq(
+            "relay-compiler-language-typescript" -> relayTypeScriptPluginVersion.value,
+            "typescript"                         -> relayTypeScriptVersion.value
+          )
         else Seq.empty
       },
       relayInclude := Seq(relayWrapDirectory.value.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),

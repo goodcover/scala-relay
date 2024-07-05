@@ -8,10 +8,7 @@ def commonSettings = Seq(
   relayCompilerCommand := s"node ${(Compile / npmInstallDependencies).value}/node_modules/.bin/relay-compiler",
   relaySchema := (LocalRootProject / baseDirectory).value / "testschema.graphql",
   relayDebug := true,
-  Compile / npmDevDependencies ++= Seq( //
-    "relay-compiler" -> "11.0.0",
-    "graphql"        -> "^15.4.0"
-  ),
+  Compile / npmDevDependencies ++= (Compile / relayDependencies).value,
   Compile / relayDisplayOnlyOnFailure := true,
   Compile / relayNpmDir := (Compile / npmInstallDependencies).value,
   webpack / version := "5.75.0"

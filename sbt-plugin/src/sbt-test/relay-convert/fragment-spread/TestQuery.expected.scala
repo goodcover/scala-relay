@@ -6,43 +6,26 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
 query TestQuery {
-  viewer {
-    actor {
-      id
-      address {
-        city
-        country
-      }
-    }
+  defaultSettings {
+    ...Test_fragment
   }
 }
 */
 
 trait TestQueryInput extends js.Object
 
-@js.native
 trait TestQuery extends js.Object {
-  val viewer: TestQuery.Viewer | Null
+  val defaultSettings: TestQuery.DefaultSettings | Null
 }
 
 object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQuery] {
   type Ctor[T] = T
 
-  @js.native
-  trait ViewerActorAddress extends js.Object {
-    val city: String | Null
-    val country: String | Null
+  trait DefaultSettings extends js.Object {
   }
 
-  @js.native
-  trait ViewerActor extends js.Object {
-    val id: String
-    val address: ViewerActorAddress | Null
-  }
-
-  @js.native
-  trait Viewer extends js.Object {
-    val actor: ViewerActor | Null
+  implicit class defaultSettings2Test_fragmentRef(f: DefaultSettings) extends _root_.relay.gql.CastToFragmentRef[DefaultSettings, Test_fragment](f) {
+    def toTest_fragment: _root_.relay.gql.FragmentRef[Test_fragment] = castToRef
   }
 
   def newInput(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]
