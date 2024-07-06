@@ -150,7 +150,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   ): Unit = {
     writeCompanionTrait(writer, name, selections, "") { field =>
       selectionField(field.name).foreach { definition =>
-        writeOperationField(writer, field.name, definition.ofType, name, hasSelections = field.selectionSet.nonEmpty)
+        writeOperationField(writer, field.alias.getOrElse(field.name), definition.ofType, name, hasSelections = field.selectionSet.nonEmpty)
       }
     }
   }
@@ -270,7 +270,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       case _: Selection.FragmentSpread      => Nil
     }
     val fullName = selection match {
-      case field: Selection.Field => typePrefix + field.name.capitalize
+      case field: Selection.Field => typePrefix + field.alias.getOrElse(field.name).capitalize
       // FIXME: This isn't guaranteed to be unique.
       //  For example, you would get a collision if you have a selection on field user and an inline fragment on User.
       case _: Selection.InlineFragment => typePrefix + typeDefinition.name.capitalize
@@ -378,7 +378,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       subFieldDefinition(subField.name).foreach { definition =>
         writeNestedField(
           writer,
-          subField.name,
+          subField.alias.getOrElse(subField.name),
           definition.ofType,
           fullName,
           hasSelections = subField.selectionSet.nonEmpty
@@ -496,7 +496,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val typePrefix =  if (outer) "" else name
     selections.foreach {
       case field: Selection.Field =>
-        val nextName = typePrefix + field.name.capitalize
+        val nextName = typePrefix + field.alias.getOrElse(field.name).capitalize
         writeFragmentImplicits(writer, nextName, field.selectionSet, outerObjectName, outer = false)
       case spread: Selection.FragmentSpread =>
         writeImplicitCastToFragmentRef(writer, name, spread)
