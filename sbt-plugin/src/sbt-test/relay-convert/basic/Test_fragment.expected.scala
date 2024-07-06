@@ -6,13 +6,13 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
 fragment Test_fragment on Viewer {
-  actor {
-    id
-    address {
-      city
-      country
+    actor {
+        id
+        address {
+            city
+            country
+        }
     }
-  }
 }
 */
 

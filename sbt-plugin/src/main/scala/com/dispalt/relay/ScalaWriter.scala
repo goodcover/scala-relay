@@ -3,6 +3,7 @@ package com.dispalt.relay
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition}
+import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema.ObjectOrInterfaceTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
@@ -132,7 +133,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val name        = getOperationName(operation) + "Input"
     val inputFields = operationInputFields(operation)
     writeTrait(writer, name, inputFields, "", jsNative = false, introspectable = false) { field =>
-      writeInputField(writer, field.name, field.ofType)
+      writeInputField(writer, field.name, field.variableType)
     }
   }
 
@@ -150,7 +151,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   ): Unit = {
     writeCompanionTrait(writer, name, selections, "") { field =>
       selectionField(field.name).foreach { definition =>
-        writeOperationField(writer, field.alias.getOrElse(field.name), definition.ofType, name, hasSelections = field.selectionSet.nonEmpty)
+        writeOperationField(
+          writer,
+          field.alias.getOrElse(field.name),
+          definition.ofType,
+          name,
+          hasSelections = field.selectionSet.nonEmpty
+        )
       }
     }
   }
@@ -341,7 +348,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         //  If it is never going to be this then why do they have a type for it?
         //  Check this again once we upgrade.
       }
-      writeTypeName(writer, "`%other`", innerObjectName.fold(outerObjectName)(n => s"$outerObjectName.$n"), indent + "  ")
+      writeTypeName(
+        writer,
+        "`%other`",
+        innerObjectName.fold(outerObjectName)(n => s"$outerObjectName.$n"),
+        indent + "  "
+      )
       writer.write(indent)
       writer.write("}\n\n")
     }
@@ -434,9 +446,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
 
     val inputFields = operationInputFields(operation)
 
-    def foreachInputField(f: (InputValueDefinition, Boolean) => Unit): Unit = {
+    def foreachInputField(f: (VariableDefinition, Boolean) => Unit): Unit = {
       @tailrec
-      def loop(fields: List[InputValueDefinition]): Unit = fields match {
+      def loop(fields: List[VariableDefinition]): Unit = fields match {
         case Nil => ()
         case field :: Nil =>
           f(field, false)
@@ -452,7 +464,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
-          writeInputFieldParameter(writer, field.name, field.ofType)
+          writeInputFieldParameter(writer, field.name, field.variableType)
           if (hasMore) writer.write(',')
           writer.write('\n')
       }
@@ -493,7 +505,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     outerObjectName: String,
     outer: Boolean = true
   ): Unit = {
-    val typePrefix =  if (outer) "" else name
+    val typePrefix = if (outer) "" else name
     selections.foreach {
       case field: Selection.Field =>
         val nextName = typePrefix + field.alias.getOrElse(field.name).capitalize
@@ -528,7 +540,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write("  }\n\n")
   }
 
-  private def writeInlineFragmentOps(writer: Writer, name: String, inlines: List[Selection.InlineFragment], typePrefix: String): Unit = {
+  private def writeInlineFragmentOps(
+    writer: Writer,
+    name: String,
+    inlines: List[Selection.InlineFragment],
+    typePrefix: String
+  ): Unit = {
     if (inlines.nonEmpty) {
       writer.write("  implicit class ")
       writer.write(name)
@@ -555,7 +572,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   }
 
   private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
-    writeField(writer, name, tpe, nameOfType(tpe), "  ")
+    writeField(writer, name, tpe, innerType(tpe), "  ")
 
   private def writeOperationField(
     writer: Writer,
@@ -564,7 +581,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     operationName: String,
     hasSelections: Boolean
   ): Unit = {
-    val typeName = if (hasSelections) s"$operationName.${name.capitalize}" else nameOfType(tpe)
+    val typeName = if (hasSelections) s"$operationName.${name.capitalize}" else innerType(tpe)
     writeField(writer, name, tpe, typeName, "  ")
   }
 
@@ -575,7 +592,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     typePrefix: String,
     hasSelections: Boolean
   ): Unit = {
-    val typeName = if (hasSelections) typePrefix + name.capitalize else nameOfType(tpe)
+    val typeName = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
     writeField(writer, name, tpe, typeName, "    ")
   }
 
@@ -589,7 +606,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   // TODO: Can we not use this?
   private def writeVariableParameter(writer: Writer, variable: VariableDefinition): Unit = {
     writer.write("    ")
-    writeNameAndType(writer, variable.name, variable.variableType, nameOfType(variable.variableType))
+    writeNameAndType(writer, variable.name, variable.variableType, innerType(variable.variableType))
     variable.defaultValue.foreach { value =>
       writer.write(" = ")
       // TODO: Probably need to convert this to Scala.
@@ -599,7 +616,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
 
   private def writeInputFieldParameter(writer: Writer, name: String, tpe: Type): Unit = {
     writer.write("    ")
-    writeNameAndType(writer, name, tpe, nameOfType(tpe))
+    writeNameAndType(writer, name, tpe, innerType(tpe))
     if (tpe.nullable) {
       writer.write(" = null")
     }
@@ -608,7 +625,9 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   private def writeNameAndType(writer: Writer, name: String, tpe: Type, typeName: String): Unit = {
     writer.write(name)
     writer.write(": ")
+    if (tpe.isInstanceOf[Type.ListType]) writer.write("js.Array[")
     writer.write(convertType(typeName))
+    if (tpe.isInstanceOf[Type.ListType]) writer.write("]")
     if (tpe.nullable) {
       writer.write(" | Null")
     }
@@ -619,11 +638,21 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       case variable :: Nil =>
         variable.variableType match {
           // TODO: Handle non-object types.
-          case named: Type.NamedType => schema.inputObjectType(named.name).fields
-          case list: Type.ListType   => throw new NotImplementedError(list.toString)
+          case named: Type.NamedType =>
+            // TODO: We should stop doing this, or at least provide both options. It doesn't work well with defaults.
+            // A single input object variable gets unpacked.
+            schema.inputObjectTypes.get(named.name) match {
+              case Some(_) if variable.defaultValue.nonEmpty =>
+                throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
+              case Some(obj) =>
+                obj.fields.map { inputValue =>
+                  VariableDefinition(inputValue.name, inputValue.ofType, inputValue.defaultValue, inputValue.directives)
+                }
+              case None => List(variable)
+            }
+          case list: Type.ListType => List(variable)
         }
-      case Nil       => Nil
-      case variables => throw new NotImplementedError(variables.toString)
+      case variables => variables
     }
   }
 
@@ -654,15 +683,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     getFieldDefinition(f)(fieldName).map(fieldDefinitionTypeDefinition)
 
   private def fieldDefinitionTypeDefinition(field: FieldDefinition): ObjectOrInterfaceTypeDefinition =
-    schema.objectOrInterfaceType(nameOfType(field.ofType))
-
-  private def nameOfType(tpe: Type): String = {
-    // TODO: Use Type.innerType
-    tpe match {
-      case named: Type.NamedType => named.name
-      case list: Type.ListType   => throw new NotImplementedError(list.toString)
-    }
-  }
+    schema.objectOrInterfaceType(innerType(field.ofType))
 
   private def convertType(typeName: String): String =
     typeName match {

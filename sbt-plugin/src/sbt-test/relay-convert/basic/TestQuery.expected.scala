@@ -6,15 +6,18 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
 query TestQuery {
-  viewer {
-    actor {
-      id
-      address {
-        city
-        country
-      }
+    viewer {
+        actor {
+            id
+            address {
+                city
+                country
+            }
+        }
+        allTimezones {
+            timezone
+        }
     }
-  }
 }
 */
 
@@ -41,8 +44,14 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
   }
 
   @js.native
+  trait ViewerAllTimezones extends js.Object {
+    val timezone: String | Null
+  }
+
+  @js.native
   trait Viewer extends js.Object {
     val actor: ViewerActor | Null
+    val allTimezones: js.Array[ViewerAllTimezones] | Null
   }
 
   def newInput(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]

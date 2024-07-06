@@ -6,7 +6,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
 fragment Test_fragmentInterface on Node {
-  name
+    name
 }
 */
 

@@ -5,7 +5,7 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-mutation TestMutation($input: ActorSubscribeInput!) {
+mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
     actorSubscribe(input: $input) {
         clientMutationId
         subscribee {
@@ -19,17 +19,17 @@ mutation TestMutation($input: ActorSubscribeInput!) {
 }
 */
 
-trait TestMutationInput extends js.Object {
+trait TestObjectVariableMutation extends js.Object {
   val clientMutationId: String | Null
   val subscribeeId: String | Null
 }
 
 @js.native
-trait TestMutation extends js.Object {
-  val actorSubscribe: TestMutation.ActorSubscribe | Null
+trait TestObjectVariableMutation extends js.Object {
+  val actorSubscribe: TestObjectVariableMutation.ActorSubscribe | Null
 }
 
-object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInput, TestMutation] {
+object TestObjectVariableMutation extends _root_.relay.gql.MutationTaggedNode[TestObjectVariableMutationInput, TestObjectVariableMutation] {
   type Ctor[T] = T
 
   @js.native
@@ -53,16 +53,16 @@ object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInpu
   def newInput(
     clientMutationId: String | Null = null,
     subscribeeId: String | Null = null
-  ): TestMutationInput =
+  ): TestObjectVariableMutationInput =
     js.Dynamic.literal(
       "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
       "subscribeeId" -> subscribeeId.asInstanceOf[js.Any]
-    ).asInstanceOf[TestMutationInput]
+    ).asInstanceOf[TestObjectVariableMutationInput]
 
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated__/TestMutation.graphql", JSImport.Default)
+  @JSImport("__generated__/TestObjectVariableMutation.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]
