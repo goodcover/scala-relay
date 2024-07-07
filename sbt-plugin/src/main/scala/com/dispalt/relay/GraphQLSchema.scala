@@ -3,10 +3,10 @@ package com.dispalt.relay
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.TypeSystemDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InterfaceTypeDefinition, ObjectTypeDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
 import caliban.parsing.adt.Type.NamedType
-import caliban.parsing.adt.{Directive, Document}
-import com.dispalt.relay.GraphQLSchema.{InvalidSchema, ObjectOrInterfaceTypeDefinition, UnsupportedOperation}
+import caliban.parsing.adt.{Directive, Document, Type}
+import com.dispalt.relay.GraphQLSchema.{FieldTypeDefinition, InvalidSchema, UnsupportedOperation}
 import sbt._
 
 import java.nio.charset.StandardCharsets
@@ -30,18 +30,33 @@ class GraphQLSchema(file: File, document: Document) {
   def inputObjectType(name: String): TypeDefinition.InputObjectTypeDefinition =
     inputObjectTypes.getOrElse(name, throw invalidSchema(s"Missing input $name."))
 
+  lazy val unionTypes: Map[String, TypeDefinition.UnionTypeDefinition] =
+    document.unionTypeDefinitions.map(d => d.name -> d).toMap
+
+  def unionType(name: String): TypeDefinition.UnionTypeDefinition =
+    unionTypes.getOrElse(name, throw invalidSchema(s"Missing union $name."))
+
+  lazy val enumTypes: Map[String, TypeDefinition.EnumTypeDefinition] =
+    document.enumTypeDefinitions.map(d => d.name -> d).toMap
+
+  def enumType(name: String): TypeDefinition.EnumTypeDefinition =
+    enumTypes.getOrElse(name, throw invalidSchema(s"Missing enum $name."))
+
   lazy val interfaceTypes: Map[String, TypeDefinition.InterfaceTypeDefinition] =
     document.interfaceTypeDefinitions.map(d => d.name -> d).toMap
 
   def interfaceType(name: String): TypeDefinition.InterfaceTypeDefinition =
     interfaceTypes.getOrElse(name, throw invalidSchema(s"Missing interface $name."))
 
-  def objectOrInterfaceType(name: String): ObjectOrInterfaceTypeDefinition =
+  def fieldType(name: String): FieldTypeDefinition =
     objectTypes
       .get(name)
-      .map(ObjectOrInterfaceTypeDefinition(_))
-      .orElse(interfaceTypes.get(name).map(ObjectOrInterfaceTypeDefinition(_)))
-      .getOrElse(throw invalidSchema(s"Missing type or interface $name."))
+      .map(FieldTypeDefinition(_))
+      .orElse(interfaceTypes.get(name).map(FieldTypeDefinition(_)))
+      .orElse(unionTypes.get(name).map(FieldTypeDefinition(_)))
+      // TODO: Currently these are implemented as String.
+      //.orElse(enumTypes.get(name).map(FieldTypeDefinition(_)))
+      .getOrElse(throw invalidSchema(s"Missing type, interface, union, or enum $name."))
 
   val queryObjectType: TypeDefinition.ObjectTypeDefinition = {
     // The query root operation type must be provided and must be an Object type.
@@ -108,20 +123,32 @@ object GraphQLSchema {
   final case class UnsupportedOperation(file: File, message: String)
       extends Exception(s"Unsupported operation in schema file: $file", new Exception(message))
 
-  final case class ObjectOrInterfaceTypeDefinition(
+  final case class FieldTypeDefinition(
     description: Option[String],
     name: String,
-    implements: List[NamedType],
+    implementsOrMembers: List[NamedType],
     directives: List[Directive],
     fields: List[FieldDefinition]
   )
 
-  object ObjectOrInterfaceTypeDefinition {
+  object FieldTypeDefinition {
 
-    def apply(obj: ObjectTypeDefinition): ObjectOrInterfaceTypeDefinition =
-      ObjectOrInterfaceTypeDefinition(obj.description, obj.name, obj.implements, obj.directives, obj.fields)
+    def apply(obj: ObjectTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(obj.description, obj.name, obj.implements, obj.directives, obj.fields)
 
-    def apply(int: InterfaceTypeDefinition): ObjectOrInterfaceTypeDefinition =
-      ObjectOrInterfaceTypeDefinition(int.description, int.name, int.implements, int.directives, int.fields)
+    def apply(int: InterfaceTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(int.description, int.name, int.implements, int.directives, int.fields)
+
+    def apply(union: UnionTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(
+        union.description,
+        union.name,
+        union.memberTypes.map(Type.NamedType(_, nonNull = true)),
+        union.directives,
+        Nil
+      )
+
+    def apply(enum: EnumTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(enum.description, enum.name, Nil, enum.directives, Nil)
   }
 }

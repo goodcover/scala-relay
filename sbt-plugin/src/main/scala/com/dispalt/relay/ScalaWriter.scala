@@ -5,7 +5,7 @@ import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
-import com.dispalt.relay.GraphQLSchema.ObjectOrInterfaceTypeDefinition
+import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
 import sbt._
 import sbt.io.Using.fileWriter
@@ -24,7 +24,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   // See https://github.com/scalameta/scalameta/issues/3372.
 
   private type FieldLookup     = String => Option[FieldDefinition]
-  private type FieldTypeLookup = String => Option[ObjectOrInterfaceTypeDefinition]
+  private type FieldTypeLookup = String => Option[FieldTypeDefinition]
 
   def write(file: File): Set[File] = {
     write(IO.read(file, StandardCharsets.UTF_8))
@@ -91,7 +91,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeFragmentPreamble(writer, documentText, fragment)
       val typeName = fragment.typeCondition.name
-      val fields   = schema.objectOrInterfaceType(typeName).fields.map(d => d.name -> d).toMap
+      val fields   = schema.fieldType(typeName).fields.map(d => d.name -> d).toMap
       writeFragmentTrait(writer, fragment, getFieldDefinition(typeName, fields))
       writeFragmentObject(writer, fragment, getFieldDefinitionTypeDefinition(typeName, fields))
     }
@@ -260,7 +260,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         // an inline fragment is considered to be of the same type as the enclosing context.
         // nonNull because we can only get an instance of this via the enclosing type which must exist first.
         val typeName   = inline.typeCondition.fold(enclosingType)(_.name)
-        val definition = schema.objectOrInterfaceType(typeName)
+        val definition = schema.fieldType(typeName)
         writeNestedSelection(writer, inline, definition, "", outerObjectName, outerObjectName)
       case _: Selection.FragmentSpread => () // Fragment spreads are handled as implicit conversions.
     }
@@ -269,7 +269,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   private def writeNestedSelection(
                                     writer: Writer,
                                     selection: Selection,
-                                    typeDefinition: ObjectOrInterfaceTypeDefinition,
+                                    typeDefinition: FieldTypeDefinition,
                                     enclosingFullName: String,
                                     outerObjectName: String,
                                     inlineParent: String
@@ -298,7 +298,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       case inline: Selection.InlineFragment =>
         if (inline.selectionSet.nonEmpty) {
           val definition =
-            inline.typeCondition.map(tpe => schema.objectOrInterfaceType(tpe.name)).getOrElse(typeDefinition)
+            inline.typeCondition.map(tpe => schema.fieldType(tpe.name)).getOrElse(typeDefinition)
           writeNestedSelection(writer, inline, definition, fullName, outerObjectName, fullName)
         }
       case _: Selection.FragmentSpread =>
@@ -686,16 +686,16 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   private def getFieldDefinitionTypeDefinition(
     typeName: String,
     fields: Map[String, FieldDefinition]
-  ): String => Option[ObjectOrInterfaceTypeDefinition] =
+  ): String => Option[FieldTypeDefinition] =
     getFieldDefinition(typeName, fields)(_).map(fieldDefinitionTypeDefinition)
 
   private def getFieldDefinitionTypeDefinition(
     f: String => FieldDefinition
-  )(fieldName: String): Option[ObjectOrInterfaceTypeDefinition] =
+  )(fieldName: String): Option[FieldTypeDefinition] =
     getFieldDefinition(f)(fieldName).map(fieldDefinitionTypeDefinition)
 
-  private def fieldDefinitionTypeDefinition(field: FieldDefinition): ObjectOrInterfaceTypeDefinition =
-    schema.objectOrInterfaceType(innerType(field.ofType))
+  private def fieldDefinitionTypeDefinition(field: FieldDefinition): FieldTypeDefinition =
+    schema.fieldType(innerType(field.ofType))
 
   private def convertType(typeName: String): String =
     typeName match {

@@ -19,3 +19,14 @@ fragment Test_node on Node {
 fragment Test_user on User {
     message
 }
+
+query TestQuery {
+    maybeNode {
+        __typename
+        ... on Story {
+            author {
+                lastName
+            }
+        }
+    }
+}
