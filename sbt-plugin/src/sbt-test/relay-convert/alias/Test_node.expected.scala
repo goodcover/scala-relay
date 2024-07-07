@@ -31,9 +31,9 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
   type Ctor[T] = T
 
   object __typename {
-    @js.native sealed trait User extends _root_.relay.gql.Introspectable[Test_node.User]
+    @js.native sealed trait User extends _root_.relay.gql.Introspectable.TypeName[Test_node.User]
     @inline def User: User = "User".asInstanceOf[User]
-    @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable[Test_node]
+    @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[Test_node]
     @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
   }
 
@@ -48,7 +48,7 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
   }
 
   @js.native
-  trait User extends js.Object {
+  trait User extends Test_node {
     val surname: String | Null
     val msg: UserMsg | Null
   }

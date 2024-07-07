@@ -5,20 +5,20 @@ $ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala 
 
 # Running again should do nothing.
 > relayConvert
--$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
--$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+-$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+-$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
 
 # Changing the version should re-convert everything.
 $ exec ./replace-version.sh
 > relayConvert
-$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
-$ newer target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
-$ copy-file target/scala-2.13/src_managed/main/relay/generated/testQuery.scala  generated/TestQuery.scala
-$ copy-file target/scala-2.13/src_managed/main/relay/generated/testQuery2.scala  generated/TestQuery2.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ newer target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  generated/TestQuery.scala
+$ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
 
 # Changing the schema should re-convert everything.
 $ touch src/main/resources/graphql/Schema.graphqls
