@@ -12,18 +12,22 @@ mutation TestNoVariablesMutation {
 }
 */
 
+trait TestNoVariablesMutationInput extends js.Object
+
 @js.native
 trait TestNoVariablesMutation extends js.Object {
   val noVariables: TestNoVariablesMutation.NoVariables | Null
 }
 
-object TestNoVariablesMutation extends _root_.relay.gql.MutationTaggedNode[Null, TestNoVariablesMutation] {
+object TestNoVariablesMutation extends _root_.relay.gql.MutationTaggedNode[TestNoVariablesMutationInput, TestNoVariablesMutation] {
   type Ctor[T] = T
 
   @js.native
   trait NoVariables extends js.Object {
     val clientMutationId: String | Null
   }
+
+  def newInput(): TestNoVariablesMutationInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesMutationInput]
 
   type Query = _root_.relay.gql.ConcreteRequest
 
