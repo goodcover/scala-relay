@@ -31,11 +31,11 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
   type Ctor[T] = T
 
   object __typename {
-    @js.native sealed trait User extends _root_.relay.gql.Introspectable[Test_node.User]
+    @js.native sealed trait User extends _root_.relay.gql.Introspectable.TypeName[Test_node.User]
     @inline def User: User = "User".asInstanceOf[User]
-    @js.native sealed trait Page extends _root_.relay.gql.Introspectable[Test_node.Page]
+    @js.native sealed trait Page extends _root_.relay.gql.Introspectable.TypeName[Test_node.Page]
     @inline def Page: Page = "Page".asInstanceOf[Page]
-    @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable[Test_node]
+    @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[Test_node]
     @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
   }
 
@@ -56,9 +56,9 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
 
   object PageActor {
     object __typename {
-      @js.native sealed trait User extends _root_.relay.gql.Introspectable[Test_node.PageActorUser]
+      @js.native sealed trait User extends _root_.relay.gql.Introspectable.TypeName[Test_node.PageActorUser]
       @inline def User: User = "User".asInstanceOf[User]
-      @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable[Test_node.PageActor]
+      @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[Test_node.PageActor]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
 

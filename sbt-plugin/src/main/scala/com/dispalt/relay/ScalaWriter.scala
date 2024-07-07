@@ -368,7 +368,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write(indent)
     writer.write("@js.native sealed trait ")
     writer.write(name)
-    writer.write(" extends _root_.relay.gql.Introspectable[")
+    writer.write(" extends _root_.relay.gql.Introspectable.TypeName[")
     writer.write(typeName)
     writer.write("]\n")
     writer.write(indent)
