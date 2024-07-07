@@ -189,20 +189,23 @@ object GraphQLExtractor {
           s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
         )
         logger.error(s"    at ${positionText(pos)}")
-        logger.debug(annot.syntax)
         logger.debug(annot.structure)
+        logger.debug(exprss.toString)
       // The application has to be exactly this. It cannot be an alias or qualified.
       // We could support more but it would require SemanticDB which is slower.
       case q"graphqlGen(${t: Lit.String})" =>
         builder += t.value
       case app @ q"graphqlGen(...$exprss)" =>
-        def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
-        logger.error(
-          s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
-        )
-        logger.error(s"    at ${positionText(pos)}")
-        logger.debug(app.syntax)
-        logger.debug(app.structure)
+        // Term.Name("graphqlGen") also matches this. Ignore it.
+        if (!app.isInstanceOf[Term.Name]) {
+          def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
+          logger.error(
+            s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
+          )
+          logger.error(s"    at ${positionText(pos)}")
+          logger.debug(app.structure)
+          logger.debug(exprss.toString)
+        }
     }
     val definitions = builder.result()
     if (definitions.nonEmpty) {
