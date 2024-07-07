@@ -4,7 +4,7 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
 import sbt.io.{ExactFileFilter, ExtensionFilter}
-import sbt.{AutoPlugin, Def, SettingKey, _}
+import sbt._
 
 object RelayBasePlugin extends AutoPlugin {
 

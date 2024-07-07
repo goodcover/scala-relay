@@ -2,7 +2,7 @@ name := "extensions"
 
 libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "1.1.0"
 
-enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
+enablePlugins(RelayPlugin, ScalaJSBundlerPlugin)
 
 scalacOptions += "-P:scalajs:sjsDefinedByDefault"
 

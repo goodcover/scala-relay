@@ -1,17 +1,15 @@
 package com.dispalt.relay
 
-import org.scalajs.sbtplugin.ScalaJSPlugin
-import sbt.Keys.*
-import sbt.{AutoPlugin, *}
+import sbt.Keys._
+import sbt._
 
-object RelayGeneratePlugin extends AutoPlugin {
+object RelayPlugin extends AutoPlugin {
 
-  override def requires: Plugins =
-    ScalaJSPlugin && RelayBasePlugin
+  override def requires: Plugins = RelayBasePlugin
 
   override def trigger = noTrigger
 
-  import RelayBasePlugin.autoImport.*
+  import RelayBasePlugin.autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] =
     inConfig(Compile)(perConfigSettings)

@@ -1,3 +1,9 @@
+mutation TestNoVariablesMutation {
+    noVariables {
+        clientMutationId
+    }
+}
+
 mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
     actorSubscribe(input: $input) {
         clientMutationId
@@ -8,12 +14,6 @@ mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
                 country
             }
         }
-    }
-}
-
-mutation TestNoVariablesMutation {
-    noVariables {
-        clientMutationId
     }
 }
 

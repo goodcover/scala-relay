@@ -15,11 +15,11 @@ def commonSettings = Seq(
 )
 
 lazy val a = project
-  .enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
+  .enablePlugins(RelayPlugin, ScalaJSBundlerPlugin)
   .settings(commonSettings)
 
 lazy val b = project
-  .enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
+  .enablePlugins(RelayPlugin, ScalaJSBundlerPlugin)
   .dependsOn(a)
   .settings(commonSettings)
   .settings(inConfig(Compile)(Seq(

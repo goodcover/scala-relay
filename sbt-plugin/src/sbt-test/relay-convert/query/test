@@ -1,0 +1,17 @@
+# This should convert as expected.
+> relayConvert
+# TODO: This is wrong. We use an empty object when there are no inputs instead of null/undefined.
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesQuery.scala TestNoVariablesQuery.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableQuery.scala TestObjectVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableQuery.scala TestOptionalObjectVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableQuery.scala TestNestedObjectVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableQuery.scala TestPrimitiveVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableQuery.scala TestOptionalPrimitiveVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableQuery.scala TestListVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableQuery.scala TestOptionalListVariableQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesQuery.scala TestMultipleVariablesQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseQuery.scala TestPrimitiveResponseQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMandatoryResponseQuery.scala TestMandatoryResponseQuery.expected.scala
+#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseQuery.scala TestListResponseQuery.expected.scala
+
+# TODO: Defaults
