@@ -251,7 +251,7 @@ object GraphQLExtractor {
   private def removeLongestPrefix(s: String, prefix: String): String = {
     val n = prefix.indices
       .find { i =>
-        s.charAt(i) != prefix.charAt(i)
+        i < s.length && s.charAt(i) != prefix.charAt(i)
       }
       .getOrElse(prefix.length)
     s.drop(n)
