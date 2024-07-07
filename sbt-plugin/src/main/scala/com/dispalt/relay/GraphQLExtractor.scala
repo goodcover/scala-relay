@@ -9,6 +9,7 @@ import sjsonnew._
 import java.nio.charset.StandardCharsets
 import scala.meta._
 import scala.meta.inputs.Input
+import scala.util.Try
 
 /**
   * Extracts the GraphQL definitions from @graphql annotations and graphqlGen macros within Scala sources.
@@ -170,7 +171,12 @@ object GraphQLExtractor {
     */
   private def extractFiles(files: Map[File, File], logger: Logger): Extracts =
     files.filter {
-      case (file, output) => extractFile(file, output, logger)
+      case (file, output) =>
+        Try(extractFile(file, output, logger)).fold({ t =>
+          logger.warn("Failed to check file. File will be ignored.")
+          logger.warn(t.getMessage)
+          false
+        }, identity)
     }
 
   private def extractFile(file: File, output: File, logger: Logger): Boolean = {
