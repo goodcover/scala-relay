@@ -93,15 +93,6 @@ object GraphQLConverter {
           val modifiedOutputs   = modifiedConversions.values.flatten.toSet
           val unmodifiedOutputs = unmodifiedConversions.values.flatten.toSet
           val outputs           = modifiedOutputs ++ unmodifiedOutputs
-          // TODO: There might be a problem here. I've seen it where somehow the cache ends up saving a last modified time
-          //  of 0 for a file that does not exist. Then the next run that is in the outputs but the cache doesn't find the
-          //  file so it defaults to 0. It is considered unmodified and so we don't attempt to re-extract it.
-          // Sanity check to prevent the cache getting really messed up.
-          modifiedOutputs.foreach { output =>
-            if (!output.exists()) {
-              throw new IllegalStateException(s"BUG: Output file does not exist: $output")
-            }
-          }
           // NOTE: Update clean if you change this.
           Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
             logger.debug(s"Outputs:\n$outputsReport")

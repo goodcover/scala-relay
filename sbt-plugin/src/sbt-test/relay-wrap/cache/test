@@ -2,6 +2,9 @@
 > relayWrap
 $ copy-file target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
 $ copy-file target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+$ copy-file target/streams/compile/relayWrap/_global/streams/relay/wrap/last cache/last
+$ copy-file target/streams/compile/relayWrap/_global/streams/relay/wrap/resources cache/resources
+$ copy-file target/streams/compile/relayWrap/_global/streams/relay/wrap/outputs cache/outputs
 
 # Running again should do nothing.
 > relayWrap
@@ -9,6 +12,9 @@ $ copy-file target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
 -$ newer target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
 $ must-mirror target/scala-2.13/src_managed/relay/js/Test.js js/Test.js
 $ must-mirror target/scala-2.13/src_managed/relay/js/Test2.js js/Test2.js
+$ must-mirror target/streams/compile/relayWrap/_global/streams/relay/wrap/last cache/last
+$ must-mirror target/streams/compile/relayWrap/_global/streams/relay/wrap/resources cache/resources
+$ must-mirror target/streams/compile/relayWrap/_global/streams/relay/wrap/outputs cache/outputs
 
 # Changing the version should re-wrap everything.
 $ exec ./replace-version.sh

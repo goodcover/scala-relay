@@ -86,15 +86,6 @@ object GraphQLExtractor {
         val modifiedOutputs                        = modifiedExtracts.values.toSet
         val unmodifiedOutputs                      = unmodifiedExtracts.values.toSet
         val outputs                                = modifiedOutputs ++ unmodifiedOutputs
-        // TODO: There might be a problem here. I've seen it where somehow the cache ends up saving a last modified time
-        //  of 0 for a file that does not exist. Then the next run that is in the outputs but the cache doesn't find the
-        //  file so it defaults to 0. It is considered unmodified and so we don't attempt to re-extract it.
-        // Sanity check to prevent the cache getting really messed up.
-        modifiedOutputs.foreach { output =>
-          if (!output.exists()) {
-            throw new IllegalStateException(s"BUG: Output file does not exist: $output")
-          }
-        }
         // NOTE: Update clean if you change this.
         Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
           logger.debug(s"Outputs:\n$outputsReport")
@@ -153,8 +144,8 @@ object GraphQLExtractor {
       if (needsExtracting.nonEmpty) logger.info("Extracting GraphQL...")
       val changedExtracts = extractFiles(needsExtracting, options.dialect, logger)
       if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
-      val unchangedExtracts =
-        sourceOutputs(sourceReport.unmodified.toSeq, options).filterKeys(!needsExtracting.contains(_))
+      val previouslyExtracted = sourceReport.checked -- needsExtracting.keySet
+      val unchangedExtracts = previousAnalysis.extracts.filterKeys(previouslyExtracted.contains)
       (changedExtracts, unchangedExtracts)
     } else {
       if (!versionUnchanged) logger.debug(s"Version changed:\n$Version")

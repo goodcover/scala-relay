@@ -38,7 +38,7 @@ package object relay {
     CacheImplicits.isoStringFormat(serializableIso)
 
   def serializableIso[A <: Serializable]: IsoString[A] =
-    IsoString.iso(serializeToString, deserializeFromString)
+    IsoString.iso(serializeToString[A], deserializeFromString[A])
 
   private def serializeToString[A <: Serializable](a: A): String =
     Using.wrap((_: Unit) => new ByteArrayOutputStream()).apply(()) { byteArrayOutputStream =>

@@ -143,7 +143,7 @@ object RelayCompiler {
           if (versionChanged || outputDirChanged) {
             IO.delete(previousAnalysis.artifacts)
           }
-          val artifacts = if (versionChanged ||
+          if (versionChanged ||
               optionsChanged ||
               sourcesReport.modified.nonEmpty ||
               outputsReport.modified.nonEmpty) {
@@ -161,13 +161,6 @@ object RelayCompiler {
           } else {
             previousAnalysis.artifacts
           }
-          // Sanity check to prevent the cache getting really messed up.
-          artifacts.foreach { output =>
-            if (!output.exists()) {
-              throw new IllegalStateException(s"BUG: Output file does not exist: $output")
-            }
-          }
-          artifacts
         }
         Analysis(Version, options, artifacts)
       }

@@ -2,6 +2,9 @@
 > relayExtract
 $ copy-file target/scala-2.13/src_managed/relay/graphql/Test.graphql graphql/Test.graphql
 $ copy-file target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/last cache/last
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/sources cache/sources
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/outputs cache/outputs
 
 # Running again should do nothing.
 > relayExtract
@@ -9,6 +12,9 @@ $ copy-file target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/Te
 -$ newer target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/Test2.graphql
 $ must-mirror target/scala-2.13/src_managed/relay/graphql/Test.graphql graphql/Test.graphql
 $ must-mirror target/scala-2.13/src_managed/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/last cache/last
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/sources cache/sources
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/outputs cache/outputs
 
 # Changing the version should re-extract everything.
 $ exec ./replace-version.sh
