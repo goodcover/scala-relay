@@ -22,6 +22,9 @@ lazy val b = project
   .enablePlugins(RelayGeneratePlugin, ScalaJSBundlerPlugin)
   .dependsOn(a)
   .settings(commonSettings)
-  .settings(inConfig(Compile)(relayInclude += (a / sourceDirectory).value))
+  .settings(inConfig(Compile)(Seq(
+    relayInclude += relayBaseDirectory.value.toPath.relativize((a / relayWrapDirectory).value.toPath).toString + "/**",
+    relayCompile := ((Compile / relayCompile) dependsOn (a / Compile / relayWrap)).value
+  )))
 
 logLevel := Level.Debug
