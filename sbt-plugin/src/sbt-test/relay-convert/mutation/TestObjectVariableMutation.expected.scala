@@ -19,7 +19,7 @@ mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
 }
 */
 
-trait TestObjectVariableMutation extends js.Object {
+trait TestObjectVariableMutationInput extends js.Object {
   val clientMutationId: String | Null
   val subscribeeId: String | Null
 }

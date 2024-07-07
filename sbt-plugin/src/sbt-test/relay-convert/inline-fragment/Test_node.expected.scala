@@ -40,12 +40,12 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
   }
 
   @js.native
-  trait User extends js.Object {
+  trait User extends Test_node {
     val name: String | Null
   }
 
   @js.native
-  trait PageActorUser extends js.Object {
+  trait PageActorUser extends PageActor {
     val name: String | Null
   }
 
@@ -65,7 +65,7 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
   }
 
   @js.native
-  trait Page extends js.Object {
+  trait Page extends Test_node {
     val name: String | Null
     val actor: PageActor | Null
   }

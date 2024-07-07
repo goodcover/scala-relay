@@ -128,13 +128,17 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
          |
          |""".stripMargin)
 
-  // TODO: Don't do this. We should create shared types from the schema.
+  // TODO: Don't do this. We should create the input types from the schema and share them.
   private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
-    val name        = getOperationName(operation) + "Input"
-    val inputFields = operationInputFields(operation)
-    writeTrait(writer, name, inputFields, "", jsNative = false, introspectable = false) { field =>
-      writeInputField(writer, field.name, field.variableType)
+    val name                    = getOperationName(operation) + "Input"
+    val singleInputObjectFields = operationSingleInputObjectFields(operation)
+    // FIXME: Core uses an empty object instead of null.
+    //if (singleInputObjectFields.nonEmpty) {
+    operation.selectionSet
+    writeTrait(writer, name, singleInputObjectFields, "", Seq.empty, jsNative = false) { field =>
+      writeInputField(writer, field.name, field.ofType)
     }
+    //}
   }
 
   private def writeOperationTrait(writer: Writer, operation: OperationDefinition, selectionField: FieldLookup): Unit =
@@ -149,7 +153,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     selections: List[Selection],
     selectionField: FieldLookup
   ): Unit = {
-    writeCompanionTrait(writer, name, selections, "") { field =>
+    writeSelectionTrait(writer, name, selections, "", Seq.empty) { field =>
       selectionField(field.name).foreach { definition =>
         writeOperationField(
           writer,
@@ -248,7 +252,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       case field: Selection.Field =>
         if (field.selectionSet.nonEmpty) {
           fieldTypeDefinition(field.name).foreach { definition =>
-            writeNestedSelection(writer, field, definition, "", outerObjectName)
+            writeNestedSelection(writer, field, definition, "", outerObjectName, outerObjectName)
           }
         }
       case inline: Selection.InlineFragment =>
@@ -257,17 +261,18 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         // nonNull because we can only get an instance of this via the enclosing type which must exist first.
         val typeName   = inline.typeCondition.fold(enclosingType)(_.name)
         val definition = schema.objectOrInterfaceType(typeName)
-        writeNestedSelection(writer, inline, definition, "", outerObjectName)
+        writeNestedSelection(writer, inline, definition, "", outerObjectName, outerObjectName)
       case _: Selection.FragmentSpread => () // Fragment spreads are handled as implicit conversions.
     }
   }
 
   private def writeNestedSelection(
-    writer: Writer,
-    selection: Selection,
-    typeDefinition: ObjectOrInterfaceTypeDefinition,
-    typePrefix: String,
-    outerObjectName: String
+                                    writer: Writer,
+                                    selection: Selection,
+                                    typeDefinition: ObjectOrInterfaceTypeDefinition,
+                                    enclosingFullName: String,
+                                    outerObjectName: String,
+                                    inlineParent: String
   ): Unit = {
     // TODO: Cache these better? It is only worth doing this if there are at least 2 selections.
     val subFieldLookup = typeDefinition.fields.map(d => d.name -> d).toMap
@@ -277,36 +282,36 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       case _: Selection.FragmentSpread      => Nil
     }
     val fullName = selection match {
-      case field: Selection.Field => typePrefix + field.alias.getOrElse(field.name).capitalize
+      case field: Selection.Field => enclosingFullName + field.alias.getOrElse(field.name).capitalize
       // FIXME: This isn't guaranteed to be unique.
       //  For example, you would get a collision if you have a selection on field user and an inline fragment on User.
-      case _: Selection.InlineFragment => typePrefix + typeDefinition.name.capitalize
-      case _: Selection.FragmentSpread => typePrefix // Unused.
+      case _: Selection.InlineFragment => enclosingFullName + typeDefinition.name.capitalize
+      case _: Selection.FragmentSpread => enclosingFullName // Unused.
     }
     subSelections.foreach {
       case subField: Selection.Field =>
         if (subField.selectionSet.nonEmpty) {
           getFieldDefinitionTypeDefinition(typeDefinition.name, subFieldLookup)(subField.name).foreach { definition =>
-            writeNestedSelection(writer, subField, definition, fullName, outerObjectName)
+            writeNestedSelection(writer, subField, definition, fullName, outerObjectName, fullName)
           }
         }
       case inline: Selection.InlineFragment =>
         if (inline.selectionSet.nonEmpty) {
           val definition =
             inline.typeCondition.map(tpe => schema.objectOrInterfaceType(tpe.name)).getOrElse(typeDefinition)
-          writeNestedSelection(writer, inline, definition, fullName, outerObjectName)
+          writeNestedSelection(writer, inline, definition, fullName, outerObjectName, fullName)
         }
       case _: Selection.FragmentSpread =>
         () // Fragment spreads are handled as implicit conversions.
     }
     selection match {
       case field: Selection.Field =>
-        writeNestedTrait(writer, fullName, field.selectionSet, subFieldLookup, typeDefinition.name)
+        writeNestedTrait(writer, fullName, field.selectionSet, subFieldLookup, typeDefinition.name, Seq.empty)
         writeNestedInlineCompanionObject(writer, fullName, field.selectionSet, outerObjectName)
       case inline: Selection.InlineFragment =>
         // FIXME: If there are multiple inline fragments without a type condition we will generate conflicting members.
-        val enclosingType = inline.typeCondition.fold(typeDefinition.name)(_.name)
-        writeNestedTrait(writer, fullName, inline.selectionSet, subFieldLookup, enclosingType)
+        val selectionObject = inline.typeCondition.fold(typeDefinition.name)(_.name)
+        writeNestedTrait(writer, fullName, inline.selectionSet, subFieldLookup, selectionObject, Seq(inlineParent))
         writeNestedInlineCompanionObject(writer, fullName, inline.selectionSet, outerObjectName)
       case _: Selection.FragmentSpread =>
         () // Fragment spreads are handled as implicit conversions.
@@ -383,10 +388,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     fullName: String,
     selections: List[Selection],
     subFieldLookup: Map[String, FieldDefinition],
-    enclosingType: String
+    selectionObject: String,
+    parentTraits: Seq[String]
   ): Unit = {
-    val subFieldDefinition = getFieldDefinition(enclosingType, subFieldLookup)(_)
-    writeCompanionTrait(writer, fullName, selections, "  ") { subField =>
+    val subFieldDefinition = getFieldDefinition(selectionObject, subFieldLookup)(_)
+    writeSelectionTrait(writer, fullName, selections, "  ", parentTraits) { subField =>
       subFieldDefinition(subField.name).foreach { definition =>
         writeNestedField(
           writer,
@@ -399,25 +405,26 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     }
   }
 
-  private def writeCompanionTrait(writer: Writer, name: String, selections: List[Selection], indent: String)(
-    f: Selection.Field => Unit
-  ): Unit =
-    writeTrait(
-      writer,
-      name,
-      nonMetaFieldSelections(selections),
-      indent,
-      jsNative = true,
-      introspectable = hasTypeName(selections)
-    )(f)
+  private def writeSelectionTrait(
+    writer: Writer,
+    name: String,
+    selections: List[Selection],
+    indent: String,
+    parentTraits: Seq[String]
+  )(f: Selection.Field => Unit): Unit = {
+    val parents =
+      if (hasTypeName(selections)) parentTraits :+ s"_root_.relay.gql.Introspectable[$name]" else parentTraits
+    val fieldSelections = nonMetaFieldSelections(selections)
+    writeTrait(writer, name, fieldSelections, indent, parents, jsNative = true)(f)
+  }
 
   private def writeTrait[A](
     writer: Writer,
     name: String,
     fields: Iterable[A],
     indent: String,
-    jsNative: Boolean,
-    introspectable: Boolean
+    parentTraits: Seq[String],
+    jsNative: Boolean
   )(f: A => Unit): Unit = {
     if (jsNative) {
       writer.write(indent)
@@ -426,12 +433,20 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write(indent)
     writer.write("trait ")
     writer.write(name)
-    writer.write(" extends ")
-    if (introspectable) {
-      writer.write("_root_.relay.gql.Introspectable[")
-      writer.write(name)
-      writer.write("]")
-    } else writer.write("js.Object")
+    val parents = if (parentTraits.isEmpty) Seq("js.Object") else parentTraits
+    if (parents.nonEmpty) {
+      parents match {
+        case base +: tail =>
+          writer.write(" extends ")
+          writer.write(base)
+          tail.foreach { parent =>
+            writer.write("with ")
+            writer.write(parent)
+            writer.write(' ')
+          }
+        case Seq() => ()
+      }
+    }
     if (fields.nonEmpty) {
       writer.write(" {\n")
       fields.foreach(f)
@@ -442,13 +457,15 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   }
 
   private def writeNewInputMethod(writer: Writer, operation: OperationDefinition): Unit = {
+    val singleInputObjectFields = operationSingleInputObjectFields(operation)
+
+    // FIXME: Core uses an empty object instead of null.
+    //if (singleInputObjectFields.nonEmpty) {
     val operationName = getOperationName(operation)
 
-    val inputFields = operationInputFields(operation)
-
-    def foreachInputField(f: (VariableDefinition, Boolean) => Unit): Unit = {
+    def foreachInputField(f: (InputValueDefinition, Boolean) => Unit): Unit = {
       @tailrec
-      def loop(fields: List[VariableDefinition]): Unit = fields match {
+      def loop(fields: List[InputValueDefinition]): Unit = fields match {
         case Nil => ()
         case field :: Nil =>
           f(field, false)
@@ -456,15 +473,16 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           f(field, true)
           loop(tail)
       }
-      loop(inputFields)
+
+      loop(singleInputObjectFields)
     }
 
     writer.write("  def newInput(")
-    if (inputFields.nonEmpty) {
+    if (singleInputObjectFields.nonEmpty) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
-          writeInputFieldParameter(writer, field.name, field.variableType)
+          writeInputFieldParameter(writer, field.name, field.ofType)
           if (hasMore) writer.write(',')
           writer.write('\n')
       }
@@ -473,13 +491,13 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write("): ")
     writer.write(operationName)
     writer.write("Input =")
-    if (inputFields.nonEmpty) {
+    if (singleInputObjectFields.nonEmpty) {
       writer.write("\n    ")
     } else {
       writer.write(' ')
     }
     writer.write("js.Dynamic.literal(")
-    if (inputFields.nonEmpty) {
+    if (singleInputObjectFields.nonEmpty) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
@@ -496,6 +514,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write(").asInstanceOf[")
     writer.write(operationName)
     writer.write("Input]\n")
+    //}
   }
 
   private def writeFragmentImplicits(
@@ -571,6 +590,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     }
   }
 
+  // TODO: Default values
   private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
     writeField(writer, name, tpe, innerType(tpe), "  ")
 
@@ -633,37 +653,29 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     }
   }
 
-  private def operationInputFields(operation: OperationDefinition) = {
+  // TODO: Don't do this. It only works if there is a single input object.
+  private def operationSingleInputObjectFields(operation: OperationDefinition) = {
     operation.variableDefinitions match {
       case variable :: Nil =>
-        variable.variableType match {
-          // TODO: Handle non-object types.
-          case named: Type.NamedType =>
-            // TODO: We should stop doing this, or at least provide both options. It doesn't work well with defaults.
-            // A single input object variable gets unpacked.
-            schema.inputObjectTypes.get(named.name) match {
-              case Some(_) if variable.defaultValue.nonEmpty =>
-                throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
-              case Some(obj) =>
-                obj.fields.map { inputValue =>
-                  VariableDefinition(inputValue.name, inputValue.ofType, inputValue.defaultValue, inputValue.directives)
-                }
-              case None => List(variable)
-            }
-          case list: Type.ListType => List(variable)
+        schema.inputObjectTypes.get(innerType(variable.variableType)) match {
+          case Some(_) if variable.defaultValue.nonEmpty =>
+            // TODO: We could support this by providing a default object somewhere
+            throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
+          case Some(obj) => obj.fields
+          case None      => Nil
         }
-      case variables => variables
+      case _ => Nil
     }
   }
 
   private def getFieldDefinition(
-    enclosingType: String,
+    selectionObject: String,
     fieldLookup: Map[String, FieldDefinition]
   ): String => Option[FieldDefinition] =
     getFieldDefinition { fieldName =>
       fieldLookup.getOrElse(
         fieldName,
-        throw new IllegalArgumentException(s"Type $enclosingType does not define field $fieldName.")
+        throw new IllegalArgumentException(s"Type $selectionObject does not define field $fieldName.")
       )
     }
 

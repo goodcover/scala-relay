@@ -11,6 +11,12 @@ mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
     }
 }
 
+mutation TestNoVariablesMutation {
+    noVariables {
+        clientMutationId
+    }
+}
+
 mutation TestOptionalObjectVariableMutation($input: ActorSubscribeInput) {
     actorSubscribe(input: $input) {
         clientMutationId

@@ -68,6 +68,7 @@ type Mutation {
   nodeSavedState(input: NodeSaveStateInput): NodeSavedStateResponsePayload
   unfriend(input: UnfriendInput): UnfriendResponsePayload
   viewerNotificationsUpdateAllSeenState(input: UpdateAllSeenStateInput): ViewerNotificationsUpdateAllSeenStateResponsePayload
+  noVariables: ActorSubscribeResponsePayload
   primitiveVariable(a: String): ActorSubscribeResponsePayload
   listVariable(as: [String]): ActorSubscribeResponsePayload
   multipleVariables(a: String, b: String): ActorSubscribeResponsePayload
