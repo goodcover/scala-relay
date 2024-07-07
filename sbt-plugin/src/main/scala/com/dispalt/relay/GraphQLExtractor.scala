@@ -19,16 +19,19 @@ object GraphQLExtractor {
   // Increment when the code changes to bust the cache.
   private val Version = 1
 
-  final case class Options(outputDir: File)
+  final case class Options(outputDir: File, dialect: Dialect)
 
   object Options {
+
+    implicit val dialectFormat: JsonFormat[Dialect] = serializableFormat
+
     //noinspection TypeAnnotation
-    implicit val iso = LList.iso[Options, File :*: LNil]( //
+    implicit val iso = LList.iso[Options, File :*: Dialect :*: LNil]( //
       { o: Options => //
-        ("outputDir" -> o.outputDir) :*: LNil
+        ("outputDir" -> o.outputDir) :*: ("dialect" -> o.dialect) :*: LNil
       }, {
-        case (_, outputDir) :*: LNil => //
-          Options(outputDir)
+        case (_, outputDir) :*: (_, dialect) :*: LNil => //
+          Options(outputDir, dialect)
       }
     )
   }
@@ -99,7 +102,7 @@ object GraphQLExtractor {
             }
             // Don't forget to delete the old ones since extract appends.
             IO.delete(unexpectedChanges)
-            val unexpectedExtracts = extractFiles(needsExtraction, logger)
+            val unexpectedExtracts = extractFiles(needsExtraction, options.dialect, logger)
             logger.warn(s"Extracted an additional ${unexpectedExtracts.size} GraphQL documents.")
             unexpectedExtracts
           }
@@ -139,7 +142,7 @@ object GraphQLExtractor {
       }
       val needsExtracting = modifiedAndTransitiveOutputs.filterKeys(!sourceReport.removed.contains(_))
       if (needsExtracting.nonEmpty) logger.info("Extracting GraphQL...")
-      val changedExtracts = extractFiles(needsExtracting, logger)
+      val changedExtracts = extractFiles(needsExtracting, options.dialect, logger)
       if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
       val unchangedExtracts =
         sourceOutputs(sourceReport.unmodified.toSeq, options).filterKeys(!needsExtracting.contains(_))
@@ -150,7 +153,7 @@ object GraphQLExtractor {
       val previousOutputs = previousAnalysis.extracts.values
       IO.delete(previousOutputs)
       val needsExtraction = sourceOutputs(sourceReport.checked.toSeq, options)
-      val changedExtracts = extractFiles(needsExtraction, logger)
+      val changedExtracts = extractFiles(needsExtraction, options.dialect, logger)
       (changedExtracts, Map.empty)
     }
   }
@@ -169,20 +172,20 @@ object GraphQLExtractor {
     * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
     * existing extracts are deleted beforehand if required.
     */
-  private def extractFiles(files: Map[File, File], logger: Logger): Extracts =
+  private def extractFiles(files: Map[File, File], dialect: Dialect, logger: Logger): Extracts =
     files.filter {
       case (file, output) =>
-        Try(extractFile(file, output, logger)).fold({ t =>
-          logger.warn("Failed to check file. File will be ignored.")
+        Try(extractFile(file, output, dialect, logger)).fold({ t =>
+          logger.warn("Failed to check file. File will be ignored. Please ensure that relayExtractDialect has the correct value.")
           logger.warn(t.getMessage)
           false
         }, identity)
     }
 
-  private def extractFile(file: File, output: File, logger: Logger): Boolean = {
+  private def extractFile(file: File, output: File, dialect: Dialect, logger: Logger): Boolean = {
     logger.debug(s"Checking file for graphql definitions: $file")
     val input   = Input.File(file)
-    val source  = input.parse[Source].get
+    val source  = input.parse[Source](implicitly, implicitly, dialect).get
     val builder = Iterable.newBuilder[String]
     source.traverse {
       // The annotation has to be exactly this. It cannot be an alias or qualified.

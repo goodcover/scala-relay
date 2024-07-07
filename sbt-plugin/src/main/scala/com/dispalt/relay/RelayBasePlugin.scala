@@ -3,8 +3,10 @@ package com.dispalt.relay
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
-import sbt.io.{ExactFileFilter, ExtensionFilter}
 import sbt._
+import sbt.io.{ExactFileFilter, ExtensionFilter}
+
+import scala.meta.Dialect
 
 object RelayBasePlugin extends AutoPlugin {
 
@@ -44,6 +46,7 @@ object RelayBasePlugin extends AutoPlugin {
     val relayConvertDirectory: SettingKey[File] =
       settingKey[File]("Output directory for the generated Scala.js facades that match the generate")
     val relayCompileDirectory: SettingKey[File] = settingKey[File]("Output of the schema stuff")
+    val relayExtractDialect: TaskKey[Dialect]   = taskKey[Dialect]("The dialect to use when parsing Scala files")
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
@@ -94,6 +97,23 @@ object RelayBasePlugin extends AutoPlugin {
       relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
       relayConvertDirectory := sourceManaged.value / "relay" / "generated",
       relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
+      relayExtractDialect := {
+        val source3 = scalacOptions.value.contains("-Xsource:3")
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, 10))            => scala.meta.dialects.Scala210
+          case Some((2, 11))            => scala.meta.dialects.Scala211
+          case Some((2, 12)) if source3 => scala.meta.dialects.Scala212Source3
+          case Some((2, 13))            => scala.meta.dialects.Scala213
+          case Some((2, 13)) if source3 => scala.meta.dialects.Scala213Source3
+          case Some((2, 13))            => scala.meta.dialects.Scala213
+          case Some((3, 0))             => scala.meta.dialects.Scala30
+          case Some((3, 1))             => scala.meta.dialects.Scala31
+          case Some((3, 2))             => scala.meta.dialects.Scala32
+          case Some((3, 3))             => scala.meta.dialects.Scala33
+          case Some((3, 4))             => scala.meta.dialects.Scala33
+          case _                        => scala.meta.dialects.Scala3Future
+        }
+      },
       relayDependencies := Seq( //
         "relay-compiler" -> relayVersion.value,
         "graphql"        -> relayGraphQLVersion.value
@@ -138,12 +158,13 @@ object RelayBasePlugin extends AutoPlugin {
   def relayExtractTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
     val sourceFiles       = unmanagedSources.value.toSet
     val outputDir         = relayExtractDirectory.value
+    val dialect           = relayExtractDialect.value
     val s                 = streams.value
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "extract"
     if (force) {
       GraphQLExtractor.clean(cacheStoreFactory)
     }
-    val extractOptions = GraphQLExtractor.Options(outputDir)
+    val extractOptions = GraphQLExtractor.Options(outputDir, dialect)
     GraphQLExtractor.extract(cacheStoreFactory, sourceFiles, extractOptions, s.log)
   }
 

@@ -1,8 +1,11 @@
 package com.dispalt
 
+import sbt.io.Using
 import sbt.util.CacheImplicits
-import sjsonnew.*
+import sjsonnew._
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util.Base64
 import scala.annotation.tailrec
 
 package object relay {
@@ -30,6 +33,29 @@ package object relay {
       override def write[J](obj: Map[K, V], builder: Builder[J]): Unit =
         delegate.write(obj, builder)
     }
+
+  def serializableFormat[A <: Serializable]: JsonFormat[A] =
+    CacheImplicits.isoStringFormat(serializableIso)
+
+  def serializableIso[A <: Serializable]: IsoString[A] =
+    IsoString.iso(serializeToString, deserializeFromString)
+
+  private def serializeToString[A <: Serializable](a: A): String =
+    Using.wrap((_: Unit) => new ByteArrayOutputStream()).apply(()) { byteArrayOutputStream =>
+      Using.resource(new ObjectOutputStream(_))(byteArrayOutputStream) { objectOutputStream =>
+        objectOutputStream.writeObject(a)
+        Base64.getEncoder.encodeToString(byteArrayOutputStream.toByteArray)
+      }
+    }
+
+  private def deserializeFromString[A <: Serializable](s: String): A = {
+    val data = Base64.getDecoder.decode(s)
+    Using.wrap(new ByteArrayInputStream(_: Array[Byte])).apply(data) { byteArrayInputStream =>
+      Using.resource(new ObjectInputStream(_))(byteArrayInputStream) { objectInputStream =>
+        objectInputStream.readObject().asInstanceOf[A]
+      }
+    }
+  }
 
   /**
     * Inverts a map and ensures that it was a lossless conversion.
