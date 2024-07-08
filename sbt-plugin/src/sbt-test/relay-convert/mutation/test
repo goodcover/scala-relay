@@ -1,10 +1,11 @@
 # This should convert as expected.
 > relayConvert
-# TODO: This is wrong. We use an empty object when there are no inputs instead of null/undefined.
+# FIXME: This is wrong. We use an empty object when there are no inputs instead of null/undefined.
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesMutation.scala TestNoVariablesMutation.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableMutation.scala TestObjectVariableMutation.expected.scala
+# TODO: Implement these remaining tests.
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableMutation.scala TestOptionalObjectVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala TestNestedObjectVariableMutation.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala TestNestedObjectVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableMutation.scala TestPrimitiveVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableMutation.scala TestOptionalPrimitiveVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableMutation.scala TestListVariableMutation.expected.scala

@@ -3,6 +3,7 @@
 # TODO: This is wrong. We use an empty object when there are no inputs instead of null/undefined.
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesQuery.scala TestNoVariablesQuery.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableQuery.scala TestObjectVariableQuery.expected.scala
+# TODO: Implement these remaining tests.
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableQuery.scala TestOptionalObjectVariableQuery.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableQuery.scala TestNestedObjectVariableQuery.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableQuery.scala TestPrimitiveVariableQuery.expected.scala

@@ -2,7 +2,7 @@ package com.dispalt.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
@@ -49,7 +49,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writeInputType(writer, operation)
+      writeOperationInputTypes(writer, operation)
       writeOperationTrait(writer, operation, getFieldDefinition(schema.queryField))
       writeOperationObject(
         writer,
@@ -65,7 +65,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     val file = operationFile(operation)
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       writeOperationPreamble(writer, documentText, operation)
-      writeInputType(writer, operation)
+      writeOperationInputTypes(writer, operation)
       writeOperationTrait(writer, operation, getFieldDefinition(schema.mutationField))
       writeOperationObject(
         writer,
@@ -129,16 +129,81 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
          |""".stripMargin)
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
-  private def writeInputType(writer: Writer, operation: OperationDefinition): Unit = {
-    val name                    = getOperationName(operation) + "Input"
+  private def writeOperationInputTypes(writer: Writer, operation: OperationDefinition): Unit = {
+    val operationName = getOperationName(operation)
+
+    @tailrec
+    def loop(remaining: Set[String], done: Set[String]): Unit = {
+      remaining.headOption match {
+        case Some(typeName) =>
+          val nextDone = done + typeName
+          schema.inputObjectTypes.get(typeName) match {
+            case Some(input) =>
+              writeInputType(writer, input, operationName)
+              val nextRemaining = remaining.tail ++ input.fields
+                .map(field => innerType(field.ofType))
+                .filterNot(done.contains)
+              loop(nextRemaining, nextDone)
+            case None =>
+              loop(remaining.tail, nextDone)
+          }
+        case None => ()
+      }
+    }
+
+    writeOperationInputType(writer, operation)
+
+    operation.variableDefinitions match {
+      case variable :: Nil =>
+        schema.inputObjectTypes.get(innerType(variable.variableType)).foreach { input =>
+          // FIXME: If the input type is cyclic then we will end up with two distinct types. It's not a big deal and we
+          //  probably have no instances of that anyway. It would be annoying to prevent and pointless since I want to
+          //  change how all these input types are generated anyway.
+          loop(input.fields.map(field => innerType(field.ofType)).toSet, Set.empty)
+        }
+      case _ => ()
+    }
+  }
+
+  // TODO: Don't do this. We should create the input types from the schema and share them.
+  private def writeOperationInputType(writer: Writer, operation: OperationDefinition): Unit = {
+    val operationName           = getOperationName(operation)
     val singleInputObjectFields = operationSingleInputObjectFields(operation)
     // FIXME: Core uses an empty object instead of null.
     //if (singleInputObjectFields.nonEmpty) {
     operation.selectionSet
-    writeTrait(writer, name, singleInputObjectFields, "", Seq.empty, jsNative = false) { field =>
-      writeInputField(writer, field.name, field.ofType)
+    writeTrait(writer, operationName + "Input", singleInputObjectFields, "", Seq.empty, jsNative = false) { field =>
+      writeInputField(
+        writer,
+        field.name,
+        field.ofType,
+        operationName,
+        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType))
+      )
     }
     //}
+  }
+
+  private def writeInputType(writer: Writer, input: InputObjectTypeDefinition, operationName: String): Unit = {
+    // FIXME: Core uses an empty object instead of null.
+    writeTrait(writer, operationName + input.name, input.fields, "", Seq.empty, jsNative = false) { field =>
+      writeInputField(
+        writer,
+        field.name,
+        field.ofType,
+        operationName,
+        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType))
+      )
+    }
+    writeInputCompanionObject(writer, input, operationName)
+  }
+
+  private def writeInputCompanionObject(writer: Writer, input: InputObjectTypeDefinition, operationName: String): Unit = {
+    writer.write("object ")
+    writer.write(operationName + input.name)
+    writer.write(" {\n")
+    writeInputApplyMethod(writer, input, operationName)
+    writer.write("}\n\n")
   }
 
   private def writeOperationTrait(writer: Writer, operation: OperationDefinition, selectionField: FieldLookup): Unit =
@@ -267,12 +332,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   }
 
   private def writeNestedSelection(
-                                    writer: Writer,
-                                    selection: Selection,
-                                    typeDefinition: FieldTypeDefinition,
-                                    enclosingFullName: String,
-                                    outerObjectName: String,
-                                    inlineParent: String
+    writer: Writer,
+    selection: Selection,
+    typeDefinition: FieldTypeDefinition,
+    enclosingFullName: String,
+    outerObjectName: String,
+    inlineParent: String
   ): Unit = {
     // TODO: Cache these better? It is only worth doing this if there are at least 2 selections.
     val subFieldLookup = typeDefinition.fields.map(d => d.name -> d).toMap
@@ -425,7 +490,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     indent: String,
     parentTraits: Seq[String],
     jsNative: Boolean
-  )(f: A => Unit): Unit = {
+  )(writeField: A => Unit): Unit = {
     if (jsNative) {
       writer.write(indent)
       writer.write("@js.native\n")
@@ -449,19 +514,29 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     }
     if (fields.nonEmpty) {
       writer.write(" {\n")
-      fields.foreach(f)
+      fields.foreach(writeField)
       writer.write(indent)
       writer.write('}')
     }
     writer.write("\n\n")
   }
 
+  private def writeInputApplyMethod(writer: Writer, input: InputObjectTypeDefinition, operationName: String): Unit = {
+    writeInputFactoryMethod(writer, "apply", input.fields, operationName + input.name, operationName)
+  }
+
   private def writeNewInputMethod(writer: Writer, operation: OperationDefinition): Unit = {
-    val singleInputObjectFields = operationSingleInputObjectFields(operation)
+    val fields = operationSingleInputObjectFields(operation)
+    val operationName = getOperationName(operation)
+    val returnType = operationName + "Input"
+    writeInputFactoryMethod(writer, "newInput", fields, returnType, operationName)
+  }
+
+  private def writeInputFactoryMethod(writer: Writer, name: String, parameters: List[InputValueDefinition], returnType: String, operationName: String): Unit = {
+    // TODO: This ought to delegate to an apply method on the input object.
 
     // FIXME: Core uses an empty object instead of null.
     //if (singleInputObjectFields.nonEmpty) {
-    val operationName = getOperationName(operation)
 
     def foreachInputField(f: (InputValueDefinition, Boolean) => Unit): Unit = {
       @tailrec
@@ -474,30 +549,32 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           loop(tail)
       }
 
-      loop(singleInputObjectFields)
+      loop(parameters)
     }
 
-    writer.write("  def newInput(")
-    if (singleInputObjectFields.nonEmpty) {
+    writer.write("  def ")
+    writer.write(name)
+    writer.write('(')
+    if (parameters.nonEmpty) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
-          writeInputFieldParameter(writer, field.name, field.ofType)
+          writeInputFieldParameter(writer, field.name, field.ofType, operationName)
           if (hasMore) writer.write(',')
           writer.write('\n')
       }
       writer.write("  ")
     }
     writer.write("): ")
-    writer.write(operationName)
-    writer.write("Input =")
-    if (singleInputObjectFields.nonEmpty) {
+    writer.write(returnType)
+    writer.write(" =")
+    if (parameters.nonEmpty) {
       writer.write("\n    ")
     } else {
       writer.write(' ')
     }
     writer.write("js.Dynamic.literal(")
-    if (singleInputObjectFields.nonEmpty) {
+    if (parameters.nonEmpty) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
@@ -505,6 +582,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           writer.write(field.name)
           writer.write("""" -> """)
           writer.write(field.name)
+          // TODO: We shouldn't need this now that the objects are js.Object.
           writer.write(".asInstanceOf[js.Any]")
           if (hasMore) writer.write(',')
           writer.write('\n')
@@ -512,8 +590,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       writer.write("    ")
     }
     writer.write(").asInstanceOf[")
-    writer.write(operationName)
-    writer.write("Input]\n")
+    writer.write(returnType)
+    writer.write("]\n")
     //}
   }
 
@@ -591,8 +669,16 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   }
 
   // TODO: Default values
-  private def writeInputField(writer: Writer, name: String, tpe: Type): Unit =
-    writeField(writer, name, tpe, innerType(tpe), "  ")
+  private def writeInputField(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    operationName: String,
+    hasSelections: Boolean
+  ): Unit = {
+    val typeName = if (hasSelections) operationName + innerType(tpe) else innerType(tpe)
+    writeField(writer, name, tpe, typeName, "  ")
+  }
 
   private def writeOperationField(
     writer: Writer,
@@ -623,20 +709,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer.write('\n')
   }
 
-  // TODO: Can we not use this?
-  private def writeVariableParameter(writer: Writer, variable: VariableDefinition): Unit = {
+  private def writeInputFieldParameter(writer: Writer, name: String, tpe: Type, operationName: String): Unit = {
     writer.write("    ")
-    writeNameAndType(writer, variable.name, variable.variableType, innerType(variable.variableType))
-    variable.defaultValue.foreach { value =>
-      writer.write(" = ")
-      // TODO: Probably need to convert this to Scala.
-      writer.write(value.toInputString)
-    }
-  }
-
-  private def writeInputFieldParameter(writer: Writer, name: String, tpe: Type): Unit = {
-    writer.write("    ")
-    writeNameAndType(writer, name, tpe, innerType(tpe))
+    val typeName = innerType(tpe)
+    val fullTypeName = if (schema.inputObjectTypes.contains(typeName)) operationName + typeName else typeName
+    writeNameAndType(writer, name, tpe, fullTypeName)
     if (tpe.nullable) {
       writer.write(" = null")
     }
