@@ -1,0 +1,2 @@
+> relayConvert
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala TestQuery.expected.scala

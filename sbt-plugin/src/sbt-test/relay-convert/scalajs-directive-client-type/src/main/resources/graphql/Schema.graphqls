@@ -1,5 +1,5 @@
 schema {
-  query: Query
+    query: Query
 }
 
 type Query {
@@ -9,11 +9,19 @@ type Query {
 input ClientTypeInput {
     required: String! @scalajs(clientType: "Required")
     optional: String @scalajs(clientType: "Optional")
+    requiredListRequiredElements: [String!]! @scalajs(clientType: "RequiredListRequiredElements")
+    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
+    requiredListOptionalElements: [String]! @scalajs(clientType: "RequiredListOptionalElements")
+    optionalListOptionalElements: [String] @scalajs(clientType: "OptionalListOptionalElements")
     # TODO: Test other input types.
 }
 
 type ClientTypeOutput {
     required: String! @scalajs(clientType: "Required")
     optional: String @scalajs(clientType: "Optional")
+    requiredListRequiredElements: [String!]! @scalajs(clientType: "RequiredListRequiredElements")
+    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
+    requiredListOptionalElements: [String]! @scalajs(clientType: "RequiredListOptionalElements")
+    optionalListOptionalElements: [String] @scalajs(clientType: "OptionalListOptionalElements")
     # TODO: Test object types.
 }

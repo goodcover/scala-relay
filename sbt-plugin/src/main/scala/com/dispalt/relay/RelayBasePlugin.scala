@@ -47,6 +47,8 @@ object RelayBasePlugin extends AutoPlugin {
       settingKey[File]("Output directory for the generated Scala.js facades that match the generate")
     val relayCompileDirectory: SettingKey[File] = settingKey[File]("Output of the schema stuff")
     val relayExtractDialect: TaskKey[Dialect]   = taskKey[Dialect]("The dialect to use when parsing Scala files")
+    val relayConvertTypeMappings: SettingKey[Map[String, String]] =
+      settingKey[Map[String, String]]("Mappings from GraphQL types to Scala types")
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
@@ -114,6 +116,7 @@ object RelayBasePlugin extends AutoPlugin {
           case _                        => scala.meta.dialects.Scala3Future
         }
       },
+      relayConvertTypeMappings := Map("ID" -> "String"),
       relayDependencies := Seq( //
         "relay-compiler" -> relayVersion.value,
         "graphql"        -> relayGraphQLVersion.value
@@ -186,6 +189,7 @@ object RelayBasePlugin extends AutoPlugin {
   def relayConvertTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
     val schemaFile   = relaySchema.value
     val outputDir    = relayConvertDirectory.value
+    val typeMappings = relayConvertTypeMappings.value
     val graphqlFiles = graphqlFilesTask.value
     val s            = streams.value
     // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
@@ -193,7 +197,7 @@ object RelayBasePlugin extends AutoPlugin {
     if (force) {
       GraphQLConverter.clean(cacheStoreFactory)
     }
-    val extractOptions = GraphQLConverter.Options(outputDir)
+    val extractOptions = GraphQLConverter.Options(outputDir, typeMappings)
     GraphQLConverter.convert(cacheStoreFactory, graphqlFiles, schemaFile, extractOptions, s.log)
   }
 

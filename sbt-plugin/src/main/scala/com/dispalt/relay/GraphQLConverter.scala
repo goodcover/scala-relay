@@ -13,16 +13,16 @@ object GraphQLConverter {
   // Increment when the code changes to bust the cache.
   private val Version = 1
 
-  final case class Options(outputDir: File)
+  final case class Options(outputDir: File, typeMappings: Map[String, String])
 
   object Options {
     //noinspection TypeAnnotation
-    implicit val iso = LList.iso[Options, File :*: LNil]( //
+    implicit val iso = LList.iso[Options, File :*: Map[String, String] :*: LNil]( //
       { o: Options => //
-        ("outputDir" -> o.outputDir) :*: LNil
+        ("outputDir" -> o.outputDir) :*: ("typeMappings" -> o.typeMappings) :*: LNil
       }, {
-        case (_, outputDir) :*: LNil => //
-          Options(outputDir)
+        case (_, outputDir) :*: (_, typeMappings) :*: LNil => //
+          Options(outputDir, typeMappings)
       }
     )
   }
@@ -174,7 +174,7 @@ object GraphQLConverter {
   ): Conversions = {
     val (conversions, _) = files.foldLeft((Conversions.empty, Set.empty[File])) {
       case ((conversions, outputs), file) =>
-        val writer = new ScalaWriter(options.outputDir, schema, outputs)
+        val writer = new ScalaWriter(options.outputDir, schema, options.typeMappings, outputs)
         logger.debug(s"Converting file: $file")
         val newOutputs      = writer.write(file)
         val nextConversions = conversions + (file -> newOutputs)

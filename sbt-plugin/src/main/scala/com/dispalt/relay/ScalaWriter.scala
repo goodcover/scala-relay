@@ -17,7 +17,7 @@ import scala.annotation.tailrec
 
 // TODO: Rename
 
-class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
+class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[String, String], outputs: Set[File]) {
 
   // TODO: Remove strip margins
 
@@ -754,13 +754,34 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     writer: Writer,
     name: String,
     tpe: Type,
+    // TODO: This is confusing. Type already has the name. We should update that instead of passing it separately.
     typeName: String,
     directives: List[Directive]
   ): Unit = {
     writer.write(name)
     writer.write(": ")
-    if (tpe.isInstanceOf[Type.ListType]) writer.write("js.Array[")
-    writer.write(convertType(typeName))
+    writeType(writer, tpe, typeName, directives)
+  }
+
+  // TODO: This is confusing. Type already has the name. We should update that instead of passing it separately.
+  private def writeType(writer: Writer, tpe: Type, typeName: String, directives: List[Directive]): Unit =
+    tpe match {
+      case Type.NamedType(_, nonNull) =>
+        writer.write(convertType(typeName))
+        writeClientType(writer, directives)
+        if (!nonNull) {
+          writer.write(" | Null")
+        }
+      case Type.ListType(ofType, nonNull) =>
+        writer.write("js.Array[")
+        writeType(writer, ofType, typeName, directives)
+        writer.write(']')
+        if (!nonNull) {
+          writer.write(" | Null")
+        }
+    }
+
+  private def writeClientType(writer: Writer, directives: List[Directive]): Unit =
     directives.find(_.name == "scalajs").foreach { directive =>
       directive.arguments.get("clientType").foreach {
         case StringValue(typeArg) =>
@@ -771,11 +792,6 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
       }
     }
-    if (tpe.isInstanceOf[Type.ListType]) writer.write("]")
-    if (tpe.nullable) {
-      writer.write(" | Null")
-    }
-  }
 
   // TODO: Don't do this. It only works if there is a single input object.
   private def operationSingleInputObjectFields(operation: OperationDefinition) = {
@@ -822,11 +838,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     schema.fieldType(innerType(field.ofType))
 
   private def convertType(typeName: String): String =
-    typeName match {
-      // TODO: Do something better with ID.
-      case "ID"  => "String"
-      case other => other
-    }
+    typeMappings.getOrElse(typeName, typeName)
 
   private def isPluralFragment(fragment: FragmentDefinition) =
     fragment.directives.exists { directive =>

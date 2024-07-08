@@ -1,0 +1,27 @@
+schema {
+    query: Query
+}
+
+scalar Foo
+
+type Query {
+    clientType(input: ClientTypeInput): ClientTypeOutput
+}
+
+input ClientTypeInput {
+    required: Foo!
+    optional: Foo
+    requiredListRequiredElements: [Foo!]!
+    optionalListRequiredElements: [Foo!]
+    requiredListOptionalElements: [Foo]!
+    optionalListOptionalElements: [Foo]
+}
+
+type ClientTypeOutput {
+    required: Foo!
+    optional: Foo
+    requiredListRequiredElements: [Foo!]!
+    optionalListRequiredElements: [Foo!]
+    requiredListOptionalElements: [Foo]!
+    optionalListOptionalElements: [Foo]
+}

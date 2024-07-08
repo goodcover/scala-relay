@@ -18,12 +18,12 @@ query TestQuery($input: ClientTypeInput!) {
 */
 
 trait TestQueryInput extends js.Object {
-  val required: String[Required]
-  val optional: String[Optional] | Null
-  val requiredListRequiredElements: js.Array[String[RequiredListRequiredElements]]
-  val optionalListRequiredElements: js.Array[String[OptionalListRequiredElements]] | Null
-  val requiredListOptionalElements: js.Array[String[RequiredListOptionalElements] | Null]
-  val optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null
+  val required: Bar
+  val optional: Bar | Null
+  val requiredListRequiredElements: js.Array[Bar]
+  val optionalListRequiredElements: js.Array[Bar] | Null
+  val requiredListOptionalElements: js.Array[Bar | Null]
+  val optionalListOptionalElements: js.Array[Bar | Null] | Null
 }
 
 @js.native
@@ -36,21 +36,21 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
 
   @js.native
   trait ClientType extends js.Object {
-    val required: String[Required]
-    val optional: String[Optional] | Null
-    val requiredListRequiredElements: js.Array[String[RequiredListRequiredElements]]
-    val requiredListOptionalElements: js.Array[String[RequiredListOptionalElements] | Null]
-    val optionalListRequiredElements: js.Array[String[OptionalListRequiredElements]] | Null
-    val optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null
+    val required: Bar
+    val optional: Bar | Null
+    val requiredListRequiredElements: js.Array[Bar]
+    val requiredListOptionalElements: js.Array[Bar | Null]
+    val optionalListRequiredElements: js.Array[Bar] | Null
+    val optionalListOptionalElements: js.Array[Bar | Null] | Null
   }
 
   def newInput(
-    required: String[Required],
-    optional: String[Optional] | Null = null,
-    requiredListRequiredElements: js.Array[String[RequiredListRequiredElements]],
-    optionalListRequiredElements: js.Array[String[OptionalListRequiredElements]] | Null = null,
-    requiredListOptionalElements: js.Array[String[RequiredListOptionalElements] | Null],
-    optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null = null
+    required: Bar,
+    optional: Bar | Null = null,
+    requiredListRequiredElements: js.Array[Bar],
+    optionalListRequiredElements: js.Array[Bar] | Null = null,
+    requiredListOptionalElements: js.Array[Bar | Null],
+    optionalListOptionalElements: js.Array[Bar | Null] | Null = null
   ): TestQueryInput =
     js.Dynamic.literal(
       "required" -> required.asInstanceOf[js.Any],
