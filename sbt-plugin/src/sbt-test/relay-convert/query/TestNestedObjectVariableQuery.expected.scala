@@ -14,18 +14,18 @@ query TestNestedObjectVariableQuery($query: CheckinSearchInput) {
 
 trait TestNestedObjectVariableQueryInput extends js.Object {
   val query: String | Null
-  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null
+  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null
 }
 
 trait TestNestedObjectVariableQueryCheckinSearchInput extends js.Object {
   val query: String | Null
-  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null
+  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null
 }
 
 object TestNestedObjectVariableQueryCheckinSearchInput {
   def apply(
     query: String | Null = null,
-    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null = null
+    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null = null
   ): TestNestedObjectVariableQueryCheckinSearchInput =
     js.Dynamic.literal(
       "query" -> query.asInstanceOf[js.Any],
@@ -35,13 +35,13 @@ object TestNestedObjectVariableQueryCheckinSearchInput {
 
 trait TestNestedObjectVariableQueryCheckinSearchInput extends js.Object {
   val query: String | Null
-  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null
+  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null
 }
 
 object TestNestedObjectVariableQueryCheckinSearchInput {
   def apply(
     query: String | Null = null,
-    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null = null
+    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null = null
   ): TestNestedObjectVariableQueryCheckinSearchInput =
     js.Dynamic.literal(
       "query" -> query.asInstanceOf[js.Any],
@@ -64,7 +64,7 @@ object TestNestedObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[Te
 
   def newInput(
     query: String | Null = null,
-    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput] | Null = null
+    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null = null
   ): TestNestedObjectVariableQueryInput =
     js.Dynamic.literal(
       "query" -> query.asInstanceOf[js.Any],

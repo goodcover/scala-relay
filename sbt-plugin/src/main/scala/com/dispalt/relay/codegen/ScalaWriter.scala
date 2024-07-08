@@ -838,7 +838,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
     schema.fieldType(innerType(field.ofType))
 
   private def convertType(typeName: String): String =
-    typeMappings.getOrElse(typeName, DefaultTypeMappings.getOrElse(typeName, typeName))
+    typeMappings.get(typeName)
+      .orElse(DefaultTypeMappings.get(typeName))
+      // TODO: We ought to handle enum types better.
+      .orElse(if (schema.enumTypes.contains(typeName)) Some("String") else None)
+      .getOrElse(typeName)
 
   private def isPluralFragment(fragment: FragmentDefinition) =
     fragment.directives.exists { directive =>

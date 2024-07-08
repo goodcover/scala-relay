@@ -51,7 +51,7 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
   @js.native
   trait Viewer extends js.Object {
     val actor: ViewerActor | Null
-    val allTimezones: js.Array[ViewerAllTimezones] | Null
+    val allTimezones: js.Array[ViewerAllTimezones | Null] | Null
   }
 
   def newInput(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]
