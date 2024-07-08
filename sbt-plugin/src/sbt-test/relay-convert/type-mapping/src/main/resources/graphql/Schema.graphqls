@@ -9,6 +9,8 @@ type Query {
 }
 
 input ClientTypeInput {
+    id: ID
+    number: Float
     required: Foo!
     optional: Foo
     requiredListRequiredElements: [Foo!]!
@@ -18,6 +20,8 @@ input ClientTypeInput {
 }
 
 type ClientTypeOutput {
+    id: ID
+    number: Float
     required: Foo!
     optional: Foo
     requiredListRequiredElements: [Foo!]!

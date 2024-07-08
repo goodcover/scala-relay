@@ -7,6 +7,8 @@ import _root_.scala.scalajs.js.annotation.JSImport
 /*
 query TestQuery($input: ClientTypeInput!) {
     clientType(input: $input) {
+        id
+        number
         required
         optional
         requiredListRequiredElements
@@ -18,6 +20,8 @@ query TestQuery($input: ClientTypeInput!) {
 */
 
 trait TestQueryInput extends js.Object {
+  val id: String | Null
+  val number: Double | Null
   val required: Bar
   val optional: Bar | Null
   val requiredListRequiredElements: js.Array[Bar]
@@ -36,6 +40,8 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
 
   @js.native
   trait ClientType extends js.Object {
+    val id: String | Null
+    val number: Double | Null
     val required: Bar
     val optional: Bar | Null
     val requiredListRequiredElements: js.Array[Bar]
@@ -45,6 +51,8 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
   }
 
   def newInput(
+    id: String | Null = null,
+    number: Double | Null = null,
     required: Bar,
     optional: Bar | Null = null,
     requiredListRequiredElements: js.Array[Bar],
@@ -53,6 +61,8 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
     optionalListOptionalElements: js.Array[Bar | Null] | Null = null
   ): TestQueryInput =
     js.Dynamic.literal(
+      "id" -> id.asInstanceOf[js.Any],
+      "number" -> number.asInstanceOf[js.Any],
       "required" -> required.asInstanceOf[js.Any],
       "optional" -> optional.asInstanceOf[js.Any],
       "requiredListRequiredElements" -> requiredListRequiredElements.asInstanceOf[js.Any],

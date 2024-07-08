@@ -1,5 +1,7 @@
 query TestQuery($input: ClientTypeInput!) {
     clientType(input: $input) {
+        id
+        number
         required
         optional
         requiredListRequiredElements

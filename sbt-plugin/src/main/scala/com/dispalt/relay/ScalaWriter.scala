@@ -8,6 +8,7 @@ import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{Directive, OperationType, Selection, Type}
 import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
+import com.dispalt.relay.ScalaWriter.DefaultTypeMappings
 import sbt._
 import sbt.io.Using.fileWriter
 
@@ -838,7 +839,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
     schema.fieldType(innerType(field.ofType))
 
   private def convertType(typeName: String): String =
-    typeMappings.getOrElse(typeName, typeName)
+    typeMappings.getOrElse(typeName, DefaultTypeMappings.getOrElse(typeName, typeName))
 
   private def isPluralFragment(fragment: FragmentDefinition) =
     fragment.directives.exists { directive =>
@@ -888,4 +889,12 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
 
   private def getOperationName(operation: OperationDefinition) =
     operation.name.getOrElse(throw new UnsupportedOperationException("Anonymous queries are not not supported."))
+}
+
+object ScalaWriter {
+
+  private val DefaultTypeMappings: Map[String, String] = Map(
+    "ID" -> "String",
+    "Float" -> "Double",
+  )
 }

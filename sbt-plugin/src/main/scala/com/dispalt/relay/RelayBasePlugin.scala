@@ -116,7 +116,7 @@ object RelayBasePlugin extends AutoPlugin {
           case _                        => scala.meta.dialects.Scala3Future
         }
       },
-      relayConvertTypeMappings := Map("ID" -> "String"),
+      relayConvertTypeMappings := Map.empty,
       relayDependencies := Seq( //
         "relay-compiler" -> relayVersion.value,
         "graphql"        -> relayGraphQLVersion.value
