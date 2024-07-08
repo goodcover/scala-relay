@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.dispalt.relay.codegen
 
 import caliban.Value.StringValue
 import caliban.parsing.Parser
@@ -6,9 +6,10 @@ import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{Directive, OperationType, Selection, Type}
+import com.dispalt.relay.GraphQLSchema
 import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
-import com.dispalt.relay.ScalaWriter.DefaultTypeMappings
+import com.dispalt.relay.codegen.ScalaWriter.DefaultTypeMappings
 import sbt._
 import sbt.io.Using.fileWriter
 
@@ -294,7 +295,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
     writeFragmentImplicits(writer, fragment.name, fragment.selectionSet, name)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
-    writer.write("  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]\n")
+    writer.write("  type Query = _root_.relay.gql.")
+    if (Directives.inline(fragment.directives)) writer.write("ReaderInlineDataFragment")
+    else writer.write("ReaderFragment")
+    writer.write("[Ctor, Out]\n")
     writeGeneratedMapping(writer, name)
   }
 
@@ -783,15 +787,10 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
     }
 
   private def writeClientType(writer: Writer, directives: List[Directive]): Unit =
-    directives.find(_.name == "scalajs").foreach { directive =>
-      directive.arguments.get("clientType").foreach {
-        case StringValue(typeArg) =>
-          writer.write('[')
-          writer.write(typeArg)
-          writer.write(']')
-        case _ =>
-          throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
-      }
+    Directives.clientType(directives).foreach { typeArg =>
+      writer.write('[')
+      writer.write(typeArg)
+      writer.write(']')
     }
 
   // TODO: Don't do this. It only works if there is a single input object.
@@ -893,8 +892,5 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[Stri
 
 object ScalaWriter {
 
-  private val DefaultTypeMappings: Map[String, String] = Map(
-    "ID" -> "String",
-    "Float" -> "Double",
-  )
+  private val DefaultTypeMappings: Map[String, String] = Map("ID" -> "String", "Float" -> "Double")
 }

@@ -1,5 +1,6 @@
 package com.dispalt.relay
 
+import com.dispalt.relay.codegen.ScalaWriter
 import sbt._
 import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
