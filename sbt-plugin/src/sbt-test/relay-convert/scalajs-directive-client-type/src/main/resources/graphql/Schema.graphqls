@@ -1,0 +1,19 @@
+schema {
+  query: Query
+}
+
+type Query {
+    clientType(input: ClientTypeInput): ClientTypeOutput
+}
+
+input ClientTypeInput {
+    required: String! @scalajs(clientType: "Required")
+    optional: String @scalajs(clientType: "Optional")
+    # TODO: Test other input types.
+}
+
+type ClientTypeOutput {
+    required: String! @scalajs(clientType: "Required")
+    optional: String @scalajs(clientType: "Optional")
+    # TODO: Test object types.
+}

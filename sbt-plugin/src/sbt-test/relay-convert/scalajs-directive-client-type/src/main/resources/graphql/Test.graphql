@@ -1,0 +1,6 @@
+query TestQuery($input: ClientTypeInput!) {
+    clientType(input: $input) {
+        required
+        optional
+    }
+}

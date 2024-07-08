@@ -1,10 +1,11 @@
 package com.dispalt.relay
 
+import caliban.Value.StringValue
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{OperationType, Selection, Type, VariableDefinition}
+import caliban.parsing.adt.{Directive, OperationType, Selection, Type}
 import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
 import com.dispalt.relay.GraphQLText.{appendFragmentText, appendOperationText}
 import sbt._
@@ -178,7 +179,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         field.name,
         field.ofType,
         operationName,
-        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType))
+        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType)),
+        field.directives
       )
     }
     //}
@@ -192,13 +194,18 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
         field.name,
         field.ofType,
         operationName,
-        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType))
+        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType)),
+        field.directives
       )
     }
     writeInputCompanionObject(writer, input, operationName)
   }
 
-  private def writeInputCompanionObject(writer: Writer, input: InputObjectTypeDefinition, operationName: String): Unit = {
+  private def writeInputCompanionObject(
+    writer: Writer,
+    input: InputObjectTypeDefinition,
+    operationName: String
+  ): Unit = {
     writer.write("object ")
     writer.write(operationName + input.name)
     writer.write(" {\n")
@@ -225,7 +232,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           field.alias.getOrElse(field.name),
           definition.ofType,
           name,
-          hasSelections = field.selectionSet.nonEmpty
+          hasSelections = field.selectionSet.nonEmpty,
+          field.directives
         )
       }
     }
@@ -464,7 +472,8 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
           subField.alias.getOrElse(subField.name),
           definition.ofType,
           fullName,
-          hasSelections = subField.selectionSet.nonEmpty
+          hasSelections = subField.selectionSet.nonEmpty,
+          definition.directives
         )
       }
     }
@@ -526,13 +535,19 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
   }
 
   private def writeNewInputMethod(writer: Writer, operation: OperationDefinition): Unit = {
-    val fields = operationSingleInputObjectFields(operation)
+    val fields        = operationSingleInputObjectFields(operation)
     val operationName = getOperationName(operation)
-    val returnType = operationName + "Input"
+    val returnType    = operationName + "Input"
     writeInputFactoryMethod(writer, "newInput", fields, returnType, operationName)
   }
 
-  private def writeInputFactoryMethod(writer: Writer, name: String, parameters: List[InputValueDefinition], returnType: String, operationName: String): Unit = {
+  private def writeInputFactoryMethod(
+    writer: Writer,
+    name: String,
+    parameters: List[InputValueDefinition],
+    returnType: String,
+    operationName: String
+  ): Unit = {
     // TODO: This ought to delegate to an apply method on the input object.
 
     // FIXME: Core uses an empty object instead of null.
@@ -559,7 +574,7 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
       writer.write('\n')
       foreachInputField {
         case (field, hasMore) =>
-          writeInputFieldParameter(writer, field.name, field.ofType, operationName)
+          writeInputFieldParameter(writer, field.name, field.ofType, operationName, field.directives)
           if (hasMore) writer.write(',')
           writer.write('\n')
       }
@@ -674,10 +689,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     name: String,
     tpe: Type,
     operationName: String,
-    hasSelections: Boolean
+    hasSelections: Boolean,
+    directives: List[Directive]
   ): Unit = {
     val typeName = if (hasSelections) operationName + innerType(tpe) else innerType(tpe)
-    writeField(writer, name, tpe, typeName, "  ")
+    writeField(writer, name, tpe, typeName, "  ", directives)
   }
 
   private def writeOperationField(
@@ -685,10 +701,11 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     name: String,
     tpe: Type,
     operationName: String,
-    hasSelections: Boolean
+    hasSelections: Boolean,
+    directives: List[Directive]
   ): Unit = {
     val typeName = if (hasSelections) s"$operationName.${name.capitalize}" else innerType(tpe)
-    writeField(writer, name, tpe, typeName, "  ")
+    writeField(writer, name, tpe, typeName, "  ", directives)
   }
 
   private def writeNestedField(
@@ -696,34 +713,64 @@ class ScalaWriter(outputDir: File, schema: GraphQLSchema, outputs: Set[File]) {
     name: String,
     tpe: Type,
     typePrefix: String,
-    hasSelections: Boolean
+    hasSelections: Boolean,
+    directives: List[Directive]
   ): Unit = {
     val typeName = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
-    writeField(writer, name, tpe, typeName, "    ")
+    writeField(writer, name, tpe, typeName, "    ", directives)
   }
 
-  private def writeField(writer: Writer, name: String, tpe: Type, typeName: String, indent: String): Unit = {
+  private def writeField(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    typeName: String,
+    indent: String,
+    directives: List[Directive]
+  ): Unit = {
     writer.write(indent)
     writer.write("val ")
-    writeNameAndType(writer, name, tpe, typeName)
+    writeNameAndType(writer, name, tpe, typeName, directives)
     writer.write('\n')
   }
 
-  private def writeInputFieldParameter(writer: Writer, name: String, tpe: Type, operationName: String): Unit = {
+  private def writeInputFieldParameter(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    operationName: String,
+    directives: List[Directive]
+  ): Unit = {
     writer.write("    ")
-    val typeName = innerType(tpe)
+    val typeName     = innerType(tpe)
     val fullTypeName = if (schema.inputObjectTypes.contains(typeName)) operationName + typeName else typeName
-    writeNameAndType(writer, name, tpe, fullTypeName)
+    writeNameAndType(writer, name, tpe, fullTypeName, directives)
     if (tpe.nullable) {
       writer.write(" = null")
     }
   }
 
-  private def writeNameAndType(writer: Writer, name: String, tpe: Type, typeName: String): Unit = {
+  private def writeNameAndType(
+    writer: Writer,
+    name: String,
+    tpe: Type,
+    typeName: String,
+    directives: List[Directive]
+  ): Unit = {
     writer.write(name)
     writer.write(": ")
     if (tpe.isInstanceOf[Type.ListType]) writer.write("js.Array[")
     writer.write(convertType(typeName))
+    directives.find(_.name == "scalajs").foreach { directive =>
+      directive.arguments.get("clientType").foreach {
+        case StringValue(typeArg) =>
+          writer.write('[')
+          writer.write(typeArg)
+          writer.write(']')
+        case _ =>
+          throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
+      }
+    }
     if (tpe.isInstanceOf[Type.ListType]) writer.write("]")
     if (tpe.nullable) {
       writer.write(" | Null")
