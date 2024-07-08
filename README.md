@@ -14,4 +14,4 @@ There are three parts to this.
 ## Dev Notes
 
  - call `release` to deploy everything, you'll need a GPG key, and Sonatype credentials handy
- - call `slinky-relay-ijext/updateIntelliJ`
+ - call `slinky-relay-ijext/updateIntellij`
