@@ -6,6 +6,7 @@ scalar Foo
 
 type Query {
     clientType(input: ClientTypeInput): ClientTypeOutput
+    primitiveVariable(a: Foo): ClientTypeOutput
 }
 
 input ClientTypeInput {

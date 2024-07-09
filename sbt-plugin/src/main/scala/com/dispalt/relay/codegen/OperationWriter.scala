@@ -37,7 +37,8 @@ abstract class OperationWriter(
     writer.write(operationObjectParent)
     writer.write('[')
     // TODO: It's kinda weird getting the name from here.
-    writer.write(inputWriter.operationInputName)
+    // FIXME: This should use the other overload but it'll probably break stuff.
+    writer.write(typeConverter.convertToScalaType(inputWriter.operationInputName))
     writer.write(", ")
     writer.write(name)
     // TODO: Ctor is redundant for queries. Only fragments can be plural.

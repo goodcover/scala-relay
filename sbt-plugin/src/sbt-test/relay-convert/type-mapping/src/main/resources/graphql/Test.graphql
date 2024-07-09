@@ -33,3 +33,9 @@ fragment Test_fragment on ClientTypeOutput {
         required
     }
 }
+
+query TestPrimitiveVariableQuery($a: String!) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}
