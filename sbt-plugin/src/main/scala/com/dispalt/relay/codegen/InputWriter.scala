@@ -1,39 +1,48 @@
 package com.dispalt.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{InputObjectTypeDefinition, InputValueDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{
+  InputObjectTypeDefinition,
+  InputValueDefinition
+}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, Type}
+import caliban.parsing.adt.{Directive, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema
+import com.dispalt.relay.codegen.InputWriter.OperationInput
 
 import java.io.Writer
 import scala.annotation.tailrec
 
 // TODO: This should not be specific to an operation but be shared instead.
 class InputWriter(
-                   writer: Writer,
-                   scalaWriter: ScalaWriter,
-                   typeConverter: TypeConverter,
-                   operation: OperationDefinition,
-                   schema: GraphQLSchema
+  writer: Writer,
+  scalaWriter: ScalaWriter,
+  typeConverter: TypeConverter,
+  operation: OperationDefinition,
+  schema: GraphQLSchema
 ) {
 
   private val operationName: String = DocumentWriter.getOperationName(operation)
 
-  // TODO: Don't do this. It only works if there is a single input object.
-  private def operationSingleInputObjectFields() = {
+  private val operationInput: Either[VariableDefinition, OperationInput] =
     operation.variableDefinitions match {
+      // FIXME: Use null instead of an empty object.
+      case Nil => Right(OperationInput(Nil))
       case variable :: Nil =>
-        schema.inputObjectTypes.get(innerType(variable.variableType)) match {
-          case Some(_) if variable.defaultValue.nonEmpty =>
-            // TODO: We could support this by providing a default object somewhere
-            throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
-          case Some(obj) => obj.fields
-          case None      => Nil
-        }
-      case _ => Nil
+        schema.inputObjectTypes
+          .get(innerType(variable.variableType))
+          .map { obj =>
+            if (variable.defaultValue.nonEmpty) {
+              // TODO: We could support this by providing a default object somewhere
+              throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
+            }
+            OperationInput(obj.fields)
+          }
+          .toRight(variable)
+      case variables => Right(OperationInput.fromVariables(variables))
     }
-  }
+
+  val operationInputName: String = operationInput.fold(_.name, _ => operationName + "Input")
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
   def writeOperationInputTypes(): Unit = {
@@ -56,7 +65,7 @@ class InputWriter(
       }
     }
 
-    writeOperationInputType()
+    operationInput.foreach(writeOperationInputType)
 
     operation.variableDefinitions match {
       case variable :: Nil =>
@@ -71,23 +80,17 @@ class InputWriter(
   }
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
-  private def writeOperationInputType(): Unit = {
-    val singleInputObjectFields = operationSingleInputObjectFields()
-    // FIXME: Core uses an empty object instead of null.
-    //if (singleInputObjectFields.nonEmpty) {
-    scalaWriter.writeTrait(operationName + "Input", Seq.empty, singleInputObjectFields, jsNative = false, "") { field =>
+  private def writeOperationInputType(input: OperationInput): Unit =
+    scalaWriter.writeTrait(operationInputName, Seq.empty, input.parameters, jsNative = false, "") { parameter =>
       writeInputField(
-        field.name,
-        field.ofType,
-        hasSelections = schema.inputObjectTypes.contains(innerType(field.ofType)),
-        field.directives
+        parameter.name,
+        parameter.ofType,
+        hasSelections = schema.inputObjectTypes.contains(innerType(parameter.ofType)),
+        parameter.directives
       )
     }
-    //}
-  }
 
   private def writeInputType(input: InputObjectTypeDefinition): Unit = {
-    // FIXME: Core uses an empty object instead of null.
     scalaWriter.writeTrait(operationName + input.name, Seq.empty, input.fields, jsNative = false, "") { field =>
       writeInputField(
         field.name,
@@ -111,11 +114,11 @@ class InputWriter(
     writeInputFactoryMethod("apply", input.fields, operationName + input.name)
   }
 
-  def writeNewInputMethod(): Unit = {
-    val fields     = operationSingleInputObjectFields()
-    val returnType = operationName + "Input"
-    writeInputFactoryMethod("newInput", fields, returnType)
-  }
+  def writeNewInputMethod(): Unit =
+    operationInput.foreach { input =>
+      val parameters = input.parameters
+      writeInputFactoryMethod("newInput", parameters, operationInputName)
+    }
 
   private def writeInputFactoryMethod(
     name: String,
@@ -198,5 +201,25 @@ class InputWriter(
     val scalaTypeId = typeConverter.convertToScalaType(tpe, typeName, directives)
     // TODO: Default value.
     scalaWriter.writeField(name, scalaTypeId, None, "  ")
+  }
+}
+
+object InputWriter {
+
+  private final case class OperationInput(parameters: List[InputValueDefinition])
+
+  private object OperationInput {
+
+    def fromVariables(fields: List[VariableDefinition]): OperationInput =
+      OperationInput(fields.map(variableToInputValue))
+
+    private def variableToInputValue(variable: VariableDefinition) =
+      InputValueDefinition(
+        description = None,
+        name = variable.name,
+        ofType = variable.variableType,
+        defaultValue = variable.defaultValue,
+        directives = variable.directives
+      )
   }
 }

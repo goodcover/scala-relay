@@ -36,8 +36,9 @@ abstract class OperationWriter(
     writer.write(" extends _root_.relay.gql.")
     writer.write(operationObjectParent)
     writer.write('[')
-    writer.write(name)
-    writer.write("Input, ")
+    // TODO: It's kinda weird getting the name from here.
+    writer.write(inputWriter.operationInputName)
+    writer.write(", ")
     writer.write(name)
     // TODO: Ctor is redundant for queries. Only fragments can be plural.
     writer.write("""] {
