@@ -16,10 +16,12 @@ class SubscriptionWriter(
 
   override def write(): Unit = {
     writePreamble()
-    ???
+    inputWriter.writeOperationInputTypes()
+    writeOperationTrait()
+    writeOperationObject()
   }
 
-  override protected val operationObjectParent: String = "TODO"
+  override protected val operationObjectParent: String = "SubscriptionTaggedNode"
 
   override protected def getOperationField(name: String): TypeDefinition.FieldDefinition =
     schema.subscriptionField(name)

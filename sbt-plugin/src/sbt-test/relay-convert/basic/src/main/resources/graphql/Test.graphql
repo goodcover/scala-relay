@@ -28,6 +28,12 @@ mutation TestMutation($input: ActorSubscribeInput!) {
     }
 }
 
+subscription TestSubscription($input: FeedbackLikeInput!) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+    }
+}
+
 fragment Test_fragment on Viewer {
     actor {
         id

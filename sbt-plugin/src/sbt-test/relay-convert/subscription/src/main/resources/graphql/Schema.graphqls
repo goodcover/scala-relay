@@ -68,11 +68,25 @@ type Mutation {
   nodeSavedState(input: NodeSaveStateInput): NodeSavedStateResponsePayload
   unfriend(input: UnfriendInput): UnfriendResponsePayload
   viewerNotificationsUpdateAllSeenState(input: UpdateAllSeenStateInput): ViewerNotificationsUpdateAllSeenStateResponsePayload
+  noVariables: ActorSubscribeResponsePayload
+  primitiveVariable(a: String): ActorSubscribeResponsePayload
+  listVariable(as: [String]): ActorSubscribeResponsePayload
+  multipleVariables(a: String, b: String): ActorSubscribeResponsePayload
+  primitiveResponse(a: String): String
+  mandatoryResponse(a: String): String!
+  listResponse(a: String): [String]
 }
 
 type Subscription {
   feedbackLikeSubscribe(input: FeedbackLikeInput): FeedbackLikeResponsePayload
   commentCreateSubscribe(input: CommentCreateSubscriptionInput): CommentCreateResponsePayload
+  noVariables: FeedbackLikeResponsePayload
+  primitiveVariable(a: String): FeedbackLikeResponsePayload
+  listVariable(as: [String]): FeedbackLikeResponsePayload
+  multipleVariables(a: String, b: String): FeedbackLikeResponsePayload
+  primitiveResponse(a: String): String
+  mandatoryResponse(a: String): String!
+  listResponse(a: String): [String]
 }
 
 input ActorSubscribeInput {
@@ -108,7 +122,6 @@ input CommentCreateSubscriptionInput {
   clientSubscriptionId: String
   feedbackId: ID
   text: String
-  input: CommentCreateInput
 }
 
 input CommentDeleteInput {

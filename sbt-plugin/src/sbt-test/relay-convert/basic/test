@@ -2,5 +2,6 @@
 > relayConvert
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala TestQuery.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMutation.scala TestMutation.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestSubscription.scala TestSubscription.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.scala Test_fragment.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragmentInterface.scala Test_fragmentInterface.expected.scala
