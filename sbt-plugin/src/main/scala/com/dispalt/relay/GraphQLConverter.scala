@@ -1,6 +1,6 @@
 package com.dispalt.relay
 
-import com.dispalt.relay.codegen.ScalaWriter
+import com.dispalt.relay.codegen.DocumentWriter
 import sbt._
 import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
@@ -175,7 +175,7 @@ object GraphQLConverter {
   ): Conversions = {
     val (conversions, _) = files.foldLeft((Conversions.empty, Set.empty[File])) {
       case ((conversions, outputs), file) =>
-        val writer = new ScalaWriter(options.outputDir, schema, options.typeMappings, outputs)
+        val writer = new DocumentWriter(options.outputDir, schema, options.typeMappings, outputs)
         logger.debug(s"Converting file: $file")
         val newOutputs      = writer.write(file)
         val nextConversions = conversions + (file -> newOutputs)

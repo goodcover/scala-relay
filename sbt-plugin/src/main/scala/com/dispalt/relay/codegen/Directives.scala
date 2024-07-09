@@ -1,20 +1,31 @@
 package com.dispalt.relay.codegen
 
-import caliban.Value.StringValue
+import caliban.InputValue
+import caliban.Value.{BooleanValue, StringValue}
 import caliban.parsing.adt.Directive
 
 private[relay] object Directives {
 
   //private final case class ScalaJSDirective(useNulls: Boolean, `extends`: String, typeCls: String, clientType: String)
 
-  def clientType(directives: List[Directive]): Option[String] =
-    directives.find(_.name == "scalajs").flatMap { directive =>
-      directive.arguments.get("clientType").map {
-        case StringValue(typeArg) => typeArg
-        case _                    => throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
-      }
+  def getClientType(directives: List[Directive]): Option[String] =
+    getDirectiveArg(directives, "scalajs", "clientType") collect {
+      case StringValue(typeArg) => typeArg
+      case _                    => throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
     }
 
-  def inline(directives: List[Directive]): Boolean =
-    directives.exists(_.name == "inline")
+  def isInline(fragmentDirectives: List[Directive]): Boolean =
+    fragmentDirectives.exists(_.name == "inline")
+
+  def isPlural(fragmentDirectives: List[Directive]): Boolean =
+    getDirectiveArg(fragmentDirectives, "relay", "plural").fold(false) {
+      case BooleanValue(plural) => plural
+      case _                    => throw new IllegalArgumentException("Invalid relay directive. plural must be a Boolean.")
+    }
+
+  private def getDirectiveArg(directives: List[Directive], directiveName: String, argName: String): Option[InputValue] =
+    for {
+      directive <- directives.find(_.name == directiveName)
+      arg       <- directive.arguments.get(argName)
+    } yield arg
 }
