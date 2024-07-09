@@ -21,4 +21,10 @@ object Test {
 
 
   """)
+
+ compiler.graphqlGen("""
+   fragment Test_foo2 on Foo {
+     id
+   }
+ """)
 }

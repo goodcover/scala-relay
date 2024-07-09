@@ -14,3 +14,8 @@ bar {
  }
   }
 
+# Extracted from ${PWD}/src/main/scala/example/Test.scala
+fragment Test_foo2 on Foo {
+  id
+}
+

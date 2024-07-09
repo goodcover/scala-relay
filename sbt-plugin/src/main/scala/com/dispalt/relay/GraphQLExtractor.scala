@@ -200,9 +200,9 @@ object GraphQLExtractor {
         logger.error(s"    at ${positionText(pos)}")
         logger.debug(annot.structure)
         logger.debug(exprss.toString)
-      // The application has to be exactly this. It cannot be an alias or qualified.
-      // We could support more but it would require SemanticDB which is slower.
       case q"graphqlGen(${t: Lit.String})" =>
+        builder += t.value
+      case q"${_}.graphqlGen(${t: Lit.String})" =>
         builder += t.value
       case app @ q"graphqlGen(...$exprss)" =>
         // Term.Name("graphqlGen") also matches this. Ignore it.
