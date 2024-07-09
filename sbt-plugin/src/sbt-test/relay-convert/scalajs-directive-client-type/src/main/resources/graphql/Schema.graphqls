@@ -10,18 +10,31 @@ input ClientTypeInput {
     required: String! @scalajs(clientType: "Required")
     optional: String @scalajs(clientType: "Optional")
     requiredListRequiredElements: [String!]! @scalajs(clientType: "RequiredListRequiredElements")
-    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
     requiredListOptionalElements: [String]! @scalajs(clientType: "RequiredListOptionalElements")
+    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
     optionalListOptionalElements: [String] @scalajs(clientType: "OptionalListOptionalElements")
-    # TODO: Test other input types.
+    nested: ClientTypeNestedInput!
+}
+
+input ClientTypeNestedInput {
+    nested: String! @scalajs(clientType: "Nested")
 }
 
 type ClientTypeOutput {
     required: String! @scalajs(clientType: "Required")
     optional: String @scalajs(clientType: "Optional")
     requiredListRequiredElements: [String!]! @scalajs(clientType: "RequiredListRequiredElements")
-    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
     requiredListOptionalElements: [String]! @scalajs(clientType: "RequiredListOptionalElements")
+    optionalListRequiredElements: [String!] @scalajs(clientType: "OptionalListRequiredElements")
     optionalListOptionalElements: [String] @scalajs(clientType: "OptionalListOptionalElements")
-    # TODO: Test object types.
+    object: ClientTypeNestedObject!
+    interface: ClientTypeNestedInterface!
+}
+
+type ClientTypeNestedObject {
+    required: String! @scalajs(clientType: "Object")
+}
+
+interface ClientTypeNestedInterface {
+    required: String! @scalajs(clientType: "Interface")
 }

@@ -68,7 +68,7 @@ abstract class ExecutableDefinitionWriter(
           field.alias.getOrElse(field.name),
           definition.ofType,
           hasSelections = field.selectionSet.nonEmpty,
-          field.directives
+          definition.directives
         )
       }
     }
@@ -78,12 +78,12 @@ abstract class ExecutableDefinitionWriter(
     name: String,
     tpe: Type,
     hasSelections: Boolean,
-    directives: List[Directive]
+    fieldDefinitionDirectives: List[Directive]
   ): Unit = {
     // TODO: This typeName stuff is weird.
-    val typeName    = if (hasSelections) s"$definitionName.${name.capitalize}" else innerType(tpe)
-    val scalaTypeId = typeConverter.convertToScalaType(tpe, typeName, directives)
-    scalaWriter.writeField(name, scalaTypeId, None, "  ")
+    val typeName  = if (hasSelections) s"$definitionName.${name.capitalize}" else innerType(tpe)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives)
+    scalaWriter.writeField(name, scalaType, None, "  ")
   }
 
   protected def writeNestedTraits(
@@ -254,11 +254,11 @@ abstract class ExecutableDefinitionWriter(
     tpe: Type,
     typePrefix: String,
     hasSelections: Boolean,
-    directives: List[Directive]
+    fieldDefinitionDirectives: List[Directive]
   ): Unit = {
-    val typeName    = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
-    val scalaTypeId = typeConverter.convertToScalaType(tpe, typeName, directives)
-    scalaWriter.writeField(name, scalaTypeId, None, "    ")
+    val typeName  = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives)
+    scalaWriter.writeField(name, scalaType, None, "    ")
   }
 
   protected def writeFragmentImplicits(

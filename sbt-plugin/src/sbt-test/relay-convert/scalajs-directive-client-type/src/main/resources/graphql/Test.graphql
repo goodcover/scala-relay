@@ -6,5 +6,26 @@ query TestQuery($input: ClientTypeInput!) {
         requiredListOptionalElements
         optionalListRequiredElements
         optionalListOptionalElements
+        object {
+            required
+        }
+        interface {
+            required
+        }
+    }
+}
+
+fragment Test_fragment on ClientTypeOutput {
+    required
+    optional
+    requiredListRequiredElements
+    requiredListOptionalElements
+    optionalListRequiredElements
+    optionalListOptionalElements
+    object {
+        required
+    }
+    interface {
+        required
     }
 }

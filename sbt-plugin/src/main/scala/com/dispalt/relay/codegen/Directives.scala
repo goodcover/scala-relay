@@ -8,8 +8,8 @@ private[relay] object Directives {
 
   //private final case class ScalaJSDirective(useNulls: Boolean, `extends`: String, typeCls: String, clientType: String)
 
-  def getClientType(directives: List[Directive]): Option[String] =
-    getDirectiveArg(directives, "scalajs", "clientType") collect {
+  def getClientType(fieldDefinitionDirectives: List[Directive]): Option[String] =
+    getDirectiveArg(fieldDefinitionDirectives, "scalajs", "clientType") collect {
       case StringValue(typeArg) => typeArg
       case _                    => throw new IllegalArgumentException("Invalid scalajs directive. clientType must be a String.")
     }

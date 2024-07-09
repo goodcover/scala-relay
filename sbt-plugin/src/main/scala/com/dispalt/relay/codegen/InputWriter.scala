@@ -1,10 +1,7 @@
 package com.dispalt.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{
-  InputObjectTypeDefinition,
-  InputValueDefinition
-}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{Directive, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema
@@ -186,21 +183,26 @@ class InputWriter(
     //}
   }
 
-  private def writeInputFieldParameter(name: String, tpe: Type, directives: List[Directive]): Unit = {
+  private def writeInputFieldParameter(name: String, tpe: Type, fieldDefinitionDirectives: List[Directive]): Unit = {
     // TODO: This typeName stuff is weird.
     val typeName     = innerType(tpe)
     val fullTypeName = if (schema.inputObjectTypes.contains(typeName)) operationName + typeName else typeName
-    val scalaTypeId  = typeConverter.convertToScalaType(tpe, fullTypeName, directives)
+    val scalaType    = typeConverter.convertToScalaType(tpe, fullTypeName, fieldDefinitionDirectives)
     val initializer  = if (tpe.nonNull) None else Some("null")
-    scalaWriter.writeParameter(name, scalaTypeId, initializer, "    ")
+    scalaWriter.writeParameter(name, scalaType, initializer, "    ")
   }
 
-  private def writeInputField(name: String, tpe: Type, hasSelections: Boolean, directives: List[Directive]): Unit = {
+  private def writeInputField(
+    name: String,
+    tpe: Type,
+    hasSelections: Boolean,
+    fieldDefinitionDirectives: List[Directive]
+  ): Unit = {
     // TODO: This typeName stuff is weird.
-    val typeName    = if (hasSelections) operationName + innerType(tpe) else innerType(tpe)
-    val scalaTypeId = typeConverter.convertToScalaType(tpe, typeName, directives)
+    val typeName  = if (hasSelections) operationName + innerType(tpe) else innerType(tpe)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives)
     // TODO: Default value.
-    scalaWriter.writeField(name, scalaTypeId, None, "  ")
+    scalaWriter.writeField(name, scalaType, None, "  ")
   }
 }
 

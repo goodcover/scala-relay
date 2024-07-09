@@ -15,6 +15,12 @@ query TestQuery($input: ClientTypeInput!) {
         requiredListOptionalElements
         optionalListRequiredElements
         optionalListOptionalElements
+        object {
+            required
+        }
+        interface {
+            required
+        }
     }
 }
 */
@@ -25,9 +31,23 @@ trait TestQueryInput extends js.Object {
   val required: Bar
   val optional: Bar | Null
   val requiredListRequiredElements: js.Array[Bar]
-  val optionalListRequiredElements: js.Array[Bar] | Null
   val requiredListOptionalElements: js.Array[Bar | Null]
+  val optionalListRequiredElements: js.Array[Bar] | Null
   val optionalListOptionalElements: js.Array[Bar | Null] | Null
+  val nested: TestQueryClientTypeNestedInput
+}
+
+trait TestQueryClientTypeNestedInput extends js.Object {
+  val nested: Bar
+}
+
+object TestQueryClientTypeNestedInput {
+  def apply(
+    nested: Bar
+  ): TestQueryClientTypeNestedInput =
+    js.Dynamic.literal(
+      "nested" -> nested.asInstanceOf[js.Any]
+    ).asInstanceOf[TestQueryClientTypeNestedInput]
 }
 
 @js.native
@@ -39,6 +59,16 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
   type Ctor[T] = T
 
   @js.native
+  trait ClientTypeObject extends js.Object {
+    val required: Bar
+  }
+
+  @js.native
+  trait ClientTypeInterface extends js.Object {
+    val required: Bar
+  }
+
+  @js.native
   trait ClientType extends js.Object {
     val id: String | Null
     val number: Double | Null
@@ -48,6 +78,8 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
     val requiredListOptionalElements: js.Array[Bar | Null]
     val optionalListRequiredElements: js.Array[Bar] | Null
     val optionalListOptionalElements: js.Array[Bar | Null] | Null
+    val `object`: ClientTypeObject
+    val interface: ClientTypeInterface
   }
 
   def newInput(
@@ -56,9 +88,10 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
     required: Bar,
     optional: Bar | Null = null,
     requiredListRequiredElements: js.Array[Bar],
-    optionalListRequiredElements: js.Array[Bar] | Null = null,
     requiredListOptionalElements: js.Array[Bar | Null],
-    optionalListOptionalElements: js.Array[Bar | Null] | Null = null
+    optionalListRequiredElements: js.Array[Bar] | Null = null,
+    optionalListOptionalElements: js.Array[Bar | Null] | Null = null,
+    nested: TestQueryClientTypeNestedInput
   ): TestQueryInput =
     js.Dynamic.literal(
       "id" -> id.asInstanceOf[js.Any],
@@ -66,9 +99,10 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
       "required" -> required.asInstanceOf[js.Any],
       "optional" -> optional.asInstanceOf[js.Any],
       "requiredListRequiredElements" -> requiredListRequiredElements.asInstanceOf[js.Any],
-      "optionalListRequiredElements" -> optionalListRequiredElements.asInstanceOf[js.Any],
       "requiredListOptionalElements" -> requiredListOptionalElements.asInstanceOf[js.Any],
-      "optionalListOptionalElements" -> optionalListOptionalElements.asInstanceOf[js.Any]
+      "optionalListRequiredElements" -> optionalListRequiredElements.asInstanceOf[js.Any],
+      "optionalListOptionalElements" -> optionalListOptionalElements.asInstanceOf[js.Any],
+      "nested" -> nested.asInstanceOf[js.Any]
     ).asInstanceOf[TestQueryInput]
 
   type Query = _root_.relay.gql.ConcreteRequest

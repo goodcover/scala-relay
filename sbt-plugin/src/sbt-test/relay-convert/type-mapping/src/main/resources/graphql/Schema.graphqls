@@ -14,9 +14,14 @@ input ClientTypeInput {
     required: Foo!
     optional: Foo
     requiredListRequiredElements: [Foo!]!
-    optionalListRequiredElements: [Foo!]
     requiredListOptionalElements: [Foo]!
+    optionalListRequiredElements: [Foo!]
     optionalListOptionalElements: [Foo]
+    nested: ClientTypeNestedInput!
+}
+
+input ClientTypeNestedInput {
+    nested: Foo!
 }
 
 type ClientTypeOutput {
@@ -25,7 +30,17 @@ type ClientTypeOutput {
     required: Foo!
     optional: Foo
     requiredListRequiredElements: [Foo!]!
-    optionalListRequiredElements: [Foo!]
     requiredListOptionalElements: [Foo]!
+    optionalListRequiredElements: [Foo!]
     optionalListOptionalElements: [Foo]
+    object: ClientTypeNestedObject!
+    interface: ClientTypeNestedInterface!
+}
+
+type ClientTypeNestedObject {
+    required: Foo!
+}
+
+interface ClientTypeNestedInterface {
+    required: Foo!
 }

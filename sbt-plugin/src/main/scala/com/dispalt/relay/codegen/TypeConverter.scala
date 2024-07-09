@@ -15,13 +15,13 @@ class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
       .getOrElse(gqlTypeName)
 
   // TODO: This is confusing. Type already has the name. We should update that instead of passing it separately.
-  def convertToScalaType(tpe: Type, gqlTypeName: String, directives: List[Directive]): String = {
+  def convertToScalaType(tpe: Type, gqlTypeName: String, fieldDefinitionDirectives: List[Directive]): String = {
     val builder = new StringBuilder()
     def loop(tpe: Type): Unit = {
       tpe match {
         case Type.NamedType(_, _) =>
           builder.append(convertToScalaType(gqlTypeName))
-          Directives.getClientType(directives).foreach { typeArg =>
+          Directives.getClientType(fieldDefinitionDirectives).foreach { typeArg =>
             builder.append('[')
             builder.append(typeArg)
             builder.append(']')

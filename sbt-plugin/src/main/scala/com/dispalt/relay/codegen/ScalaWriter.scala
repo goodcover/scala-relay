@@ -1,6 +1,7 @@
 package com.dispalt.relay.codegen
 
 import java.io.Writer
+import scala.meta.{Term, dialects}
 
 class ScalaWriter(writer: Writer) {
 
@@ -41,22 +42,23 @@ class ScalaWriter(writer: Writer) {
     writer.write("\n\n")
   }
 
-  def writeField(id: String, typeId: String, initializer: Option[String], indent: String): Unit = {
+  def writeField(id: String, scalaType: String, initializer: Option[String], indent: String): Unit = {
     writer.write(indent)
     writer.write("val ")
-    writeDeclaration(id, typeId, initializer)
+    writeDeclaration(id, scalaType, initializer)
     writer.write('\n')
   }
 
-  def writeParameter(id: String, typeId: String, initializer: Option[String], indent: String): Unit = {
+  def writeParameter(id: String, scalaType: String, initializer: Option[String], indent: String): Unit = {
     writer.write(indent)
-    writeDeclaration(id, typeId, initializer)
+    writeDeclaration(id, scalaType, initializer)
   }
 
-  private def writeDeclaration(id: String, typeId: String, initializer: Option[String]): Unit = {
-    writer.write(id)
+  private def writeDeclaration(id: String, scalaType: String, initializer: Option[String]): Unit = {
+    // Make sure any reserved words get quoted etc.
+    writer.write(Term.Name(id)(dialects.Scala213).syntax)
     writer.write(": ")
-    writer.write(typeId)
+    writer.write(scalaType)
     initializer.foreach { init =>
       writer.write(" = ")
       writer.write(init)
