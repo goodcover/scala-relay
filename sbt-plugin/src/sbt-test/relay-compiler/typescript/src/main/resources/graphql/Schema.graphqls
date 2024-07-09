@@ -1,0 +1,24 @@
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+type Query {
+    objectVariable(a: Input!): Node!
+    noVariables: Node!
+    primitiveVariable(a: String!): Node!
+    listVariable(as: [String!]!): Node!
+    multipleVariables(a: String!, b: String!): Node!
+    primitiveResponse(a: String!): String!
+    mandatoryResponse(a: String!): String!
+    listResponse(a: String!): [String!]!
+}
+
+input Input {
+    value: String!
+}
+
+type Node {
+    id: ID!
+}

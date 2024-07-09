@@ -1,0 +1,65 @@
+query TestNoVariablesQuery {
+    noVariables {
+        id
+    }
+}
+
+query TestObjectVariableQuery($filter: ItemFilterInput!) {
+    items(filter: $filter) {
+        date
+    }
+}
+
+query TestOptionalObjectVariableQuery($filter: ItemFilterInput) {
+    items(filter: $filter) {
+        date
+    }
+}
+
+query TestNestedObjectVariableQuery($query: CheckinSearchInput) {
+    checkinSearchQuery(query: $query) {
+        query
+    }
+}
+
+query TestPrimitiveVariableQuery($a: String!) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}
+
+query TestOptionalPrimitiveVariableQuery($a: String) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}
+
+query TestListVariableQuery($as: [String]!) {
+    listVariable(as: $as) {
+        id
+    }
+}
+
+query TestOptionalListVariableQuery($as: [String]) {
+    listVariable(as: $as) {
+        id
+    }
+}
+
+query TestMultipleVariablesQuery($a: String!, $b: String!) {
+    multipleVariables(a: $a, b: $b) {
+        id
+    }
+}
+
+query TestPrimitiveResponseQuery($a: String) {
+    primitiveResponse(a: $a)
+}
+
+query TestMandatoryResponseQuery($a: String) {
+    mandatoryResponse(a: $a)
+}
+
+query TestListResponseQuery($a: String) {
+    listResponse(a: $a)
+}
