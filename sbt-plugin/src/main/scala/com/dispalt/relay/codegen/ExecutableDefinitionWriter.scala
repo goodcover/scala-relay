@@ -179,7 +179,8 @@ abstract class ExecutableDefinitionWriter(
     }
     selection match {
       case field: Selection.Field =>
-        writeNestedTrait(fullName, field.selectionSet, subFieldLookup, typeDefinition.name, Seq.empty)
+        val parentTraits = Directives.getExtends(field.directives).toList
+        writeNestedTrait(fullName, field.selectionSet, subFieldLookup, typeDefinition.name, parentTraits)
         writeNestedInlineCompanionObject(fullName, field.selectionSet, outerObjectName)
       case inline: Selection.InlineFragment =>
         // FIXME: If there are multiple inline fragments without a type condition we will generate conflicting members.
