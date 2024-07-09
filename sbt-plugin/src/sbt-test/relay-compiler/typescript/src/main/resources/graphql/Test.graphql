@@ -4,21 +4,21 @@ query TestNoVariablesQuery {
     }
 }
 
-query TestObjectVariableQuery($filter: ItemFilterInput!) {
-    items(filter: $filter) {
-        date
+query TestObjectVariableQuery($input: Input!) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-query TestOptionalObjectVariableQuery($filter: ItemFilterInput) {
-    items(filter: $filter) {
-        date
+query TestOptionalObjectVariableQuery($input: Input) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-query TestNestedObjectVariableQuery($query: CheckinSearchInput) {
-    checkinSearchQuery(query: $query) {
-        query
+query TestNestedObjectVariableQuery($nested: Nested) {
+    nestedObjectVariable(nested: $nested) {
+        id
     }
 }
 
@@ -34,13 +34,13 @@ query TestOptionalPrimitiveVariableQuery($a: String) {
     }
 }
 
-query TestListVariableQuery($as: [String]!) {
+query TestListVariableQuery($as: [String!]!) {
     listVariable(as: $as) {
         id
     }
 }
 
-query TestOptionalListVariableQuery($as: [String]) {
+query TestOptionalListVariableQuery($as: [String!]) {
     listVariable(as: $as) {
         id
     }
@@ -52,14 +52,14 @@ query TestMultipleVariablesQuery($a: String!, $b: String!) {
     }
 }
 
-query TestPrimitiveResponseQuery($a: String) {
+query TestPrimitiveResponseQuery($a: String!) {
     primitiveResponse(a: $a)
 }
 
-query TestMandatoryResponseQuery($a: String) {
-    mandatoryResponse(a: $a)
+query TestOptionalPrimitiveResponseQuery($a: String!) {
+    optionalPrimitiveResponse(a: $a)
 }
 
-query TestListResponseQuery($a: String) {
+query TestListResponseQuery($a: String!) {
     listResponse(a: $a)
 }

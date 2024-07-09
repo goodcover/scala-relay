@@ -1,2 +1,13 @@
 > relayCompile
-$ pause
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestListResponseQuery.graphql.ts generated/TestListResponseQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestListVariableQuery.graphql.ts generated/TestListVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestMultipleVariablesQuery.graphql.ts generated/TestMultipleVariablesQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestNestedObjectVariableQuery.graphql.ts generated/TestNestedObjectVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestNoVariablesQuery.graphql.ts generated/TestNoVariablesQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestObjectVariableQuery.graphql.ts generated/TestObjectVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestOptionalListVariableQuery.graphql.ts generated/TestOptionalListVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestOptionalObjectVariableQuery.graphql.ts generated/TestOptionalObjectVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestOptionalPrimitiveResponseQuery.graphql.ts generated/TestOptionalPrimitiveResponseQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestOptionalPrimitiveVariableQuery.graphql.ts generated/TestOptionalPrimitiveVariableQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestPrimitiveResponseQuery.graphql.ts generated/TestPrimitiveResponseQuery.graphql.ts
+$ must-mirror target/scala-2.13/src_managed/relay/generated/TestPrimitiveVariableQuery.graphql.ts generated/TestPrimitiveVariableQuery.graphql.ts
