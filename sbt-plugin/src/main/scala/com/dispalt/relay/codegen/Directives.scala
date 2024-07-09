@@ -15,6 +15,9 @@ private[relay] object Directives {
   def isInline(fragmentDirectives: List[Directive]): Boolean =
     fragmentDirectives.exists(_.name == "inline")
 
+  def isRefetchable(fragmentDirectives: List[Directive]): Boolean =
+    fragmentDirectives.exists(_.name == "refetchable")
+
   def isPlural(fragmentDirectives: List[Directive]): Boolean =
     getBooleanDirectiveArg(fragmentDirectives, "relay", "plural").getOrElse(false)
 

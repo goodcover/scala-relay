@@ -21,7 +21,7 @@ trait Test_fragment3 extends js.Object {
   val foo: Test_fragment3.Foo
 }
 
-object Test_fragment3 extends _root_.relay.gql.FragmentTaggedNode[Test_fragment3] {
+object Test_fragment3 extends _root_.relay.gql.FragmentRefetchableTaggedNode[Test_fragment3, NestedArgsInput, NestedArgs] {
   type Ctor[T] = T
 
   @js.native

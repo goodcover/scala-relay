@@ -38,9 +38,19 @@ class FragmentWriter(
     writer.write("object ")
     val name = fragment.name
     writer.write(name)
-    writer.write(" extends _root_.relay.gql.FragmentTaggedNode[")
-    writer.write(name)
-    writer.write("] {\n")
+    Directives.getRefetchable(fragment.directives).fold {
+      writer.write(" extends _root_.relay.gql.FragmentTaggedNode[")
+      writer.write(name)
+      writer.write("] {\n")
+    } { refetchable =>
+      writer.write(" extends _root_.relay.gql.FragmentRefetchableTaggedNode[")
+      writer.write(name)
+      writer.write(", ")
+      writer.write(refetchable.queryName)
+      writer.write("Input, ")
+      writer.write(refetchable.queryName)
+      writer.write("] {\n")
+    }
     writer.write("  type Ctor[T] = ")
     if (isPlural(fragment.directives)) writer.write("js.Array[T]")
     else writer.write('T')
