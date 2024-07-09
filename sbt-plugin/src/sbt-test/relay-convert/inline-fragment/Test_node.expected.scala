@@ -61,7 +61,6 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
       @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[Test_node.PageActor]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
-
   }
 
   @js.native

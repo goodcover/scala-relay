@@ -6,7 +6,7 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVaria
 # TODO: Implement these remaining tests.
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableMutation.scala TestOptionalObjectVariableMutation.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala TestNestedObjectVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableMutation.scala TestPrimitiveVariableMutation.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableMutation.scala TestPrimitiveVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableMutation.scala TestOptionalPrimitiveVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableMutation.scala TestListVariableMutation.expected.scala
 #$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableMutation.scala TestOptionalListVariableMutation.expected.scala

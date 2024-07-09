@@ -45,7 +45,7 @@ class FragmentWriter(
     if (isPlural(fragment.directives)) writer.write("js.Array[T]")
     else writer.write('T')
     writer.write("\n\n")
-    writeNestedTypeNameObject(None, fragment.selectionSet, name, "  ")
+    writeNestedTypeNameObject(None, fragment.selectionSet, name, "  ", compact = false)
     writeNestedTraits(fragment.typeCondition.name, fragment.selectionSet, fieldTypeDefinition, name)
     writeFragmentImplicits(fragment.name, fragment.selectionSet, name)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
@@ -53,7 +53,7 @@ class FragmentWriter(
     writer.write("  type Query = _root_.relay.gql.")
     if (Directives.isInline(fragment.directives)) writer.write("ReaderInlineDataFragment")
     else writer.write("ReaderFragment")
-    writer.write("[Ctor, Out]\n")
+    writer.write("[Ctor, Out]\n\n")
     writeGeneratedMapping(writer, name)
   }
 }

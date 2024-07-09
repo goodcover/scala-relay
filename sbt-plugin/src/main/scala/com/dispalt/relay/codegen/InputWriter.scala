@@ -39,7 +39,7 @@ class InputWriter(
       case variables => Right(OperationInput.fromVariables(variables))
     }
 
-  val operationInputName: String = operationInput.fold(_.name, _ => operationName + "Input")
+  val operationInputName: String = operationInput.fold(single => innerType(single.variableType), _ => operationName + "Input")
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
   def writeOperationInputTypes(): Unit = {
@@ -107,20 +107,20 @@ class InputWriter(
     writer.write("}\n\n")
   }
 
-  private def writeInputApplyMethod(input: InputObjectTypeDefinition): Unit = {
-    writeInputFactoryMethod("apply", input.fields, operationName + input.name)
-  }
+  private def writeInputApplyMethod(input: InputObjectTypeDefinition): Unit =
+    writeInputFactoryMethod("apply", input.fields, operationName + input.name, compact = true)
 
   def writeNewInputMethod(): Unit =
     operationInput.foreach { input =>
       val parameters = input.parameters
-      writeInputFactoryMethod("newInput", parameters, operationInputName)
+      writeInputFactoryMethod("newInput", parameters, operationInputName, compact = false)
     }
 
   private def writeInputFactoryMethod(
     name: String,
     parameters: List[InputValueDefinition],
-    returnType: String
+    returnType: String,
+    compact: Boolean
   ): Unit = {
     // TODO: This ought to delegate to an apply method on the input object.
 
@@ -180,7 +180,7 @@ class InputWriter(
     writer.write(").asInstanceOf[")
     writer.write(returnType)
     writer.write("]\n")
-    //}
+    if (!compact) writer.write('\n')
   }
 
   private def writeInputFieldParameter(name: String, tpe: Type, fieldDefinitionDirectives: List[Directive]): Unit = {

@@ -47,7 +47,6 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
       @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[TestQuery.MaybeNode]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
-
   }
 
   implicit class MaybeNode_Ops(f: MaybeNode) {

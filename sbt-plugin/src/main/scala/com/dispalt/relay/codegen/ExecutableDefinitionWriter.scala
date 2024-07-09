@@ -201,7 +201,7 @@ abstract class ExecutableDefinitionWriter(
       writer.write("  object ")
       writer.write(fullName)
       writer.write(" {\n")
-      writeNestedTypeNameObject(Some(fullName), selections, outerObjectName, "    ")
+      writeNestedTypeNameObject(Some(fullName), selections, outerObjectName, "    ", compact = true)
       writer.write("  }\n\n")
     }
   }
@@ -210,7 +210,8 @@ abstract class ExecutableDefinitionWriter(
     innerObjectName: Option[String],
     selections: List[Selection],
     outerObjectName: String,
-    indent: String
+    indent: String,
+    compact: Boolean
   ): Unit = {
     val inlines = inlineFragmentSelections(selections)
     if (inlines.nonEmpty) {
@@ -226,7 +227,8 @@ abstract class ExecutableDefinitionWriter(
       }
       writeTypeName("`%other`", innerObjectName.fold(outerObjectName)(n => s"$outerObjectName.$n"), indent + "  ")
       writer.write(indent)
-      writer.write("}\n\n")
+      writer.write("}\n")
+      if (!compact) writer.write('\n')
     }
   }
 
@@ -333,8 +335,7 @@ abstract class ExecutableDefinitionWriter(
   }
 
   protected def writeGeneratedMapping(writer: Writer, name: String): Unit = {
-    writer.write("""
-                   |  @js.native
+    writer.write("""  @js.native
                    |  @JSImport("__generated__/""".stripMargin)
     // TODO: Make this configurable.
     // The __generated__ import here should be setup as an alias to the output location of the relay compiler.

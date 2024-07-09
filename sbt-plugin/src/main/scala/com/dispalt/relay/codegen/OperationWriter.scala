@@ -45,13 +45,13 @@ abstract class OperationWriter(
                    |  type Ctor[T] = T
                    |
                    |""".stripMargin)
-    writeNestedTypeNameObject(None, operation.selectionSet, name, "  ")
+    writeNestedTypeNameObject(None, operation.selectionSet, name, "  ", compact = false)
     writeNestedTraits(name, operation.selectionSet, fieldTypeDefinition, name)
     writeFragmentImplicits(name, operation.selectionSet, name)
     inputWriter.writeNewInputMethod()
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
-    writer.write("\n  type Query = _root_.relay.gql.ConcreteRequest\n")
+    writer.write("  type Query = _root_.relay.gql.ConcreteRequest\n\n")
     writeGeneratedMapping(writer, name)
   }
 
