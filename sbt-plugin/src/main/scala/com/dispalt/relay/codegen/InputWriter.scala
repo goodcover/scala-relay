@@ -3,7 +3,7 @@ package com.dispalt.relay.codegen
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, Type, VariableDefinition}
+import caliban.parsing.adt.{Directive, OperationType, Type, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema
 import com.dispalt.relay.codegen.InputWriter.OperationInput
 
@@ -22,16 +22,27 @@ class InputWriter(
   private val operationName: String = DocumentWriter.getOperationName(operation)
 
   private val operationInput: Either[VariableDefinition, OperationInput] =
+    operation.operationType match {
+      case OperationType.Mutation => mutationInput
+      case _                      => nonMutationInput
+    }
+
+  private def nonMutationInput: Either[VariableDefinition, OperationInput] =
+    Right(OperationInput.fromVariables(operation.variableDefinitions))
+
+  // FIXME: Stop doing this. The outer type is not superfluous. The input type is the thing that is superfluous so stop
+  //  doing that if you don't want the double wrapping.
+  private def mutationInput: Either[VariableDefinition, OperationInput] =
     operation.variableDefinitions match {
-      // FIXME: Use null instead of an empty object.
       case Nil => Right(OperationInput(Nil))
       case variable :: Nil =>
         schema.inputObjectTypes
           .get(innerType(variable.variableType))
           .map { obj =>
             if (variable.defaultValue.nonEmpty) {
-              // TODO: We could support this by providing a default object somewhere
-              throw new UnsupportedOperationException("A single input object variable cannot have a default value.")
+              throw new UnsupportedOperationException(
+                "A single input object variable to a mutation cannot have a default value."
+              )
             }
             OperationInput(obj.fields)
           }
@@ -39,7 +50,8 @@ class InputWriter(
       case variables => Right(OperationInput.fromVariables(variables))
     }
 
-  val operationInputName: String = operationInput.fold(single => innerType(single.variableType), _ => operationName + "Input")
+  val operationInputName: String =
+    operationInput.fold(single => innerType(single.variableType), _ => operationName + "Input")
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
   def writeOperationInputTypes(): Unit = {
@@ -62,17 +74,9 @@ class InputWriter(
       }
     }
 
-    operationInput.foreach(writeOperationInputType)
-
-    operation.variableDefinitions match {
-      case variable :: Nil =>
-        schema.inputObjectTypes.get(innerType(variable.variableType)).foreach { input =>
-          // FIXME: If the input type is cyclic then we will end up with two distinct types. It's not a big deal and we
-          //  probably have no instances of that anyway. It would be annoying to prevent and pointless since I want to
-          //  change how all these input types are generated anyway.
-          loop(input.fields.map(field => innerType(field.ofType)).toSet, Set.empty)
-        }
-      case _ => ()
+    operationInput.foreach { input =>
+      writeOperationInputType(input)
+      loop(input.parameters.map(parameter => innerType(parameter.ofType)).toSet, Set.empty)
     }
   }
 
@@ -123,8 +127,6 @@ class InputWriter(
     compact: Boolean
   ): Unit = {
     // TODO: This ought to delegate to an apply method on the input object.
-
-    // FIXME: Core uses an empty object instead of null.
 
     def foreachInputField(f: (InputValueDefinition, Boolean) => Unit): Unit = {
       @tailrec
@@ -208,6 +210,7 @@ class InputWriter(
 
 object InputWriter {
 
+  // FIXME: Get rid of this.
   private final case class OperationInput(parameters: List[InputValueDefinition])
 
   private object OperationInput {

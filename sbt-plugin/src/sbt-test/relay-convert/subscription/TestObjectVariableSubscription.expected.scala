@@ -13,8 +13,23 @@ subscription TestObjectVariableSubscription($input: FeedbackLikeInput!) {
 */
 
 trait TestObjectVariableSubscriptionInput extends js.Object {
+  val input: TestObjectVariableSubscriptionFeedbackLikeInput
+}
+
+trait TestObjectVariableSubscriptionFeedbackLikeInput extends js.Object {
   val clientMutationId: String | Null
   val feedbackId: String | Null
+}
+
+object TestObjectVariableSubscriptionFeedbackLikeInput {
+  def apply(
+    clientMutationId: String | Null = null,
+    feedbackId: String | Null = null
+  ): TestObjectVariableSubscriptionFeedbackLikeInput =
+    js.Dynamic.literal(
+      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
+      "feedbackId" -> feedbackId.asInstanceOf[js.Any]
+    ).asInstanceOf[TestObjectVariableSubscriptionFeedbackLikeInput]
 }
 
 @js.native
@@ -31,12 +46,10 @@ object TestObjectVariableSubscription extends _root_.relay.gql.SubscriptionTagge
   }
 
   def newInput(
-    clientMutationId: String | Null = null,
-    feedbackId: String | Null = null
+    input: TestObjectVariableSubscriptionFeedbackLikeInput
   ): TestObjectVariableSubscriptionInput =
     js.Dynamic.literal(
-      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
-      "feedbackId" -> feedbackId.asInstanceOf[js.Any]
+      "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestObjectVariableSubscriptionInput]
 
   type Query = _root_.relay.gql.ConcreteRequest

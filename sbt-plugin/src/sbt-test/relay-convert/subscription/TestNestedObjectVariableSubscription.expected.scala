@@ -13,9 +13,26 @@ subscription TestNestedObjectVariableSubscription($input: CommentCreateInput) {
 */
 
 trait TestNestedObjectVariableSubscriptionInput extends js.Object {
+  val input: TestNestedObjectVariableSubscriptionCommentCreateInput | Null
+}
+
+trait TestNestedObjectVariableSubscriptionCommentCreateInput extends js.Object {
   val clientMutationId: String | Null
   val feedbackId: String | Null
   val feedback: TestNestedObjectVariableSubscriptionCommentfeedbackFeedback | Null
+}
+
+object TestNestedObjectVariableSubscriptionCommentCreateInput {
+  def apply(
+    clientMutationId: String | Null = null,
+    feedbackId: String | Null = null,
+    feedback: TestNestedObjectVariableSubscriptionCommentfeedbackFeedback | Null = null
+  ): TestNestedObjectVariableSubscriptionCommentCreateInput =
+    js.Dynamic.literal(
+      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
+      "feedbackId" -> feedbackId.asInstanceOf[js.Any],
+      "feedback" -> feedback.asInstanceOf[js.Any]
+    ).asInstanceOf[TestNestedObjectVariableSubscriptionCommentCreateInput]
 }
 
 trait TestNestedObjectVariableSubscriptionCommentfeedbackFeedback extends js.Object {
@@ -58,14 +75,10 @@ object TestNestedObjectVariableSubscription extends _root_.relay.gql.Subscriptio
   }
 
   def newInput(
-    clientMutationId: String | Null = null,
-    feedbackId: String | Null = null,
-    feedback: TestNestedObjectVariableSubscriptionCommentfeedbackFeedback | Null = null
+    input: TestNestedObjectVariableSubscriptionCommentCreateInput | Null = null
   ): TestNestedObjectVariableSubscriptionInput =
     js.Dynamic.literal(
-      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
-      "feedbackId" -> feedbackId.asInstanceOf[js.Any],
-      "feedback" -> feedback.asInstanceOf[js.Any]
+      "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableSubscriptionInput]
 
   type Query = _root_.relay.gql.ConcreteRequest

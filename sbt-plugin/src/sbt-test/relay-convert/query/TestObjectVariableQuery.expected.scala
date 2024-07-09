@@ -13,7 +13,20 @@ query TestObjectVariableQuery($filter: ItemFilterInput!) {
 */
 
 trait TestObjectVariableQueryInput extends js.Object {
+  val filter: TestObjectVariableQueryItemFilterInput
+}
+
+trait TestObjectVariableQueryItemFilterInput extends js.Object {
   val date: String | Null
+}
+
+object TestObjectVariableQueryItemFilterInput {
+  def apply(
+    date: String | Null = null
+  ): TestObjectVariableQueryItemFilterInput =
+    js.Dynamic.literal(
+      "date" -> date.asInstanceOf[js.Any]
+    ).asInstanceOf[TestObjectVariableQueryItemFilterInput]
 }
 
 @js.native
@@ -30,10 +43,10 @@ object TestObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[TestObje
   }
 
   def newInput(
-    date: String | Null = null
+    filter: TestObjectVariableQueryItemFilterInput
   ): TestObjectVariableQueryInput =
     js.Dynamic.literal(
-      "date" -> date.asInstanceOf[js.Any]
+      "filter" -> filter.asInstanceOf[js.Any]
     ).asInstanceOf[TestObjectVariableQueryInput]
 
   type Query = _root_.relay.gql.ConcreteRequest

@@ -12,18 +12,29 @@ query TestPrimitiveVariableQuery($a: String!) {
 }
 */
 
+trait TestPrimitiveVariableQueryInput extends js.Object {
+  val a: String
+}
+
 @js.native
 trait TestPrimitiveVariableQuery extends js.Object {
   val primitiveVariable: TestPrimitiveVariableQuery.PrimitiveVariable | Null
 }
 
-object TestPrimitiveVariableQuery extends _root_.relay.gql.QueryTaggedNode[String, TestPrimitiveVariableQuery] {
+object TestPrimitiveVariableQuery extends _root_.relay.gql.QueryTaggedNode[TestPrimitiveVariableQueryInput, TestPrimitiveVariableQuery] {
   type Ctor[T] = T
 
   @js.native
   trait PrimitiveVariable extends js.Object {
     val id: String
   }
+
+  def newInput(
+    a: String
+  ): TestPrimitiveVariableQueryInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestPrimitiveVariableQueryInput]
 
   type Query = _root_.relay.gql.ConcreteRequest
 

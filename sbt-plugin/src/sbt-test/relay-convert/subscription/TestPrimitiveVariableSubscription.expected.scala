@@ -12,18 +12,29 @@ subscription TestPrimitiveVariableSubscription($a: String!) {
 }
 */
 
+trait TestPrimitiveVariableSubscriptionInput extends js.Object {
+  val a: String
+}
+
 @js.native
 trait TestPrimitiveVariableSubscription extends js.Object {
   val primitiveVariable: TestPrimitiveVariableSubscription.PrimitiveVariable | Null
 }
 
-object TestPrimitiveVariableSubscription extends _root_.relay.gql.SubscriptionTaggedNode[String, TestPrimitiveVariableSubscription] {
+object TestPrimitiveVariableSubscription extends _root_.relay.gql.SubscriptionTaggedNode[TestPrimitiveVariableSubscriptionInput, TestPrimitiveVariableSubscription] {
   type Ctor[T] = T
 
   @js.native
   trait PrimitiveVariable extends js.Object {
     val clientSubscriptionId: String | Null
   }
+
+  def newInput(
+    a: String
+  ): TestPrimitiveVariableSubscriptionInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestPrimitiveVariableSubscriptionInput]
 
   type Query = _root_.relay.gql.ConcreteRequest
 

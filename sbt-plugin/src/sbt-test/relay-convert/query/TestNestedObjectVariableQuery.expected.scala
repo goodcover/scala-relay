@@ -13,8 +13,7 @@ query TestNestedObjectVariableQuery($query: CheckinSearchInput) {
 */
 
 trait TestNestedObjectVariableQueryInput extends js.Object {
-  val query: String | Null
-  val inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null
+  val query: TestNestedObjectVariableQueryCheckinSearchInput | Null
 }
 
 trait TestNestedObjectVariableQueryCheckinSearchInput extends js.Object {
@@ -63,12 +62,10 @@ object TestNestedObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[Te
   }
 
   def newInput(
-    query: String | Null = null,
-    inputs: js.Array[TestNestedObjectVariableQueryCheckinSearchInput | Null] | Null = null
+    query: TestNestedObjectVariableQueryCheckinSearchInput | Null = null
   ): TestNestedObjectVariableQueryInput =
     js.Dynamic.literal(
-      "query" -> query.asInstanceOf[js.Any],
-      "inputs" -> inputs.asInstanceOf[js.Any]
+      "query" -> query.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableQueryInput]
 
   type Query = _root_.relay.gql.ConcreteRequest

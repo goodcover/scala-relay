@@ -1,6 +1,5 @@
 # This should convert as expected.
 > relayConvert
-# TODO: This is wrong. We use an empty object when there are no inputs instead of null/undefined.
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesQuery.scala TestNoVariablesQuery.expected.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableQuery.scala TestObjectVariableQuery.expected.scala
 # TODO: Implement these remaining tests.
