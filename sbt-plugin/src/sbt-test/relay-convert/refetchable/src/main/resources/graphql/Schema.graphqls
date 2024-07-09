@@ -1,0 +1,27 @@
+schema {
+    query: Query
+}
+
+type Query {
+    foo: Foo!
+    oneArg(a: String): Foo!
+    objArg(thing: Thing): Foo!
+}
+
+type Foo {
+    bar: String
+    args: Args
+}
+
+type Args {
+    oneArg(a: String): Foo!
+    objArg(thing: Thing): Foo!
+}
+
+input Thing {
+    stuff: Stuff!
+}
+
+input Stuff {
+    junk: String
+}

@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets
 
 class GraphQLSchema(file: File, document: Document) {
 
+  // TODO: Change IllegalArgumentExceptions to NoSuchElementExceptions
+
   // See https://spec.graphql.org/October2021.
 
   lazy val schemaDefinition: TypeSystemDefinition.SchemaDefinition =
@@ -49,14 +51,20 @@ class GraphQLSchema(file: File, document: Document) {
     interfaceTypes.getOrElse(name, throw invalidSchema(s"Missing interface $name."))
 
   def fieldType(name: String): FieldTypeDefinition =
+    objectInterfaceUnionType(name)
+    // TODO: Currently these are implemented as String.
+    //.orElse(enumTypes.get(name).map(FieldTypeDefinition(_)))
+
+  def fragmentType(name: String): FieldTypeDefinition =
+    objectInterfaceUnionType(name)
+
+  def objectInterfaceUnionType(name: String): FieldTypeDefinition =
     objectTypes
       .get(name)
       .map(FieldTypeDefinition(_))
       .orElse(interfaceTypes.get(name).map(FieldTypeDefinition(_)))
       .orElse(unionTypes.get(name).map(FieldTypeDefinition(_)))
-      // TODO: Currently these are implemented as String.
-      //.orElse(enumTypes.get(name).map(FieldTypeDefinition(_)))
-      .getOrElse(throw invalidSchema(s"Missing type, interface, union, or enum $name."))
+      .getOrElse(throw invalidSchema(s"Missing type, interface, or union $name."))
 
   val queryObjectType: TypeDefinition.ObjectTypeDefinition = {
     // The query root operation type must be provided and must be an Object type.
@@ -123,6 +131,7 @@ object GraphQLSchema {
   final case class UnsupportedOperation(file: File, message: String)
       extends Exception(s"Unsupported operation in schema file: $file", new Exception(message))
 
+  // TODO: Rename
   final case class FieldTypeDefinition(
     description: Option[String],
     name: String,

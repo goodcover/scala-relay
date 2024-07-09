@@ -1,10 +1,14 @@
 package com.dispalt.relay.codegen
 
+import caliban.InputValue
+import caliban.InputValue.{ListValue, ObjectValue, VariableValue}
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
-import caliban.parsing.adt.OperationType
+import caliban.parsing.adt.Type.{NamedType, innerType}
+import caliban.parsing.adt.{OperationType, Selection, VariableDefinition}
 import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.codegen.DocumentWriter.getOperationName
+import com.dispalt.relay.codegen.Directives.{Refetchable, getRefetchable}
+import com.dispalt.relay.codegen.DocumentWriter.{getOperationName, variableArguments}
 import sbt._
 import sbt.io.Using.fileWriter
 
@@ -21,7 +25,13 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
     val document   = Parser.parseQuery(documentText).right.get
     val operations = document.operationDefinitions.map(writeOperation(documentText, _)).toSet
     val fragments  = document.fragmentDefinitions.map(writeFragment(documentText, _)).toSet
-    operations ++ fragments
+    val refetchables = {
+      for {
+        fragment    <- document.fragmentDefinitions
+        refetchable <- getRefetchable(fragment.directives)
+      } yield writeRefetchableFragment(documentText, fragment, refetchable)
+    }.toSet
+    operations ++ fragments ++ refetchables
   }
 
   private def writeOperation(documentText: String, operation: OperationDefinition): File = {
@@ -39,10 +49,28 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
     writeDefinition(operationFile(mutation))(new MutationWriter(_, mutation, documentText, schema, typeMappings))
 
   private def writeSubscription(documentText: String, subscription: OperationDefinition): File =
-    writeDefinition(operationFile(subscription))(new SubscriptionWriter(_, subscription, documentText, schema, typeMappings))
+    writeDefinition(operationFile(subscription))(
+      new SubscriptionWriter(_, subscription, documentText, schema, typeMappings)
+    )
 
   private def writeFragment(documentText: String, fragment: FragmentDefinition): File =
     writeDefinition(fragmentFile(fragment))(new FragmentWriter(_, fragment, documentText, schema, typeMappings))
+
+  private def writeRefetchableFragment(
+    documentText: String,
+    fragment: FragmentDefinition,
+    refetchable: Refetchable
+  ): File = {
+    val variables = fragmentVariables(fragment)
+    // TODO: Add directives.
+    val directives = Nil
+    val selection  = Selection.FragmentSpread(fragment.name, Nil)
+    val query =
+      OperationDefinition(OperationType.Query, Some(refetchable.queryName), variables, directives, List(selection))
+    // FIXME: This doesn't adequately check for duplicate outputs.
+    // FIXME: The definition text is missing because it is looking for the wrong thing.
+    writeDefinition(operationFile(query))(new QueryWriter(_, query, documentText, schema, typeMappings))
+  }
 
   private def writeDefinition(file: File)(f: Writer => ExecutableDefinitionWriter): File =
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
@@ -67,6 +95,42 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
     }
     file
   }
+
+  // TODO: This should also take into account any @argumentDefinitions on the fragment.
+  private def fragmentVariables(fragment: FragmentDefinition): List[VariableDefinition] = {
+    val typeName    = innerType(fragment.typeCondition)
+    val tpe         = schema.fragmentType(typeName)
+    val fieldLookup = tpe.fields.map(field => field.name -> field).toMap
+    selectionVariables(fragment.selectionSet, fieldLookup.get, typeName)
+  }.values.toList
+
+  // TODO: There ought to be a way to abstract this sort of traversal. It is painful...
+  private def selectionVariables(
+    selections: List[Selection],
+    fieldLookup: FieldLookup,
+    // TODO: Rename.
+    parentTypeName: String
+  ): Map[String, VariableDefinition] = {
+    selections.foldLeft(Map.empty[String, VariableDefinition]) {
+      case (args, field: Selection.Field) =>
+        val definition = fieldLookup(field.name)
+          .getOrElse(throw new NoSuchElementException(s"$parentTypeName does not have a field ${field.name}."))
+        val argsLookup = definition.args.map(arg => arg.name -> arg).toMap
+        val typeName   = innerType(definition.ofType)
+        val fieldArgs  = variableArguments(field.arguments, argsLookup.get, typeName)
+        val nextArgs   = args ++ fieldArgs
+        if (field.selectionSet.nonEmpty) {
+          val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
+          nextArgs ++ selectionVariables(field.selectionSet, nextFieldLookup, typeName)
+        } else nextArgs
+      case (args, inline: Selection.InlineFragment) =>
+        val tpe                          = inline.typeCondition.getOrElse(NamedType(parentTypeName, nonNull = true))
+        val typeName                     = innerType(tpe)
+        val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
+        args ++ selectionVariables(inline.selectionSet, nextFieldLookup, typeName)
+      case (args, _: Selection.FragmentSpread) => args
+    }
+  }
 }
 
 object DocumentWriter {
@@ -74,4 +138,23 @@ object DocumentWriter {
   // TODO: Where should this go?
   private[codegen] def getOperationName(operation: OperationDefinition) =
     operation.name.getOrElse(throw new UnsupportedOperationException("Anonymous operations are not not supported."))
+
+  private def variableArguments(
+    arguments: Map[String, InputValue],
+    argLookup: ArgLookup,
+    typeName: String
+  ): Map[String, VariableDefinition] = {
+    arguments.collect {
+      case (argName, VariableValue(variableName)) =>
+        argLookup(argName).fold(throw new NoSuchElementException(s"$typeName does not have an argument $argName.")) {
+          arg =>
+            variableName -> VariableDefinition(variableName, arg.ofType, None, Nil)
+        }
+      // TODO: Look inside lists and objects too.
+      case (_, ListValue(_)) =>
+        throw new NotImplementedError("Variables within lists for refetchable fragments have not been implemented.")
+      case (_, ObjectValue(_)) =>
+        throw new NotImplementedError("Variables within objects for refetchable fragments have not been implemented.")
+    }
+  }
 }

@@ -20,9 +20,6 @@ abstract class ExecutableDefinitionWriter(
   typeMappings: Map[String, String]
 ) {
 
-  protected type FieldLookup     = String => Option[FieldDefinition]
-  protected type FieldTypeLookup = String => Option[FieldTypeDefinition]
-
   protected val scalaWriter   = new ScalaWriter(writer)
   protected val typeConverter = new TypeConverter(schema, typeMappings)
 
