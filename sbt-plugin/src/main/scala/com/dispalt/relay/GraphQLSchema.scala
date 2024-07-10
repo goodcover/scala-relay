@@ -1,9 +1,10 @@
 package com.dispalt.relay
 
 import caliban.parsing.Parser
-import caliban.parsing.adt.Definition.TypeSystemDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
+import caliban.parsing.adt.Definition.{ExecutableDefinition, TypeSystemDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.{SchemaDefinition, TypeDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
+import caliban.parsing.adt.Definition.TypeSystemExtension.SchemaExtension
 import caliban.parsing.adt.Type.NamedType
 import caliban.parsing.adt.{Directive, Document, Type}
 import com.dispalt.relay.GraphQLSchema.{FieldTypeDefinition, InvalidSchema, UnsupportedOperation}
@@ -11,41 +12,62 @@ import sbt._
 
 import java.nio.charset.StandardCharsets
 
-class GraphQLSchema(file: File, document: Document) {
+class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
+
+  // See https://spec.graphql.org/October2021.
 
   // TODO: Change IllegalArgumentExceptions to NoSuchElementExceptions
 
-  // See https://spec.graphql.org/October2021.
+  // TODO: Handle schema extensions.
+  //  You have to pull out the TypeSystemExtensions from the document.definitions manually.
 
   lazy val schemaDefinition: TypeSystemDefinition.SchemaDefinition =
     document.schemaDefinition.getOrElse(throw invalidSchema("Missing schema."))
 
+  lazy val fragments: Map[String, ExecutableDefinition.FragmentDefinition] =
+    additional.foldLeft(document.fragmentDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.fragmentDefinitions.map(d => d.name -> d)
+    }
+
+  def fragment(name: String): ExecutableDefinition.FragmentDefinition =
+    fragments.getOrElse(name, throw invalidSchema(s"Missing fragment $name."))
+
   lazy val objectTypes: Map[String, TypeDefinition.ObjectTypeDefinition] =
-    document.objectTypeDefinitions.map(d => d.name -> d).toMap
+    additional.foldLeft(document.objectTypeDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.objectTypeDefinitions.map(d => d.name -> d)
+    }
 
   def objectType(name: String): TypeDefinition.ObjectTypeDefinition =
     objectTypes.getOrElse(name, throw invalidSchema(s"Missing type $name."))
 
   lazy val inputObjectTypes: Map[String, TypeDefinition.InputObjectTypeDefinition] =
-    document.inputObjectTypeDefinitions.map(d => d.name -> d).toMap
+    additional.foldLeft(document.inputObjectTypeDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.inputObjectTypeDefinitions.map(d => d.name -> d)
+    }
 
   def inputObjectType(name: String): TypeDefinition.InputObjectTypeDefinition =
     inputObjectTypes.getOrElse(name, throw invalidSchema(s"Missing input $name."))
 
   lazy val unionTypes: Map[String, TypeDefinition.UnionTypeDefinition] =
-    document.unionTypeDefinitions.map(d => d.name -> d).toMap
+    additional.foldLeft(document.unionTypeDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.unionTypeDefinitions.map(d => d.name -> d)
+    }
 
   def unionType(name: String): TypeDefinition.UnionTypeDefinition =
     unionTypes.getOrElse(name, throw invalidSchema(s"Missing union $name."))
 
   lazy val enumTypes: Map[String, TypeDefinition.EnumTypeDefinition] =
-    document.enumTypeDefinitions.map(d => d.name -> d).toMap
+    additional.foldLeft(document.enumTypeDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.enumTypeDefinitions.map(d => d.name -> d)
+    }
 
   def enumType(name: String): TypeDefinition.EnumTypeDefinition =
     enumTypes.getOrElse(name, throw invalidSchema(s"Missing enum $name."))
 
   lazy val interfaceTypes: Map[String, TypeDefinition.InterfaceTypeDefinition] =
-    document.interfaceTypeDefinitions.map(d => d.name -> d).toMap
+    additional.foldLeft(document.interfaceTypeDefinitions.map(d => d.name -> d).toMap) {
+      (definitions, document) => definitions ++ document.interfaceTypeDefinitions.map(d => d.name -> d)
+    }
 
   def interfaceType(name: String): TypeDefinition.InterfaceTypeDefinition =
     interfaceTypes.getOrElse(name, throw invalidSchema(s"Missing interface $name."))
@@ -114,16 +136,21 @@ class GraphQLSchema(file: File, document: Document) {
   def subscriptionField(name: String): TypeDefinition.FieldDefinition =
     subscriptionFields.getOrElse(name, throw new IllegalArgumentException(s"Missing subscription $name."))
 
+  // TODO: Remove this. It doesn't make sense now that we are combining multiple documents.
   def invalidSchema(message: String): InvalidSchema =
     InvalidSchema(file, message)
 }
 
 object GraphQLSchema {
 
-  def apply(file: File): GraphQLSchema = {
-    val document = Parser.parseQuery(IO.read(file, StandardCharsets.UTF_8)).right.get
-    new GraphQLSchema(file, document)
+  def apply(schemaFile: File, additional: Set[File]): GraphQLSchema = {
+    val document = readDocument(schemaFile)
+    val additionalDocuments = additional.toSeq.map(readDocument)
+    new GraphQLSchema(schemaFile, document, additionalDocuments)
   }
+
+  private def readDocument(file: File): Document =
+    Parser.parseQuery(IO.read(file, StandardCharsets.UTF_8)).right.get
 
   final case class InvalidSchema(file: File, message: String)
       extends Exception(s"Invalid schema file: $file", new Exception(message))

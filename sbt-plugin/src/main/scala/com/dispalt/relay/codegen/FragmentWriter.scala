@@ -47,6 +47,7 @@ class FragmentWriter(
       writer.write(name)
       writer.write(", ")
       writer.write(refetchable.queryName)
+      // TODO: This shouldn't be hard coded to XInput.
       writer.write("Input, ")
       writer.write(refetchable.queryName)
       writer.write("] {\n")

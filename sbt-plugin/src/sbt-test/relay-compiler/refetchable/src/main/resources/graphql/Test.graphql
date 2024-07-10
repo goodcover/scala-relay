@@ -25,3 +25,25 @@ fragment Test_fragment4 on Query @refetchable(queryName: "ObjectArgs") {
         bar
     }
 }
+
+fragment Test_fragment5 on ImplicitNode @refetchable(queryName: "ImplicitNodeArgs") {
+    name
+}
+
+fragment Test_args on Args {
+    oneArg(a: $b) {
+        bar
+    }
+}
+
+fragment Test_fragment6 on Query @refetchable(queryName: "ArgsOfSpread") {
+    foo {
+        args {
+            ...Test_args
+        }
+    }
+}
+
+fragment Test_viewer on Viewer @refetchable(queryName: "ViewerQuery") {
+    name
+}

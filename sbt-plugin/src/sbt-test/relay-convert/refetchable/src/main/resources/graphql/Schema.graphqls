@@ -6,6 +6,12 @@ type Query {
     foo: Foo!
     oneArg(a: String): Foo!
     objArg(thing: Thing): Foo!
+    node(nodeID: ID!): Node
+    viewer: Viewer
+}
+
+interface Node {
+  id: ID!
 }
 
 type Foo {
@@ -24,4 +30,13 @@ input Thing {
 
 input Stuff {
     junk: String
+}
+
+interface ImplicitNode {
+    id: ID!
+    name: String!
+}
+
+type Viewer {
+    name: String!
 }

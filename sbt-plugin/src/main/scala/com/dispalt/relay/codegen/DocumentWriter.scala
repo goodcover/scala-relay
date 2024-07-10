@@ -61,7 +61,7 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
     fragment: FragmentDefinition,
     refetchable: Refetchable
   ): File = {
-    val variables = fragmentVariables(fragment)
+    val variables = refetchableFragmentVariables(fragment)
     // TODO: Add directives.
     val directives = Nil
     val selection  = Selection.FragmentSpread(fragment.name, Nil)
@@ -97,12 +97,20 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
   }
 
   // TODO: This should also take into account any @argumentDefinitions on the fragment.
-  private def fragmentVariables(fragment: FragmentDefinition): List[VariableDefinition] = {
-    val typeName    = innerType(fragment.typeCondition)
-    val tpe         = schema.fragmentType(typeName)
+  private def refetchableFragmentVariables(fragment: FragmentDefinition): List[VariableDefinition] = {
+    val typeName = innerType(fragment.typeCondition)
+    val tpe      = schema.fragmentType(typeName)
+    // The @refetchable directive can only be on fragments with a type condition of Query, Viewer, or Node.
+    // The later is quite relaxed and will work on any interface and it will assume that it is queryable via node.
+    val implied = if (schema.queryObjectType.name == tpe.name || typeName == "Viewer") {
+      Map.empty[String, VariableDefinition]
+    } else {
+      Map("id" -> VariableDefinition("id", NamedType("ID", nonNull = true), None, Nil))
+    }
     val fieldLookup = tpe.fields.map(field => field.name -> field).toMap
-    selectionVariables(fragment.selectionSet, fieldLookup.get, typeName)
-  }.values.toList
+    val inner       = selectionVariables(fragment.selectionSet, fieldLookup.get, typeName)
+    (implied ++ inner).values.toList
+  }
 
   // TODO: There ought to be a way to abstract this sort of traversal. It is painful...
   private def selectionVariables(
@@ -128,7 +136,11 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
         val typeName                     = innerType(tpe)
         val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
         args ++ selectionVariables(inline.selectionSet, nextFieldLookup, typeName)
-      case (args, _: Selection.FragmentSpread) => args
+      case (args, spread: Selection.FragmentSpread) =>
+        val definition                   = schema.fragment(spread.name)
+        val typeName                     = innerType(definition.typeCondition)
+        val nextFieldLookup: FieldLookup = schema.fragmentType(typeName).fields.map(f => f.name -> f).toMap.get
+        args ++ selectionVariables(definition.selectionSet, nextFieldLookup, typeName)
     }
   }
 }

@@ -87,7 +87,7 @@ object GraphQLConverter {
           // 3) Resource added - generate the conversion
           // 4) Resource modified - generate the conversion
           // 5) Conversion modified - generate the conversion
-          val schema = GraphQLSchema(schemaFile)
+          val schema = GraphQLSchema(schemaFile, sources)
           // TODO: We should be converting the schema once instead of copying all the types into the operations.
           val (modifiedConversions, unmodifiedConversions) =
             convertModified(resourcesReport, schemaReport, schema, previousAnalysis, options, logger)

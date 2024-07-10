@@ -4,7 +4,13 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.s
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment2.scala expected/Test_fragment2.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment3.scala expected/Test_fragment3.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment4.scala expected/Test_fragment4.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment5.scala expected/Test_fragment5.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment6.scala expected/Test_fragment6.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_viewer.scala expected/Test_viewer.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Args.scala expected/Args.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/NestedArgs.scala expected/NestedArgs.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/NoArgs.scala expected/NoArgs.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/ObjectArgs.scala expected/ObjectArgs.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/ImplicitNodeArgs.scala expected/ImplicitNodeArgs.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/ArgsOfSpread.scala expected/ArgsOfSpread.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/ViewerQuery.scala expected/ViewerQuery.scala
