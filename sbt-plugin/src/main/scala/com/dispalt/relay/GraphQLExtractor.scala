@@ -254,9 +254,6 @@ object GraphQLExtractor {
     }
   }
 
-  private def trimBlankLines(s: String): String =
-    s.replaceFirst("""^\s*(\R+|$)""", "").replaceFirst("""\R\s*$""", "")
-
   private def removeLongestPrefix(s: String, prefix: String): String = {
     val n = prefix.indices
       .find { i =>

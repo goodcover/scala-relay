@@ -1,0 +1,23 @@
+fragment Test_root on Root @argumentDefinitions(
+    searchTerm: { type: "String" },
+    after: { type: "String" },
+    before: { type: "String" },
+    first: { type: "Int" },
+    last: { type: "Int" },
+){
+    viewer {
+        things(after: $after, first: $first, last: $last, before: $before, searchTerm: $searchTerm) {
+            edges {
+                node {
+                    text
+                }
+            }
+            pageInfo {
+                startCursor
+                hasNextPage
+                endCursor
+                hasPreviousPage
+            }
+        }
+    }
+}

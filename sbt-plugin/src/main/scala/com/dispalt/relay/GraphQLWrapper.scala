@@ -1,15 +1,16 @@
 package com.dispalt.relay
 
-import com.dispalt.relay.GraphQLText.{countSelectionSetDiff, splitComment}
+import caliban.parsing.Parser
+import caliban.parsing.adt.{Definition, Document}
+import caliban.rendering.DocumentRenderer
 import sbt._
-import sbt.io.Using.{fileReader, fileWriter}
+import sbt.io.Using.fileWriter
 import sbt.util.CacheImplicits.{mapFormat => _, _}
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew._
 
-import java.io.{BufferedReader, BufferedWriter}
+import java.io.BufferedWriter
 import java.nio.charset.StandardCharsets
-import scala.annotation.tailrec
 
 object GraphQLWrapper {
 
@@ -184,50 +185,21 @@ object GraphQLWrapper {
 
   private def wrapFile(file: File, output: File, logger: Logger): Unit = {
     logger.debug(s"Wrapping graphql definitions: $file")
-    fileReader(StandardCharsets.UTF_8)(file) { reader =>
-      fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
-        writeWrapper(reader, writer, logger)
+    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
+      // TODO: We could use the caliban fastparse parsers directly but this seems fast enough for now.
+      val documentText = IO.read(file, StandardCharsets.UTF_8)
+      val document     = Parser.parseQuery(documentText).right.get
+      document.definitions.foreach { definition =>
+        writeWrapper(writer, definition, document, logger)
       }
     }
   }
 
-  private def writeWrapper(reader: BufferedReader, writer: BufferedWriter, logger: Logger): Unit = {
-    @tailrec
-    /**
-      * @param level 0 when not inside a graphql macro
-      *              1 when inside a graphql macro
-      *              +1 for every open selection set
-      */
-    def loop(level: Int): Unit = {
-      Option(reader.readLine()) match {
-        case Some(line) if line.isBlank =>
-          writer.write(line)
-          writer.write('\n')
-          loop(level)
-        case Some(line) =>
-          if (level == 0) {
-            writer.write("graphql`\n")
-          }
-          val (nonComment, comment) = splitComment(line)
-          writer.write(escape(nonComment))
-          writer.write(comment)
-          writer.write('\n')
-          val openSelectionSets     = math.max(0, level - 1)
-          val hadContent            = openSelectionSets > 0 || !nonComment.isBlank
-          val selectionSetDiff      = countSelectionSetDiff(nonComment, hasComments = false)
-          val nextOpenSelectionSets = openSelectionSets + selectionSetDiff
-          if (nextOpenSelectionSets == 0 && hadContent) {
-            writer.write("`\n")
-            loop(0)
-          } else {
-            loop(1 + nextOpenSelectionSets)
-          }
-        case None if level > 0 =>
-          throw new IllegalArgumentException("Encountered an unclosed selection set.")
-        case None => // EOF
-      }
-    }
-    loop(0)
+  private def writeWrapper(writer: BufferedWriter, definition: Definition, document: Document, logger: Logger): Unit = {
+    writer.write("graphql`\n")
+    val rendered = DocumentRenderer.render(Document(List(definition), document.sourceMapper))
+    writer.write(escape(trimBlankLines(rendered)))
+    writer.write("`\n\n")
   }
 
   private def escape(s: String): String =

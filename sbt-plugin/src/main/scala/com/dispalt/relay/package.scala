@@ -110,4 +110,7 @@ package object relay {
           acc.updated(b, acc.get(b).fold(Vector(a))(_ :+ a))
         }
     }
+
+  def trimBlankLines(s: String): String =
+    s.replaceFirst("""^\s*(\R+|$)""", "").replaceFirst("""\R\s*$""", "")
 }
