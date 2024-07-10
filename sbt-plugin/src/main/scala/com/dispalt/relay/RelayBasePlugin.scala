@@ -49,6 +49,10 @@ object RelayBasePlugin extends AutoPlugin {
     val relayExtractDialect: TaskKey[Dialect]   = taskKey[Dialect]("The dialect to use when parsing Scala files")
     val relayConvertTypeMappings: SettingKey[Map[String, String]] =
       settingKey[Map[String, String]]("Mappings from GraphQL types to Scala types")
+    val relayGraphQLFiles: TaskKey[Set[File]] = taskKey[Set[File]]("GraphQL files to wrap or convert")
+    val relayGraphQLDependencies: TaskKey[Set[File]] = taskKey[Set[File]](
+      "GraphQL files that are not themselves wrapped or converted but are required by the other GraphQL files. E.g. The GraphQL files from a project dependency."
+    )
     val relayCompilerCommand: TaskKey[String]   = taskKey[String]("The command to execute the `scala-relay-compiler`")
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
@@ -117,6 +121,8 @@ object RelayBasePlugin extends AutoPlugin {
         }
       },
       relayConvertTypeMappings := Map.empty,
+      relayGraphQLFiles := graphqlFilesTask.value,
+      relayGraphQLDependencies := Set.empty,
       relayDependencies := Seq( //
         "relay-compiler" -> relayVersion.value,
         "graphql"        -> relayGraphQLVersion.value
@@ -164,9 +170,7 @@ object RelayBasePlugin extends AutoPlugin {
     val dialect           = relayExtractDialect.value
     val s                 = streams.value
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "extract"
-    if (force) {
-      GraphQLExtractor.clean(cacheStoreFactory)
-    }
+    if (force) GraphQLExtractor.clean(cacheStoreFactory)
     val extractOptions = GraphQLExtractor.Options(outputDir, dialect)
     GraphQLExtractor.extract(cacheStoreFactory, sourceFiles, extractOptions, s.log)
   }
@@ -176,12 +180,10 @@ object RelayBasePlugin extends AutoPlugin {
   def relayWrapTask(force: Boolean = false): Def.Initialize[Task[Set[File]]] = Def.task {
     val typeScript        = relayTypeScript.value
     val outputDir         = relayWrapDirectory.value
-    val graphqlFiles      = graphqlFilesTask.value
+    val graphqlFiles      = relayGraphQLFiles.value
     val s                 = streams.value
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "wrap"
-    if (force) {
-      GraphQLWrapper.clean(cacheStoreFactory)
-    }
+    if (force) GraphQLWrapper.clean(cacheStoreFactory)
     val extractOptions = GraphQLWrapper.Options(outputDir, typeScript)
     GraphQLWrapper.wrap(cacheStoreFactory, graphqlFiles, extractOptions, s.log)
   }
@@ -190,15 +192,14 @@ object RelayBasePlugin extends AutoPlugin {
     val schemaFile   = relaySchema.value
     val outputDir    = relayConvertDirectory.value
     val typeMappings = relayConvertTypeMappings.value
-    val graphqlFiles = graphqlFilesTask.value
+    val graphqlFiles = relayGraphQLFiles.value
+    val dependencies = relayGraphQLDependencies.value
     val s            = streams.value
     // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "convert"
-    if (force) {
-      GraphQLConverter.clean(cacheStoreFactory)
-    }
+    if (force) GraphQLConverter.clean(cacheStoreFactory)
     val extractOptions = GraphQLConverter.Options(outputDir, typeMappings)
-    GraphQLConverter.convert(cacheStoreFactory, graphqlFiles, schemaFile, extractOptions, s.log)
+    GraphQLConverter.convert(cacheStoreFactory, graphqlFiles, schemaFile, dependencies, extractOptions, s.log)
   }
 
   /**
@@ -242,9 +243,7 @@ object RelayBasePlugin extends AutoPlugin {
     // get it to do its usual thing, completely unaware of Scala.js since it no longer supports language plugins.
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "compile"
 
-    if (force) {
-      RelayCompiler.clean(cacheStoreFactory)
-    }
+    if (force) RelayCompiler.clean(cacheStoreFactory)
 
     val compileOptions = RelayCompiler.Options(
       workingDir = workingDir,

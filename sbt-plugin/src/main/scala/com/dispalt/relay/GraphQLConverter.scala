@@ -52,13 +52,20 @@ object GraphQLConverter {
     )
   }
 
-  private final case class Stores(last: CacheStore, resources: CacheStore, schema: CacheStore, outputs: CacheStore)
+  private final case class Stores(
+    last: CacheStore,
+    resources: CacheStore,
+    schema: CacheStore,
+    dependencies: CacheStore,
+    outputs: CacheStore
+  )
 
   private object Stores {
     def apply(cacheStoreFactory: CacheStoreFactory): Stores = Stores(
       last = cacheStoreFactory.make("last"),
-      resources = cacheStoreFactory.make("sources"),
+      resources = cacheStoreFactory.make("resources"),
       schema = cacheStoreFactory.make("schema"),
+      dependencies = cacheStoreFactory.make("dependencies"),
       outputs = cacheStoreFactory.make("outputs")
     )
   }
@@ -67,6 +74,7 @@ object GraphQLConverter {
     cacheStoreFactory: CacheStoreFactory,
     sources: Set[File],
     schemaFile: File,
+    dependencies: Set[File],
     options: Options,
     logger: Logger
   ): Results = {
@@ -81,40 +89,46 @@ object GraphQLConverter {
         // NOTE: Update clean if you change this.
         Tracked.diffInputs(stores.schema, FileInfo.lastModified)(Set(schemaFile)) { schemaReport =>
           logger.debug(s"Schema:\n$schemaReport")
-          // There are 5 cases to handle:
-          // 1) Version, schema, or options changed - delete all previous conversions and re-convert everything
-          // 2) Resource removed - delete the conversion
-          // 3) Resource added - generate the conversion
-          // 4) Resource modified - generate the conversion
-          // 5) Conversion modified - generate the conversion
-          val schema = GraphQLSchema(schemaFile, sources)
-          // TODO: We should be converting the schema once instead of copying all the types into the operations.
-          val (modifiedConversions, unmodifiedConversions) =
-            convertModified(resourcesReport, schemaReport, schema, previousAnalysis, options, logger)
-          val modifiedOutputs   = modifiedConversions.values.flatten.toSet
-          val unmodifiedOutputs = unmodifiedConversions.values.flatten.toSet
-          val outputs           = modifiedOutputs ++ unmodifiedOutputs
-          // NOTE: Update clean if you change this.
-          Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
-            logger.debug(s"Outputs:\n$outputsReport")
-            val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
-            if (unexpectedChanges.nonEmpty) {
-              logger.warn("Unexpected modifications found to files:")
-              unexpectedChanges.foreach { file =>
-                logger.warn(s" ${file.absolutePath}")
+          Tracked.diffInputs(stores.dependencies, FileInfo.lastModified)(dependencies) { dependenciesReport =>
+            logger.debug(s"Dependencies:\n$dependenciesReport")
+            // NOTE: Update clean if you change this.
+            // There are 5 cases to handle:
+            // 1) Version, schema, dependencies, or options changed - delete all previous conversions and re-convert everything
+            // 2) Resource removed - delete the conversion
+            // 3) Resource added - generate the conversion
+            // 4) Resource modified - generate the conversion
+            // 5) Conversion modified - generate the conversion
+            val schema = GraphQLSchema(schemaFile, sources ++ dependencies)
+            // TODO: We should be converting the schema once instead of copying all the types into the operations.
+            val (modifiedConversions, unmodifiedConversions) =
+              convertModified(resourcesReport, schemaReport, schema, previousAnalysis, options, logger)
+            val modifiedOutputs   = modifiedConversions.values.flatten.toSet
+            val unmodifiedOutputs = unmodifiedConversions.values.flatten.toSet
+            val outputs           = modifiedOutputs ++ unmodifiedOutputs
+            // NOTE: Update clean if you change this.
+            Tracked.diffOutputs(stores.outputs, FileInfo.lastModified)(outputs) { outputsReport =>
+              logger.debug(s"Outputs:\n$outputsReport")
+              val unexpectedChanges = unmodifiedOutputs -- outputsReport.unmodified
+              if (unexpectedChanges.nonEmpty) {
+                logger.warn("Unexpected modifications found to files:")
+                unexpectedChanges.foreach { file =>
+                  logger.warn(s" ${file.absolutePath}")
+                }
+                logger.warn(
+                  "Ensure that nothing is modifying these files so as to get the most benefit from the cache."
+                )
+                val inverse         = invertOneToManyOrThrow(unmodifiedConversions)
+                val needsConversion = unexpectedChanges.flatMap(inverse.get)
+                // Don't forget to delete the old ones since convert fails if it exists.
+                IO.delete(unexpectedChanges)
+                val unexpectedConversions = convertFiles(needsConversion, schema, options, logger)
+                logger.warn(s"Converted an additional ${unexpectedConversions.size} GraphQL documents.")
+                unexpectedConversions
               }
-              logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
-              val inverse         = invertOneToManyOrThrow(unmodifiedConversions)
-              val needsConversion = unexpectedChanges.flatMap(inverse.get)
-              // Don't forget to delete the old ones since convert fails if it exists.
-              IO.delete(unexpectedChanges)
-              val unexpectedConversions = convertFiles(needsConversion, schema, options, logger)
-              logger.warn(s"Converted an additional ${unexpectedConversions.size} GraphQL documents.")
-              unexpectedConversions
             }
+            val extracts = modifiedConversions ++ unmodifiedConversions
+            Analysis(Version, options, extracts)
           }
-          val extracts = modifiedConversions ++ unmodifiedConversions
-          Analysis(Version, options, extracts)
         }
       }
     }
@@ -186,10 +200,11 @@ object GraphQLConverter {
   }
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {
-    val Stores(last, resources, schema, outputs) = Stores(cacheStoreFactory)
+    val Stores(last, resources, schema, dependencies, outputs) = Stores(cacheStoreFactory)
     last.delete()
     Tracked.diffInputs(resources, FileInfo.lastModified).clean()
     Tracked.diffInputs(schema, FileInfo.lastModified).clean()
+    Tracked.diffInputs(dependencies, FileInfo.lastModified).clean()
     Tracked.diffOutputs(outputs, FileInfo.lastModified).clean()
   }
 }

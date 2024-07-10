@@ -1,10 +1,9 @@
 package com.dispalt.relay
 
 import caliban.parsing.Parser
-import caliban.parsing.adt.Definition.{ExecutableDefinition, TypeSystemDefinition}
-import caliban.parsing.adt.Definition.TypeSystemDefinition.{SchemaDefinition, TypeDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
-import caliban.parsing.adt.Definition.TypeSystemExtension.SchemaExtension
+import caliban.parsing.adt.Definition.{ExecutableDefinition, TypeSystemDefinition}
 import caliban.parsing.adt.Type.NamedType
 import caliban.parsing.adt.{Directive, Document, Type}
 import com.dispalt.relay.GraphQLSchema.{FieldTypeDefinition, InvalidSchema, UnsupportedOperation}
@@ -25,48 +24,48 @@ class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
     document.schemaDefinition.getOrElse(throw invalidSchema("Missing schema."))
 
   lazy val fragments: Map[String, ExecutableDefinition.FragmentDefinition] =
-    additional.foldLeft(document.fragmentDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.fragmentDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.fragmentDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.fragmentDefinitions.map(d => d.name    -> d)
     }
 
   def fragment(name: String): ExecutableDefinition.FragmentDefinition =
     fragments.getOrElse(name, throw invalidSchema(s"Missing fragment $name."))
 
   lazy val objectTypes: Map[String, TypeDefinition.ObjectTypeDefinition] =
-    additional.foldLeft(document.objectTypeDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.objectTypeDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.objectTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.objectTypeDefinitions.map(d => d.name    -> d)
     }
 
   def objectType(name: String): TypeDefinition.ObjectTypeDefinition =
     objectTypes.getOrElse(name, throw invalidSchema(s"Missing type $name."))
 
   lazy val inputObjectTypes: Map[String, TypeDefinition.InputObjectTypeDefinition] =
-    additional.foldLeft(document.inputObjectTypeDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.inputObjectTypeDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.inputObjectTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.inputObjectTypeDefinitions.map(d => d.name    -> d)
     }
 
   def inputObjectType(name: String): TypeDefinition.InputObjectTypeDefinition =
     inputObjectTypes.getOrElse(name, throw invalidSchema(s"Missing input $name."))
 
   lazy val unionTypes: Map[String, TypeDefinition.UnionTypeDefinition] =
-    additional.foldLeft(document.unionTypeDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.unionTypeDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.unionTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.unionTypeDefinitions.map(d => d.name    -> d)
     }
 
   def unionType(name: String): TypeDefinition.UnionTypeDefinition =
     unionTypes.getOrElse(name, throw invalidSchema(s"Missing union $name."))
 
   lazy val enumTypes: Map[String, TypeDefinition.EnumTypeDefinition] =
-    additional.foldLeft(document.enumTypeDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.enumTypeDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.enumTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.enumTypeDefinitions.map(d => d.name    -> d)
     }
 
   def enumType(name: String): TypeDefinition.EnumTypeDefinition =
     enumTypes.getOrElse(name, throw invalidSchema(s"Missing enum $name."))
 
   lazy val interfaceTypes: Map[String, TypeDefinition.InterfaceTypeDefinition] =
-    additional.foldLeft(document.interfaceTypeDefinitions.map(d => d.name -> d).toMap) {
-      (definitions, document) => definitions ++ document.interfaceTypeDefinitions.map(d => d.name -> d)
+    additional.foldLeft(document.interfaceTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.interfaceTypeDefinitions.map(d => d.name    -> d)
     }
 
   def interfaceType(name: String): TypeDefinition.InterfaceTypeDefinition =
@@ -74,8 +73,8 @@ class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
 
   def fieldType(name: String): FieldTypeDefinition =
     objectInterfaceUnionType(name)
-    // TODO: Currently these are implemented as String.
-    //.orElse(enumTypes.get(name).map(FieldTypeDefinition(_)))
+  // TODO: Currently these are implemented as String.
+  //.orElse(enumTypes.get(name).map(FieldTypeDefinition(_)))
 
   def fragmentType(name: String): FieldTypeDefinition =
     objectInterfaceUnionType(name)
@@ -144,7 +143,7 @@ class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
 object GraphQLSchema {
 
   def apply(schemaFile: File, additional: Set[File]): GraphQLSchema = {
-    val document = readDocument(schemaFile)
+    val document            = readDocument(schemaFile)
     val additionalDocuments = additional.toSeq.map(readDocument)
     new GraphQLSchema(schemaFile, document, additionalDocuments)
   }

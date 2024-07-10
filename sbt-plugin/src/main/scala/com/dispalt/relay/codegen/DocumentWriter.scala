@@ -120,6 +120,7 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
     parentTypeName: String
   ): Map[String, VariableDefinition] = {
     selections.foldLeft(Map.empty[String, VariableDefinition]) {
+      case (args, field: Selection.Field) if Fields.isMetaField(field.name) => args
       case (args, field: Selection.Field) =>
         val definition = fieldLookup(field.name)
           .getOrElse(throw new NoSuchElementException(s"$parentTypeName does not have a field ${field.name}."))

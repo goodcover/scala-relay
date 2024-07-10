@@ -23,6 +23,7 @@ lazy val b = project
   .dependsOn(a)
   .settings(commonSettings)
   .settings(inConfig(Compile)(Seq(
+    relayGraphQLDependencies ++= (a / relayGraphQLFiles).value,
     relayInclude += relayBaseDirectory.value.toPath.relativize((a / relayWrapDirectory).value.toPath).toString + "/**",
     relayCompile := ((Compile / relayCompile) dependsOn (a / Compile / relayWrap)).value
   )))
