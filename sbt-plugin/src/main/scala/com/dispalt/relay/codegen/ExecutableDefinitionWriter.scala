@@ -1,12 +1,13 @@
 package com.dispalt.relay.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
-import caliban.parsing.adt.Type.innerType
+import caliban.parsing.adt.Type.{innerType, NamedType}
 import caliban.parsing.adt.{Directive, Selection, Type}
 import com.dispalt.relay.GraphQLSchema
 import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
 import com.dispalt.relay.GraphQLText.appendSelectionText
-import com.dispalt.relay.codegen.Fields.isMetaField
+import com.dispalt.relay.codegen.ExecutableDefinitionWriter.idFieldDefinition
+import com.dispalt.relay.codegen.Fields.{isID, isMetaField, isTypeName}
 import com.dispalt.relay.codegen.Selections._
 
 import java.io.Writer
@@ -133,7 +134,7 @@ abstract class ExecutableDefinitionWriter(
   ): Unit = {
     val parents =
       if (hasTypeName(selections)) parentTraits :+ s"_root_.relay.gql.Introspectable[$name]" else parentTraits
-    val fieldSelections = nonMetaFieldSelections(selections)
+    val fieldSelections = selectableFieldSelections(selections)
     scalaWriter.writeTrait(name, parents, fieldSelections, jsNative = true, indent)(writeField)
   }
 
@@ -362,7 +363,8 @@ abstract class ExecutableDefinitionWriter(
     }
 
   protected def getFieldDefinition(f: String => FieldDefinition)(fieldName: String): Option[FieldDefinition] =
-    if (isMetaField(fieldName)) None
+    if (isID(fieldName)) Some(idFieldDefinition)
+    else if (isMetaField(fieldName)) None
     else Some(f(fieldName))
 
   protected def getFieldDefinitionTypeDefinition(
@@ -378,4 +380,10 @@ abstract class ExecutableDefinitionWriter(
 
   private def fieldDefinitionTypeDefinition(field: FieldDefinition): FieldTypeDefinition =
     schema.fieldType(innerType(field.ofType))
+}
+
+object ExecutableDefinitionWriter {
+
+  private val idFieldDefinition =
+    FieldDefinition(None, "__id", Nil, NamedType("ID", nonNull = true), Nil)
 }
