@@ -101,7 +101,7 @@ object GraphQLExtractor {
               case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
             }
             // Don't forget to delete the old ones since extract appends.
-            IO.delete(unexpectedChanges)
+            IO.delete(needsExtraction.values)
             val unexpectedExtracts = extractFiles(needsExtraction, options.dialect, logger)
             logger.warn(s"Extracted an additional ${unexpectedExtracts.size} GraphQL documents.")
             unexpectedExtracts
@@ -142,6 +142,11 @@ object GraphQLExtractor {
       }
       val needsExtracting = modifiedAndTransitiveOutputs.filterKeys(!sourceReport.removed.contains(_))
       if (needsExtracting.nonEmpty) logger.info("Extracting GraphQL...")
+      needsExtracting.foreach {
+        case (source, output) =>
+          val exists = output.exists()
+          require(!exists, s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
+      }
       val changedExtracts = extractFiles(needsExtracting, options.dialect, logger)
       if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
       val previouslyExtracted = sourceReport.checked -- needsExtracting.keySet
@@ -153,6 +158,11 @@ object GraphQLExtractor {
       val previousOutputs = previousAnalysis.extracts.values
       IO.delete(previousOutputs)
       val needsExtraction = sourceOutputs(sourceReport.checked.toSeq, options)
+      needsExtraction.foreach {
+        case (source, output) =>
+          val exists = output.exists()
+          require(!exists, s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
+      }
       val changedExtracts = extractFiles(needsExtraction, options.dialect, logger)
       (changedExtracts, Map.empty)
     }
