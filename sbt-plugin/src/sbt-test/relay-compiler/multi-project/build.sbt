@@ -44,7 +44,14 @@ lazy val b = project
     relayCompile := ((Compile / relayCompile) dependsOn (a / Compile / relayCompile)).value
   )))
   .settings(
-    scalaJSUseMainModuleInitializer := true
+    scalaJSUseMainModuleInitializer := true,
+    webpackConfigFile := {
+      val template = file("b") / "scalajs.webpack.config.js.template"
+      val config = IO.read(template).replaceAllLiterally("${PWD}", baseDirectory.value.getAbsolutePath)
+      val output = crossTarget.value / "scalajs.webpack.config.js"
+      IO.write(output, config)
+      Some(output)
+    }
   )
 
 logLevel := Level.Debug
