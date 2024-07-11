@@ -21,7 +21,7 @@ object Test_fragment5 extends _root_.relay.gql.FragmentRefetchableTaggedNode[Tes
   type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
 
   @js.native
-  @JSImport("./__generated__/Test_fragment5.graphql", JSImport.Default)
+  @JSImport("__generated/Test_fragment5.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

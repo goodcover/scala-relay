@@ -335,7 +335,7 @@ abstract class ExecutableDefinitionWriter(
 
   protected def writeGeneratedMapping(writer: Writer, name: String): Unit = {
     writer.write("""  @js.native
-                   |  @JSImport("./__generated__/""".stripMargin)
+                   |  @JSImport("__generated__/""".stripMargin)
     writer.write(name)
     writer.write(""".graphql", JSImport.Default)
                    |  private object node extends js.Object

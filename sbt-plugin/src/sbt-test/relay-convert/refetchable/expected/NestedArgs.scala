@@ -31,7 +31,7 @@ object NestedArgs extends _root_.relay.gql.QueryTaggedNode[NestedArgsInput, Nest
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("./__generated__/NestedArgs.graphql", JSImport.Default)
+  @JSImport("__generated/NestedArgs.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]
