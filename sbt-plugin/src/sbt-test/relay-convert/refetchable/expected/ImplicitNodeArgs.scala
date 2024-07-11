@@ -31,7 +31,7 @@ object ImplicitNodeArgs extends _root_.relay.gql.QueryTaggedNode[ImplicitNodeArg
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/ImplicitNodeArgs.graphql", JSImport.Default)
+  @JSImport("__generated__/ImplicitNodeArgs.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

@@ -32,7 +32,7 @@ object TestNoVariablesSubscription extends _root_.relay.gql.SubscriptionTaggedNo
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/TestNoVariablesSubscription.graphql", JSImport.Default)
+  @JSImport("__generated__/TestNoVariablesSubscription.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

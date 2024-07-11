@@ -65,7 +65,7 @@ object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInpu
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/TestMutation.graphql", JSImport.Default)
+  @JSImport("__generated__/TestMutation.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

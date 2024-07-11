@@ -57,7 +57,7 @@ object ObjectArgs extends _root_.relay.gql.QueryTaggedNode[ObjectArgsInput, Obje
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/ObjectArgs.graphql", JSImport.Default)
+  @JSImport("__generated__/ObjectArgs.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

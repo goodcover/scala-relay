@@ -28,7 +28,7 @@ object TestPrimitiveVariableQuery extends _root_.relay.gql.QueryTaggedNode[Foo, 
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/TestPrimitiveVariableQuery.graphql", JSImport.Default)
+  @JSImport("__generated__/TestPrimitiveVariableQuery.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

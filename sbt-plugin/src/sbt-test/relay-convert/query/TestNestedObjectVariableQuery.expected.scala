@@ -71,7 +71,7 @@ object TestNestedObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[Te
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated/TestNestedObjectVariableQuery.graphql", JSImport.Default)
+  @JSImport("__generated__/TestNestedObjectVariableQuery.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]
