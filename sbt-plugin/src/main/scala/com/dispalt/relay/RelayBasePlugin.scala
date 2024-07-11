@@ -57,9 +57,10 @@ object RelayBasePlugin extends AutoPlugin {
     val relayBaseDirectory: SettingKey[File]    = settingKey[File]("The base directory the relay compiler")
     val relayWorkingDirectory: SettingKey[File] = settingKey[File]("The working directory the relay compiler")
     val relayInclude: SettingKey[Seq[String]] =
-      settingKey[Seq[String]]("Globs of files to include, relative to the relayBaseDirectory")
+      settingKey[Seq[String]]("Globs of directories and files to include, relative to the relayBaseDirectory")
     val relayExclude: SettingKey[Seq[String]] =
-      settingKey[Seq[String]]("Globs of files to exclude, relative to the relayBaseDirectory")
+      settingKey[Seq[String]]("Globs of directories and files to exclude, relative to the relayBaseDirectory")
+    val relayExtensions: SettingKey[Seq[String]] = settingKey[Seq[String]]("File extensions to compile")
     val relayPersistedPath: SettingKey[Option[File]] =
       settingKey[Option[File]]("Where to persist the json file containing the dictionary of all compiled queries.")
     val relayDependencies: SettingKey[Seq[(String, String)]] =
@@ -99,17 +100,17 @@ object RelayBasePlugin extends AutoPlugin {
       relayConvert := relayConvertTask().value,
       relayCompile := relayCompileTask().value,
       relayForceCompile := relayCompileTask(force = true).value,
-      relayExtractDirectory := sourceManagedRoot.value / "relay" / "graphql",
-      relayWrapDirectory := sourceManagedRoot.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
+      relayExtractDirectory := resourceManaged.value / "relay" / "graphql",
+      relayWrapDirectory := resourceManaged.value / "relay" / (if (relayTypeScript.value) "ts" else "js"),
       relayConvertDirectory := sourceManaged.value / "relay" / "generated",
-      relayCompileDirectory := sourceManagedRoot.value / "relay" / "generated",
+      relayCompileDirectory := resourceManaged.value / "__generated__",
       relayExtractDialect := {
         val source3 = scalacOptions.value.contains("-Xsource:3")
         CrossVersion.partialVersion(scalaVersion.value) match {
           case Some((2, 10))            => scala.meta.dialects.Scala210
           case Some((2, 11))            => scala.meta.dialects.Scala211
           case Some((2, 12)) if source3 => scala.meta.dialects.Scala212Source3
-          case Some((2, 13))            => scala.meta.dialects.Scala213
+          case Some((2, 12))            => scala.meta.dialects.Scala212
           case Some((2, 13)) if source3 => scala.meta.dialects.Scala213Source3
           case Some((2, 13))            => scala.meta.dialects.Scala213
           case Some((3, 0))             => scala.meta.dialects.Scala30
@@ -138,6 +139,7 @@ object RelayBasePlugin extends AutoPlugin {
       relayInclude := Seq(relayWrapDirectory.value.relativeTo(relayBaseDirectory.value).get.getPath + "/**"),
       relayExclude := Seq("**/node_modules/**", "**/__mocks__/**", "**/__generated__/**"),
       relayExclude ++= relayCompileDirectory.value.relativeTo(relayBaseDirectory.value).map(_.getPath + "/**"),
+      relayExtensions := Seq.empty,
       relayPersistedPath := None,
       // Display output only on a failure, this works well with persisted queries because they delete all the files
       // before outputting them.
@@ -145,11 +147,6 @@ object RelayBasePlugin extends AutoPlugin {
       relayCompilePersist := relayCompilePersistTask.value,
       relayCustomScalars := Map.empty
     )
-
-  private def sourceManagedRoot = Def.setting {
-    // sbt annoyingly defaults everything to Compile when we want the setting with a Zero config axis.
-    sourceManaged.in(ThisScope.copy(config = Zero)).value
-  }
 
   private def relayCompilePersistTask = Def.taskDyn[Option[File]] {
     if (relayPersistedPath.value.nonEmpty) {
@@ -224,6 +221,7 @@ object RelayBasePlugin extends AutoPlugin {
     val customScalars    = relayCustomScalars.value
     val included         = relayInclude.value
     val excluded         = relayExclude.value
+    val extensions       = relayExtensions.value
     val displayOnFailure = relayDisplayOnlyOnFailure.value
     val persisted        = relayPersistedPath.value
     val workingDir       = relayWorkingDirectory.value
@@ -254,6 +252,7 @@ object RelayBasePlugin extends AutoPlugin {
       verbose = verbose,
       includes = included,
       excludes = excluded,
+      extensions = extensions,
       persisted = persisted,
       customScalars = customScalars,
       displayOnFailure = displayOnFailure,

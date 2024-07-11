@@ -2,4 +2,4 @@ $ exec ./make-expected.sh
 
 # This should extract as expected.
 > relayExtract
-$ must-mirror target/scala-2.13/src_managed/relay/graphql/Test.graphql expected.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql expected.graphql

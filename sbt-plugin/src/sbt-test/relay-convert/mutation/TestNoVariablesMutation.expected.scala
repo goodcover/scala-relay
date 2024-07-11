@@ -32,7 +32,7 @@ object TestNoVariablesMutation extends _root_.relay.gql.MutationTaggedNode[TestN
   type Query = _root_.relay.gql.ConcreteRequest
 
   @js.native
-  @JSImport("__generated__/TestNoVariablesMutation.graphql", JSImport.Default)
+  @JSImport("./__generated__/TestNoVariablesMutation.graphql", JSImport.Default)
   private object node extends js.Object
 
   lazy val query: Query = node.asInstanceOf[Query]

@@ -2,6 +2,7 @@ package example
 
 import relay.compiler.graphqlGen
 import relay.generated._
+import org.scalajs.dom
 
 object Main extends App {
 
@@ -9,6 +10,9 @@ object Main extends App {
     query MainQuery {
       task(number: 1) {
         ...TaskComponent_task
+      }
+      story {
+        ...StoryComponent_story
       }
     }
   """)
@@ -22,8 +26,9 @@ object Main extends App {
   """)
 
   // Make sure that everything can be linked properly.
-  private val queryObj = MainQuery
-  private val fragmentObj = Main_fragment
-  private val refetchableObj = Main_fragment_Query
-  private val spreadObj = TaskComponent_task
+  dom.console.log(MainQuery.sourceHash)
+  dom.console.log(Main_fragment.sourceHash)
+  dom.console.log(Main_fragment_Query.sourceHash)
+  dom.console.log(TaskComponent_task.sourceHash)
+  dom.console.log(StoryComponent_story.sourceHash)
 }

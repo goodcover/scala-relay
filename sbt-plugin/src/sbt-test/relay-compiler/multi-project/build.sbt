@@ -11,8 +11,13 @@ def commonSettings = Seq(
   Compile / npmDevDependencies ++= (Compile / relayDependencies).value,
   Compile / relayDisplayOnlyOnFailure := true,
   Compile / relayNpmDir := (Compile / npmInstallDependencies).value,
-  webpack / version := "5.75.0"
+  webpack / version := "5.75.0",
+  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.0"
 )
+
+lazy val root = project
+  .in(file("."))
+  .aggregate(a, b)
 
 lazy val a = project
   .enablePlugins(RelayPlugin, ScalaJSBundlerPlugin)
@@ -23,9 +28,23 @@ lazy val b = project
   .dependsOn(a)
   .settings(commonSettings)
   .settings(inConfig(Compile)(Seq(
+    // This is for relayConvert.
+    // We need to ensure that the converter knows about all fragments.
     relayGraphQLDependencies ++= (a / relayGraphQLFiles).value,
-    relayInclude += relayBaseDirectory.value.toPath.relativize((a / relayWrapDirectory).value.toPath).toString + "/**",
-    relayCompile := ((Compile / relayCompile) dependsOn (a / Compile / relayWrap)).value
+    // These are for relayCompile.
+    // We should only include the graphql resources and extracts otherwise we compile twice.
+    relayInclude ++= {
+      val base = relayBaseDirectory.value.toPath
+      (a / unmanagedResourceDirectories).value.map { dir =>
+        base.relativize(dir.toPath).toString + "/**"
+      }
+    },
+    relayInclude += relayBaseDirectory.value.toPath.relativize((a / relayExtractDirectory).value.toPath).toString + "/**",
+    // Technically this only depends on relayExtract. We will need to run this at some point though.
+    relayCompile := ((Compile / relayCompile) dependsOn (a / Compile / relayCompile)).value
   )))
+  .settings(
+    scalaJSUseMainModuleInitializer := true
+  )
 
 logLevel := Level.Debug

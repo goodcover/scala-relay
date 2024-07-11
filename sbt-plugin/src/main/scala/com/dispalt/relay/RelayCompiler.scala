@@ -29,6 +29,7 @@ object RelayCompiler {
     verbose: Boolean,
     includes: Seq[String],
     excludes: Seq[String],
+    extensions: Seq[String],
     persisted: Option[File],
     customScalars: Map[String, String],
     displayOnFailure: Boolean,
@@ -41,10 +42,10 @@ object RelayCompiler {
 
     //noinspection TypeAnnotation
     implicit val iso = LList
-      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Seq[String] :*: Option[
-        File
-      ] :*: Map[String, String] :*: Boolean :*: Boolean :*: LNil]( //
-        { o: Options =>                                            //
+      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Seq[String] :*: Seq[
+        String
+      ] :*: Option[File] :*: Map[String, String] :*: Boolean :*: Boolean :*: LNil]( //
+        { o: Options =>                                                             //
           ("workingDir"         -> o.workingDir) :*:
             ("compilerCommand"  -> o.compilerCommand) :*:
             ("schemaPath"       -> o.schemaPath) :*:
@@ -53,6 +54,7 @@ object RelayCompiler {
             ("verbose"          -> o.verbose) :*:
             ("includes"         -> o.includes) :*:
             ("excludes"         -> o.excludes) :*:
+            ("extensions"       -> o.extensions) :*:
             ("persisted"        -> o.persisted) :*:
             ("customScalars"    -> o.customScalars) :*:
             ("displayOnFailure" -> o.displayOnFailure) :*:
@@ -67,6 +69,7 @@ object RelayCompiler {
                 (_, verbose) :*:
                 (_, includes) :*:
                 (_, excludes) :*:
+                (_, extensions) :*:
                 (_, persisted) :*:
                 (_, customScalars) :*:
                 (_, displayOnFailure) :*:
@@ -81,6 +84,7 @@ object RelayCompiler {
               verbose,
               includes,
               excludes,
+              extensions,
               persisted,
               customScalars,
               displayOnFailure,
@@ -138,7 +142,7 @@ object RelayCompiler {
           // For now we delete things ad hoc when we know they need to be deleted.
           // Running relay compiler in watch mode might do a better job.
           val versionChanged   = Version != previousAnalysis.version
-          val optionsChanged = options != previousAnalysis.options
+          val optionsChanged   = options != previousAnalysis.options
           val outputDirChanged = options.outputPath != previousAnalysis.options.outputPath
           if (versionChanged || outputDirChanged) {
             IO.delete(previousAnalysis.artifacts)
@@ -266,6 +270,8 @@ object RelayCompiler {
 
     val excludesList = excludes flatMap (exclude => Seq("--exclude", exclude.quote))
 
+    val extensionsList = extensions flatMap (extension => Seq("--extensions", extension.quote))
+
     val persistedList = persisted match {
       case Some(value) => Seq("--persist-output", value.getPath.quote)
       case None        => Seq.empty
@@ -275,8 +281,15 @@ object RelayCompiler {
       case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
     }.toSeq
 
-    val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ persistedList ++ customScalarsArgs)
-      .mkString(" ")
+    val cmd =
+      shell :+
+        (argsList ++
+          verboseList ++
+          includesList ++
+          excludesList ++
+          extensionsList ++
+          persistedList ++
+          customScalarsArgs).mkString(" ")
 
     var output = Vector.empty[String]
 

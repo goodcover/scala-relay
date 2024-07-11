@@ -1,82 +1,82 @@
 # Create the caches.
 > relayCompile
-$ copy-file target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Running again should do nothing.
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
--$ newer target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Changing the version should re-compile everything.
 $ exec ./replace-version.sh
 > relayCompile
-$ newer target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # FIXME: There is some really obscure error when switching to TypeScript. I can't figure it out.
 ## Changing the TypeScript option should re-compile everything.
 #> set relayTypeScript := true
 #> relayCompile
-#$ absent target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js
-#$ absent target/scala-2.13/src_managed/relay/generated/TestQuery2.graphql.js
-#$ exists target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js
-#$ exists target/scala-2.13/src_managed/relay/generated/TestQuery2.graphql.js
+#$ absent target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js
+#$ absent target/scala-2.13/resource_managed/main/__generated__/TestQuery2.graphql.js
+#$ exists target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js
+#$ exists target/scala-2.13/resource_managed/main/__generated__/TestQuery2.graphql.js
 ## Change it back for the next tests.
 #> set relayTypeScript := false
 #> relayCompile
 
 # Changing the output directory should re-compile everything.
-> set relayCompileDirectory in Compile := file("target/scala-2.13/src_managed/relay/generated2")
+> set relayCompileDirectory in Compile := file("target/scala-2.13/resource_managed/main/__generated__2")
 > relayCompile
-$ absent target/scala-2.13/src_managed/relay/generated/TestQuery.graphql.js
-$ absent target/scala-2.13/src_managed/relay/generated/Test2Query.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ absent target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js
+$ absent target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Removing a resource should delete its artifact.
 $ exec mv src/main/resources/graphql/Test2.graphql src/main/resources/graphql/Test2.bak
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ absent target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ absent target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
 
 # Adding a resource should compile it.
 $ exec mv src/main/resources/graphql/Test2.bak src/main/resources/graphql/Test2.graphql
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Modifying a resource should compile it.
 $ copy-file src/main/resources/graphql/Test2.graphql.bak src/main/resources/graphql/Test2.graphql
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
--$ must-mirror target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ copy-file target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ copy-file target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Deleting an artifact should compile it.
-$ delete target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js
+$ delete target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
 
 # Modifying an artifact should re-compile it.
-$ touch target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js
+$ touch target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js
 > relayCompile
--$ newer target/scala-2.13/src_managed/relay/generated2/TestQuery.graphql.js generated/TestQuery.graphql.js
-$ newer target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
-$ must-mirror target/scala-2.13/src_managed/relay/generated2/Test2Query.graphql.js generated/Test2Query.graphql.js
+-$ newer target/scala-2.13/resource_managed/main/__generated__2/TestQuery.graphql.js generated/TestQuery.graphql.js
+$ newer target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__2/Test2Query.graphql.js generated/Test2Query.graphql.js

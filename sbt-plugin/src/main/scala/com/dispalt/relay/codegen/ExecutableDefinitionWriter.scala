@@ -335,9 +335,7 @@ abstract class ExecutableDefinitionWriter(
 
   protected def writeGeneratedMapping(writer: Writer, name: String): Unit = {
     writer.write("""  @js.native
-                   |  @JSImport("__generated__/""".stripMargin)
-    // TODO: Make this configurable.
-    // The __generated__ import here should be setup as an alias to the output location of the relay compiler.
+                   |  @JSImport("./__generated__/""".stripMargin)
     writer.write(name)
     writer.write(""".graphql", JSImport.Default)
                    |  private object node extends js.Object
