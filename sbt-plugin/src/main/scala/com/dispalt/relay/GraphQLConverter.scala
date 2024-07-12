@@ -2,7 +2,7 @@ package com.dispalt.relay
 
 import com.dispalt.relay.codegen.DocumentWriter
 import sbt._
-import sbt.util.CacheImplicits.{mapFormat => _, _}
+import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew._
 

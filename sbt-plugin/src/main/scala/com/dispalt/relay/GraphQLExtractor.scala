@@ -2,7 +2,7 @@ package com.dispalt.relay
 
 import sbt._
 import sbt.io.Using.fileWriter
-import sbt.util.CacheImplicits.{mapFormat => _, _}
+import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew._
 
@@ -19,7 +19,14 @@ object GraphQLExtractor {
   // Increment when the code changes to bust the cache.
   private val Version = 1
 
-  final case class Options(outputDir: File, dialect: Dialect)
+  final case class Options(outputDir: File, dialect: Dialect) {
+
+    override def equals(obj: Any): Boolean = obj match {
+      case Options(otherOutputDir, otherDialect) =>
+        outputDir == otherOutputDir && dialect.isEquivalentTo(otherDialect)
+      case _ => false
+    }
+  }
 
   object Options {
 
@@ -143,9 +150,9 @@ object GraphQLExtractor {
       val needsExtracting = modifiedAndTransitiveOutputs.filterKeys(!sourceReport.removed.contains(_))
       if (needsExtracting.nonEmpty) logger.info("Extracting GraphQL...")
       needsExtracting.foreach {
-        case (source, output) =>
-          val exists = output.exists()
-          require(!exists, s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
+        case (source, output) if output.exists() =>
+          logger.warn(s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
+        case _ => ()
       }
       val changedExtracts = extractFiles(needsExtracting, options.dialect, logger)
       if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
@@ -158,11 +165,7 @@ object GraphQLExtractor {
       val previousOutputs = previousAnalysis.extracts.values
       IO.delete(previousOutputs)
       val needsExtraction = sourceOutputs(sourceReport.checked.toSeq, options)
-      needsExtraction.foreach {
-        case (source, output) =>
-          val exists = output.exists()
-          require(!exists, s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
-      }
+      IO.delete(needsExtraction.values)
       val changedExtracts = extractFiles(needsExtraction, options.dialect, logger)
       (changedExtracts, Map.empty)
     }

@@ -5,7 +5,7 @@ import caliban.parsing.adt.{Definition, Document}
 import caliban.rendering.DocumentRenderer
 import sbt._
 import sbt.io.Using.fileWriter
-import sbt.util.CacheImplicits.{mapFormat => _, _}
+import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew._
 
@@ -104,7 +104,7 @@ object GraphQLWrapper {
               case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
             }
             // Don't forget to delete the old ones since wrap appends.
-            IO.delete(unexpectedChanges)
+            IO.delete(needsWrapping.values)
             wrapFiles(needsWrapping, logger)
             logger.warn(s"Wrapped an additional ${needsWrapping.size} GraphQL definitions.")
             needsWrapping
@@ -144,6 +144,11 @@ object GraphQLWrapper {
         case entry @ (_, output) => entry +: unmodifiedResources.getOrElse(output, Vector.empty).map(_ -> output)
       }
       val needsWrapping = modifiedAndTransitiveOutputs.filterKeys(!resourceReport.removed.contains(_))
+      needsWrapping.foreach {
+        case (resource, output) if output.exists() =>
+          logger.warn(s"BUG: Output ${output.getPath} of resource ${resource.getPath} should not exist.")
+        case _ => ()
+      }
       if (needsWrapping.nonEmpty)
         logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
       wrapFiles(needsWrapping, logger)
@@ -157,6 +162,7 @@ object GraphQLWrapper {
       val previousOutputs = previousAnalysis.wrappers.values
       IO.delete(previousOutputs)
       val needsExtraction = resourceOutputs(resourceReport.checked.toSeq, options)
+      IO.delete(needsExtraction.values)
       wrapFiles(needsExtraction, logger)
       (needsExtraction, Map.empty)
     }
