@@ -163,21 +163,26 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:higherKinds",         // Allow higher-kinded types
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
-  organization := "com.dispalt.relay",  // TODO - Coordinates
-  sonatypeProfileName := "com.dispalt", // TODO - Coordinates
+  organization := "com.goodcover.relay",  // TODO - Coordinates
+  sonatypeProfileName := "com.goodcover", // TODO - Coordinates
   pomExtra :=
     <developers>
-        <developer>
-          <id>dispalt</id>
-          <name>Dan Di Spaltro</name>
-          <url>http://dispalt.com</url>
-        </developer>
-        <developer>
-          <id>kolarm</id>
-          <name>Marko Kolar</name>
-          <url>https://github.com/kolarm</url>
-        </developer>
-      </developers>,
+      <developer>
+        <id>dispalt</id>
+        <name>Dan Di Spaltro</name>
+        <url>http://dispalt.com</url>
+      </developer>
+      <developer>
+        <id>kolarm</id>
+        <name>Marko Kolar</name>
+        <url>https://github.com/kolarm</url>
+      </developer>
+      <developer>
+        <id>steinybot</id>
+        <name>Jason Pickens</name>
+        <url>https://github.com/steinybot</url>
+      </developer>
+    </developers>,
   homepage := Some(url(s"https://github.com/goodcover/scala-relay")),
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(

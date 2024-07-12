@@ -1,9 +1,9 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.FragmentDefinition
-import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.GraphQLText.startOfFragment
-import com.dispalt.relay.codegen.Directives.isPlural
+import com.goodcover.relay.GraphQLSchema
+import com.goodcover.relay.GraphQLText.startOfFragment
+import com.goodcover.relay.codegen.Directives.isPlural
 
 import java.io.Writer
 

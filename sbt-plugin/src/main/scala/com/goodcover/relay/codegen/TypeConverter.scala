@@ -1,8 +1,8 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.{Directive, Type}
-import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.codegen.TypeConverter.DefaultTypeMappings
+import com.goodcover.relay.GraphQLSchema
+import com.goodcover.relay.codegen.TypeConverter.DefaultTypeMappings
 
 class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
 

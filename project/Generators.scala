@@ -3,9 +3,9 @@ import sbt._
 object Generators {
   // Generates a scala file that contains the Lagom version for use at runtime.
   def version(version: String, dir: File): Seq[File] = {
-    val file = dir / "com" / "dispalt" / "relay" / "core" / "SRCVersion.scala"
+    val file = dir / "com" / "goodcover" / "relay" / "core" / "SRCVersion.scala"
     val scalaSource =
-      """|package com.dispalt.relay.core
+      """|package com.goodcover.relay.core
          |
          |object SRCVersion {
          |    val current = "%s"

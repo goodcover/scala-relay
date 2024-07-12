@@ -1,14 +1,14 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
 import caliban.parsing.adt.Type.{NamedType, innerType}
 import caliban.parsing.adt.{Directive, Selection, Type}
-import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
-import com.dispalt.relay.GraphQLText.appendSelectionText
-import com.dispalt.relay.codegen.ExecutableDefinitionWriter.idFieldDefinition
-import com.dispalt.relay.codegen.Fields.{isID, isMetaField}
-import com.dispalt.relay.codegen.Selections._
+import com.goodcover.relay.GraphQLSchema
+import com.goodcover.relay.GraphQLSchema.FieldTypeDefinition
+import com.goodcover.relay.GraphQLText.appendSelectionText
+import com.goodcover.relay.codegen.ExecutableDefinitionWriter.idFieldDefinition
+import com.goodcover.relay.codegen.Fields.{isID, isMetaField}
+import com.goodcover.relay.codegen.Selections._
 
 import java.io.Writer
 

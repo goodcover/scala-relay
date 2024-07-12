@@ -1,7 +1,7 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Selection
-import com.dispalt.relay.codegen.Fields.isTypeName
+import com.goodcover.relay.codegen.Fields.isTypeName
 
 object Selections {
 

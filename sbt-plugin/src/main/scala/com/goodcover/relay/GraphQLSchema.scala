@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
@@ -6,7 +6,7 @@ import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
 import caliban.parsing.adt.Definition.{ExecutableDefinition, TypeSystemDefinition}
 import caliban.parsing.adt.Type.NamedType
 import caliban.parsing.adt.{Directive, Document, Type}
-import com.dispalt.relay.GraphQLSchema.{FieldTypeDefinition, InvalidSchema, UnsupportedOperation}
+import com.goodcover.relay.GraphQLSchema.{FieldTypeDefinition, InvalidSchema, UnsupportedOperation}
 import sbt._
 
 import java.nio.charset.StandardCharsets

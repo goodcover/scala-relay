@@ -2,11 +2,11 @@
 # Relay Modern Tools for Scala.js Folks
 
 There are three parts to this.
-  - Sbt plugin - `addSbtPlugin("com.dispalt.relay" % "sbt-relay-compiler" % "<version>")`
+  - Sbt plugin - `addSbtPlugin("com.goodcover.relay" % "sbt-relay-compiler" % "<version>")`
     which handles code generation sbt hooks
-  - Scala.js runtime (plain scalajs) - `"com.dispalt.relay" %%% "relay-macro" % "<version>"` which 
+  - Scala.js runtime (plain scalajs) - `"com.goodcover.relay" %%% "relay-macro" % "<version>"` which 
     handles the runtime, which is very small (intentionally).
-  - Slinky relay module - `"com.dispalt.relay" %%% "slinky-relay" % "<version>"`
+  - Slinky relay module - `"com.goodcover.relay" %%% "slinky-relay" % "<version>"`
 
 ### [Change log](./CHANGELOG.md)
 

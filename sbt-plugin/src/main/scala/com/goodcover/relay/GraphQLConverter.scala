@@ -1,6 +1,6 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
-import com.dispalt.relay.codegen.DocumentWriter
+import com.goodcover.relay.codegen.DocumentWriter
 import sbt._
 import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}

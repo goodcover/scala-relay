@@ -1,7 +1,7 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{FieldDefinition, InputValueDefinition}
-import com.dispalt.relay.GraphQLSchema.FieldTypeDefinition
+import com.goodcover.relay.GraphQLSchema.FieldTypeDefinition
 
 package object codegen {
 

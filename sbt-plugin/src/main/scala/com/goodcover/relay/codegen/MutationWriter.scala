@@ -1,18 +1,18 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
-import com.dispalt.relay.GraphQLSchema
+import com.goodcover.relay.GraphQLSchema
 
 import java.io.Writer
 
-class SubscriptionWriter(
+class MutationWriter(
   writer: Writer,
-  subscription: OperationDefinition,
+  mutation: OperationDefinition,
   documentText: String,
   schema: GraphQLSchema,
   typeMappings: Map[String, String]
-) extends OperationWriter(writer, subscription, documentText, schema, typeMappings) {
+) extends OperationWriter(writer, mutation, documentText, schema, typeMappings) {
 
   override def write(): Unit = {
     writePreamble()
@@ -21,8 +21,8 @@ class SubscriptionWriter(
     writeOperationObject()
   }
 
-  override protected val operationObjectParent: String = "SubscriptionTaggedNode"
+  override protected val operationObjectParent: String = "MutationTaggedNode"
 
   override protected def getOperationField(name: String): TypeDefinition.FieldDefinition =
-    schema.subscriptionField(name)
+    schema.mutationField(name)
 }

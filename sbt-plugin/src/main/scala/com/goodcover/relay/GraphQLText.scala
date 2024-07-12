@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.OperationType

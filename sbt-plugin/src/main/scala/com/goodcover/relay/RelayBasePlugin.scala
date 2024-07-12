@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin
@@ -79,7 +79,7 @@ object RelayBasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-      libraryDependencies ++= Seq("com.dispalt.relay" %%% "relay-macro" % com.dispalt.relay.core.SRCVersion.current),
+      libraryDependencies ++= Seq("com.goodcover.relay" %%% "relay-macro" % com.goodcover.relay.core.SRCVersion.current),
       relayDebug := false,
       relayTypeScript := false,
       relayBaseDirectory := baseDirectory.value,

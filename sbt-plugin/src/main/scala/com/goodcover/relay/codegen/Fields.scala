@@ -1,4 +1,4 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 object Fields {
 

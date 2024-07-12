@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.{Definition, Document}

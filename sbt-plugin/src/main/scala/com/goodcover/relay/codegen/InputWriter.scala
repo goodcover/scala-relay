@@ -1,11 +1,11 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
 import caliban.parsing.adt.{Directive, OperationType, Type, VariableDefinition}
-import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.codegen.InputWriter.OperationInput
+import com.goodcover.relay.GraphQLSchema
+import com.goodcover.relay.codegen.InputWriter.OperationInput
 
 import java.io.Writer
 import scala.annotation.tailrec

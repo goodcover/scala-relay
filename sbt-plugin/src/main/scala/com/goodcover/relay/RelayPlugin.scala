@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import sbt.Keys._
 import sbt._

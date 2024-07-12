@@ -1,4 +1,4 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import java.io.Writer
 import scala.meta.{Term, dialects}

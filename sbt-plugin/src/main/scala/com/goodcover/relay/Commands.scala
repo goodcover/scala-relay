@@ -1,4 +1,4 @@
-package com.dispalt.relay
+package com.goodcover.relay
 
 import sbt.Logger
 import java.io.{File, InputStream}

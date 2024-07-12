@@ -1,4 +1,4 @@
-package com.dispalt
+package com.goodcover
 
 import sbt.io.Using
 import sbt.util.CacheImplicits

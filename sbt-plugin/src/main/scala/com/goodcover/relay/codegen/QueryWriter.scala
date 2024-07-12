@@ -1,8 +1,8 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
-import com.dispalt.relay.GraphQLSchema
+import com.goodcover.relay.GraphQLSchema
 
 import java.io.Writer
 

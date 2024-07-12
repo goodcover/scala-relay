@@ -1,4 +1,4 @@
-package com.dispalt.relay.codegen
+package com.goodcover.relay.codegen
 
 import caliban.InputValue
 import caliban.InputValue.{ListValue, ObjectValue, VariableValue}
@@ -6,9 +6,9 @@ import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Type.{NamedType, innerType}
 import caliban.parsing.adt.{OperationType, Selection, VariableDefinition}
-import com.dispalt.relay.GraphQLSchema
-import com.dispalt.relay.codegen.Directives.{Refetchable, getRefetchable}
-import com.dispalt.relay.codegen.DocumentWriter.{getOperationName, variableArguments}
+import com.goodcover.relay.GraphQLSchema
+import com.goodcover.relay.codegen.Directives.{Refetchable, getRefetchable}
+import com.goodcover.relay.codegen.DocumentWriter.{getOperationName, variableArguments}
 import sbt._
 import sbt.io.Using.fileWriter
 
