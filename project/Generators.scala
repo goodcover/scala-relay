@@ -1,5 +1,6 @@
 import sbt._
 
+// TODO: Delete.
 object Generators {
   // Generates a scala file that contains the Lagom version for use at runtime.
   def version(version: String, dir: File): Seq[File] = {

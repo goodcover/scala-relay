@@ -1,16 +1,21 @@
+# scala-relay
 
-# Relay Modern Tools for Scala.js Folks
+## Relay Modern Tools for Scala.js Folks
 
-There are three parts to this.
-  - Sbt plugin - `addSbtPlugin("com.goodcover.relay" % "sbt-relay-compiler" % "<version>")`
-    which handles code generation sbt hooks
-  - Scala.js runtime (plain scalajs) - `"com.goodcover.relay" %%% "relay-macro" % "<version>"` which 
-    handles the runtime, which is very small (intentionally).
-  - Slinky relay module - `"com.goodcover.relay" %%% "slinky-relay" % "<version>"`
+There are three parts to this:
 
-### [Change log](./CHANGELOG.md)
+- Sbt plugin - handles code generation sbt hooks (`relayConvert` and `relayCompile`).
+ 
+  ```sbt
+  addSbtPlugin("com.goodcover.relay" % "sbt-scala-relay" % "<version>")
+  ```
+ 
+- Scala.js runtime (plain scalajs) - handles the runtime, which is very small (intentionally).
 
-## Dev Notes
+  ```sbt
+  libraryDependencies += "com.goodcover.relay" %%% "scala-relay-macros" % "<version>"
+  ```
+ 
+### [Change Log](./CHANGELOG.md)
 
- - call `release` to deploy everything, you'll need a GPG key, and Sonatype credentials handy
- - call `slinky-relay-ijext/updateIntelliJ`
+### [Contributing Guide](./CONTRIBUTING.md)
