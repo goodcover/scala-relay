@@ -53,7 +53,7 @@ trait TestNestedObjectVariableQuery extends js.Object {
   val checkinSearchQuery: TestNestedObjectVariableQuery.CheckinSearchQuery | Null
 }
 
-object TestNestedObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[TestNestedObjectVariableQueryInput, TestNestedObjectVariableQuery] {
+object TestNestedObjectVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestNestedObjectVariableQueryInput, TestNestedObjectVariableQuery] {
   type Ctor[T] = T
 
   @js.native
@@ -68,7 +68,7 @@ object TestNestedObjectVariableQuery extends _root_.relay.gql.QueryTaggedNode[Te
       "query" -> query.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableQueryInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestNestedObjectVariableQuery.graphql", JSImport.Default)

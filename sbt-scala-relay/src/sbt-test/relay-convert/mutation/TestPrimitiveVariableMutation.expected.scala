@@ -17,7 +17,7 @@ trait TestPrimitiveVariableMutation extends js.Object {
   val primitiveVariable: TestPrimitiveVariableMutation.PrimitiveVariable | Null
 }
 
-object TestPrimitiveVariableMutation extends _root_.relay.gql.MutationTaggedNode[String, TestPrimitiveVariableMutation] {
+object TestPrimitiveVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[String, TestPrimitiveVariableMutation] {
   type Ctor[T] = T
 
   @js.native
@@ -25,7 +25,7 @@ object TestPrimitiveVariableMutation extends _root_.relay.gql.MutationTaggedNode
     val clientMutationId: String | Null
   }
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestPrimitiveVariableMutation.graphql", JSImport.Default)

@@ -20,7 +20,7 @@ trait Test_viewer extends js.Object {
   val actor: Test_viewer.Actor | Null
 }
 
-object Test_viewer extends _root_.relay.gql.FragmentTaggedNode[Test_viewer] {
+object Test_viewer extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_viewer] {
   type Ctor[T] = T
 
   @js.native
@@ -31,15 +31,15 @@ object Test_viewer extends _root_.relay.gql.FragmentTaggedNode[Test_viewer] {
     val address: ActorAddress | Null
   }
 
-  implicit class Test_viewer2Test_viewer2Ref(f: Test_viewer) extends _root_.relay.gql.CastToFragmentRef[Test_viewer, Test_viewer2](f) {
-    def toTest_viewer2: _root_.relay.gql.FragmentRef[Test_viewer2] = castToRef
+  implicit class Test_viewer2Test_viewer2Ref(f: Test_viewer) extends _root_.com.goodcover.relay.CastToFragmentRef[Test_viewer, Test_viewer2](f) {
+    def toTest_viewer2: _root_.com.goodcover.relay.FragmentRef[Test_viewer2] = castToRef
   }
 
-  implicit class ActorAddress2Test_addressRef(f: ActorAddress) extends _root_.relay.gql.CastToFragmentRef[ActorAddress, Test_address](f) {
-    def toTest_address: _root_.relay.gql.FragmentRef[Test_address] = castToRef
+  implicit class ActorAddress2Test_addressRef(f: ActorAddress) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorAddress, Test_address](f) {
+    def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_viewer.graphql", JSImport.Default)

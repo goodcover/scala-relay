@@ -15,10 +15,10 @@ trait Test_fragment5 extends js.Object {
   val name: String
 }
 
-object Test_fragment5 extends _root_.relay.gql.FragmentRefetchableTaggedNode[Test_fragment5, ImplicitNodeArgsInput, ImplicitNodeArgs] {
+object Test_fragment5 extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment5, ImplicitNodeArgsInput, ImplicitNodeArgs] {
   type Ctor[T] = T
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_fragment5.graphql", JSImport.Default)

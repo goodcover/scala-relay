@@ -76,7 +76,7 @@ trait TestQuery extends js.Object {
   val clientType: TestQuery.ClientType | Null
 }
 
-object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQuery] {
+object TestQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestQueryInput, TestQuery] {
   type Ctor[T] = T
 
   @js.native
@@ -108,7 +108,7 @@ object TestQuery extends _root_.relay.gql.QueryTaggedNode[TestQueryInput, TestQu
       "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestQueryInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestQuery.graphql", JSImport.Default)

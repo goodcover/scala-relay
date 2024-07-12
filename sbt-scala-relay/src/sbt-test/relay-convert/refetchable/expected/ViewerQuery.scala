@@ -12,16 +12,16 @@ trait ViewerQueryInput extends js.Object
 @js.native
 trait ViewerQuery extends js.Object
 
-object ViewerQuery extends _root_.relay.gql.QueryTaggedNode[ViewerQueryInput, ViewerQuery] {
+object ViewerQuery extends _root_.com.goodcover.relay.QueryTaggedNode[ViewerQueryInput, ViewerQuery] {
   type Ctor[T] = T
 
-  implicit class ViewerQuery2Test_viewerRef(f: ViewerQuery) extends _root_.relay.gql.CastToFragmentRef[ViewerQuery, Test_viewer](f) {
-    def toTest_viewer: _root_.relay.gql.FragmentRef[Test_viewer] = castToRef
+  implicit class ViewerQuery2Test_viewerRef(f: ViewerQuery) extends _root_.com.goodcover.relay.CastToFragmentRef[ViewerQuery, Test_viewer](f) {
+    def toTest_viewer: _root_.com.goodcover.relay.FragmentRef[Test_viewer] = castToRef
   }
 
   def newInput(): ViewerQueryInput = js.Dynamic.literal().asInstanceOf[ViewerQueryInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/ViewerQuery.graphql", JSImport.Default)

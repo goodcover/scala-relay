@@ -25,7 +25,7 @@ lazy val root = project
   )
 
 lazy val `sbt-scala-relay` = project
-  .enablePlugins(SbtPlugin, Sonatype)
+  .enablePlugins(SbtPlugin, BuildInfoPlugin, Sonatype)
   .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
@@ -33,6 +33,8 @@ lazy val `sbt-scala-relay` = project
     addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Versions.Scalajs),
     addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2"),
     libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
+    buildInfoKeys := Seq[BuildInfoKey](version),
+    buildInfoPackage := "com.goodcover.relay",
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
@@ -40,11 +42,7 @@ lazy val `sbt-scala-relay` = project
       (`scala-relay-macros` / publishLocal).value
     },
     scalaVersion := Versions.Scala212,
-    crossScalaVersions := Nil,
-    // TODO: Replace with build info plugin.
-    Compile / sourceGenerators += Def.task {
-      Generators.version(version.value, (Compile / sourceManaged).value)
-    }.taskValue
+    crossScalaVersions := Nil
   )
 
 lazy val `scala-relay-core` = project
@@ -153,8 +151,8 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:higherKinds",         // Allow higher-kinded types
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
-  organization := "com.goodcover.relay",  // TODO - Coordinates
-  sonatypeProfileName := "com.goodcover", // TODO - Coordinates
+  organization := "com.goodcover",
+  sonatypeProfileName := "com.goodcover",
   pomExtra :=
     <developers>
       <developer>

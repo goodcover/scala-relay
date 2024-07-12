@@ -1,6 +1,7 @@
-package com.goodcover.relay
+package com.goodcover
 
-package object gql {
+package object relay {
+
   type ReaderFragment[F[_], O] = TaggedNodeQuery[F, O, Block]
 
   type ReaderInlineDataFragment[F[_], O] = TaggedNodeQuery[F, O, Inline]

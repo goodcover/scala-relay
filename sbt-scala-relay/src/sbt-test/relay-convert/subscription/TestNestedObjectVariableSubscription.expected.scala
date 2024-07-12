@@ -66,7 +66,7 @@ trait TestNestedObjectVariableSubscription extends js.Object {
   val commentCreateSubscribe: TestNestedObjectVariableSubscription.CommentCreateSubscribe | Null
 }
 
-object TestNestedObjectVariableSubscription extends _root_.relay.gql.SubscriptionTaggedNode[TestNestedObjectVariableSubscriptionInput, TestNestedObjectVariableSubscription] {
+object TestNestedObjectVariableSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestNestedObjectVariableSubscriptionInput, TestNestedObjectVariableSubscription] {
   type Ctor[T] = T
 
   @js.native
@@ -81,7 +81,7 @@ object TestNestedObjectVariableSubscription extends _root_.relay.gql.Subscriptio
       "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableSubscriptionInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestNestedObjectVariableSubscription.graphql", JSImport.Default)

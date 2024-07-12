@@ -12,16 +12,16 @@ trait NoArgsInput extends js.Object
 @js.native
 trait NoArgs extends js.Object
 
-object NoArgs extends _root_.relay.gql.QueryTaggedNode[NoArgsInput, NoArgs] {
+object NoArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NoArgsInput, NoArgs] {
   type Ctor[T] = T
 
-  implicit class NoArgs2Test_fragmentRef(f: NoArgs) extends _root_.relay.gql.CastToFragmentRef[NoArgs, Test_fragment](f) {
-    def toTest_fragment: _root_.relay.gql.FragmentRef[Test_fragment] = castToRef
+  implicit class NoArgs2Test_fragmentRef(f: NoArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[NoArgs, Test_fragment](f) {
+    def toTest_fragment: _root_.com.goodcover.relay.FragmentRef[Test_fragment] = castToRef
   }
 
   def newInput(): NoArgsInput = js.Dynamic.literal().asInstanceOf[NoArgsInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/NoArgs.graphql", JSImport.Default)

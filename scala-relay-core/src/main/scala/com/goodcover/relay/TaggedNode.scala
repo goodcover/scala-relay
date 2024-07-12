@@ -1,8 +1,6 @@
-package com.goodcover.relay.gql
+package com.goodcover.relay
 
-import scala.annotation.unchecked.uncheckedVariance
 import scala.scalajs.js
-import scala.scalajs.js.|
 
 /** This is one level higher than what's returned by relay, the query is what's returned by `Relay` */
 trait GenericGraphQLTaggedNode {

@@ -49,7 +49,7 @@ trait TestNestedObjectVariableMutation extends js.Object {
   val commentCreate: TestNestedObjectVariableMutation.CommentCreate | Null
 }
 
-object TestNestedObjectVariableMutation extends _root_.relay.gql.MutationTaggedNode[TestNestedObjectVariableMutationInput, TestNestedObjectVariableMutation] {
+object TestNestedObjectVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestNestedObjectVariableMutationInput, TestNestedObjectVariableMutation] {
   type Ctor[T] = T
 
   @js.native
@@ -68,7 +68,7 @@ object TestNestedObjectVariableMutation extends _root_.relay.gql.MutationTaggedN
       "feedback" -> feedback.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableMutationInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestNestedObjectVariableMutation.graphql", JSImport.Default)

@@ -40,11 +40,11 @@ object ObjectArgsStuff {
 @js.native
 trait ObjectArgs extends js.Object
 
-object ObjectArgs extends _root_.relay.gql.QueryTaggedNode[ObjectArgsInput, ObjectArgs] {
+object ObjectArgs extends _root_.com.goodcover.relay.QueryTaggedNode[ObjectArgsInput, ObjectArgs] {
   type Ctor[T] = T
 
-  implicit class ObjectArgs2Test_fragment4Ref(f: ObjectArgs) extends _root_.relay.gql.CastToFragmentRef[ObjectArgs, Test_fragment4](f) {
-    def toTest_fragment4: _root_.relay.gql.FragmentRef[Test_fragment4] = castToRef
+  implicit class ObjectArgs2Test_fragment4Ref(f: ObjectArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[ObjectArgs, Test_fragment4](f) {
+    def toTest_fragment4: _root_.com.goodcover.relay.FragmentRef[Test_fragment4] = castToRef
   }
 
   def newInput(
@@ -54,7 +54,7 @@ object ObjectArgs extends _root_.relay.gql.QueryTaggedNode[ObjectArgsInput, Obje
       "thing" -> thing.asInstanceOf[js.Any]
     ).asInstanceOf[ObjectArgsInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/ObjectArgs.graphql", JSImport.Default)

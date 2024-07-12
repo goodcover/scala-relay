@@ -1,4 +1,4 @@
-package com.goodcover.relay.gql
+package com.goodcover.relay
 
 import scala.scalajs.js
 

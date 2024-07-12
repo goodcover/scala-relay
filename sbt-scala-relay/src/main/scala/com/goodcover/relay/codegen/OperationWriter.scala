@@ -33,7 +33,7 @@ abstract class OperationWriter(
     writer.write("object ")
     val name = definitionName
     writer.write(name)
-    writer.write(" extends _root_.relay.gql.")
+    writer.write(" extends _root_.com.goodcover.relay.")
     writer.write(operationObjectParent)
     writer.write('[')
     // TODO: It's kinda weird getting the name from here.
@@ -52,7 +52,7 @@ abstract class OperationWriter(
     inputWriter.writeNewInputMethod()
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
-    writer.write("  type Query = _root_.relay.gql.ConcreteRequest\n\n")
+    writer.write("  type Query = _root_.com.goodcover.relay.ConcreteRequest\n\n")
     writeGeneratedMapping(writer, name)
   }
 

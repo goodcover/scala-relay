@@ -15,10 +15,10 @@ trait Test_fragmentInterface extends js.Object {
   val name: String | Null
 }
 
-object Test_fragmentInterface extends _root_.relay.gql.FragmentTaggedNode[Test_fragmentInterface] {
+object Test_fragmentInterface extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_fragmentInterface] {
   type Ctor[T] = T
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_fragmentInterface.graphql", JSImport.Default)

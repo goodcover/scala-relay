@@ -133,7 +133,7 @@ abstract class ExecutableDefinitionWriter(
     writeField: Selection.Field => Unit
   ): Unit = {
     val parents =
-      if (hasTypeName(selections)) parentTraits :+ s"_root_.relay.gql.Introspectable[$name]" else parentTraits
+      if (hasTypeName(selections)) parentTraits :+ s"_root_.com.goodcover.relay.Introspectable[$name]" else parentTraits
     val fieldSelections = selectableFieldSelections(selections)
     scalaWriter.writeTrait(name, parents, fieldSelections, jsNative = true, indent)(writeField)
   }
@@ -235,7 +235,7 @@ abstract class ExecutableDefinitionWriter(
     writer.write(indent)
     writer.write("@js.native sealed trait ")
     writer.write(name)
-    writer.write(" extends _root_.relay.gql.Introspectable.TypeName[")
+    writer.write(" extends _root_.com.goodcover.relay.Introspectable.TypeName[")
     writer.write(typeName)
     writer.write("]\n")
     writer.write(indent)
@@ -290,14 +290,14 @@ abstract class ExecutableDefinitionWriter(
     writer.write(spread.name)
     writer.write("Ref(f: ")
     writer.write(name)
-    writer.write(") extends _root_.relay.gql.CastToFragmentRef[")
+    writer.write(") extends _root_.com.goodcover.relay.CastToFragmentRef[")
     writer.write(name)
     writer.write(", ")
     writer.write(spread.name)
     writer.write("](f) {\n")
     writer.write("    def to")
     writer.write(spread.name)
-    writer.write(": _root_.relay.gql.FragmentRef[")
+    writer.write(": _root_.com.goodcover.relay.FragmentRef[")
     writer.write(spread.name)
     writer.write("] = castToRef\n")
     writer.write("  }\n\n")
@@ -323,7 +323,7 @@ abstract class ExecutableDefinitionWriter(
         writer.write(": Option[")
         writer.write(typePrefix)
         writer.write(to)
-        writer.write("] = _root_.relay.gql.Introspectable.as(f, ")
+        writer.write("] = _root_.com.goodcover.relay.Introspectable.as(f, ")
         writer.write(name)
         writer.write(".__typename.")
         writer.write(to)

@@ -37,7 +37,7 @@ trait Test_fragment extends js.Object {
   val interface: Test_fragment.Interface
 }
 
-object Test_fragment extends _root_.relay.gql.FragmentTaggedNode[Test_fragment] {
+object Test_fragment extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_fragment] {
   type Ctor[T] = T
 
   @js.native
@@ -50,7 +50,7 @@ object Test_fragment extends _root_.relay.gql.FragmentTaggedNode[Test_fragment] 
     val required: Bar
   }
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_fragment.graphql", JSImport.Default)

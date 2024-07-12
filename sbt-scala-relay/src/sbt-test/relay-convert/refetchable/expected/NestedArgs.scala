@@ -14,11 +14,11 @@ trait NestedArgsInput extends js.Object {
 @js.native
 trait NestedArgs extends js.Object
 
-object NestedArgs extends _root_.relay.gql.QueryTaggedNode[NestedArgsInput, NestedArgs] {
+object NestedArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NestedArgsInput, NestedArgs] {
   type Ctor[T] = T
 
-  implicit class NestedArgs2Test_fragment3Ref(f: NestedArgs) extends _root_.relay.gql.CastToFragmentRef[NestedArgs, Test_fragment3](f) {
-    def toTest_fragment3: _root_.relay.gql.FragmentRef[Test_fragment3] = castToRef
+  implicit class NestedArgs2Test_fragment3Ref(f: NestedArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[NestedArgs, Test_fragment3](f) {
+    def toTest_fragment3: _root_.com.goodcover.relay.FragmentRef[Test_fragment3] = castToRef
   }
 
   def newInput(
@@ -28,7 +28,7 @@ object NestedArgs extends _root_.relay.gql.QueryTaggedNode[NestedArgsInput, Nest
       "b" -> b.asInstanceOf[js.Any]
     ).asInstanceOf[NestedArgsInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/NestedArgs.graphql", JSImport.Default)

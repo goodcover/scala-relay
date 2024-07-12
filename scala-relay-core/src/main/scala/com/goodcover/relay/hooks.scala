@@ -1,13 +1,12 @@
-package com.goodcover.relay.runtime
-
-import relay.gql.{FragmentRef, ReaderInlineDataFragment, TaggedNodeQuery, Block, Inline}
+package com.goodcover.relay
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.scalajs.js
-import scala.scalajs.js.|
 import scala.scalajs.js.annotation.{JSImport, JSName}
+import scala.scalajs.js.|
 
 object hooks {
+
   type Id[+A]     = A
   type OrNull[+A] = (A @uncheckedVariance) | Null
 

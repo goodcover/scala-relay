@@ -28,7 +28,7 @@ trait TestMutation extends js.Object {
   val actorSubscribe: TestMutation.ActorSubscribe | Null
 }
 
-object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInput, TestMutation] {
+object TestMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestMutationInput, TestMutation] {
   type Ctor[T] = T
 
   @js.native
@@ -45,12 +45,12 @@ object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInpu
     val subscribee: ActorSubscribeSubscribee | Null
   }
 
-  implicit class ActorSubscribe2Test_payloadRef(f: ActorSubscribe) extends _root_.relay.gql.CastToFragmentRef[ActorSubscribe, Test_payload](f) {
-    def toTest_payload: _root_.relay.gql.FragmentRef[Test_payload] = castToRef
+  implicit class ActorSubscribe2Test_payloadRef(f: ActorSubscribe) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribe, Test_payload](f) {
+    def toTest_payload: _root_.com.goodcover.relay.FragmentRef[Test_payload] = castToRef
   }
 
-  implicit class ActorSubscribeSubscribeeAddress2Test_addressRef(f: ActorSubscribeSubscribeeAddress) extends _root_.relay.gql.CastToFragmentRef[ActorSubscribeSubscribeeAddress, Test_address](f) {
-    def toTest_address: _root_.relay.gql.FragmentRef[Test_address] = castToRef
+  implicit class ActorSubscribeSubscribeeAddress2Test_addressRef(f: ActorSubscribeSubscribeeAddress) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribeSubscribeeAddress, Test_address](f) {
+    def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 
   def newInput(
@@ -62,7 +62,7 @@ object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInpu
       "subscribeeId" -> subscribeeId.asInstanceOf[js.Any]
     ).asInstanceOf[TestMutationInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestMutation.graphql", JSImport.Default)

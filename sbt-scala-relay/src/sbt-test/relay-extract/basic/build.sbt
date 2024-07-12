@@ -1,6 +1,7 @@
 name := "basic"
 
 libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "1.1.0"
+libraryDependencies += "com.goodcover" %%% "scala-relay-macros" % com.goodcover.relay.BuildInfo.version
 
 enablePlugins(ScalaRelayPlugin, ScalaJSBundlerPlugin)
 

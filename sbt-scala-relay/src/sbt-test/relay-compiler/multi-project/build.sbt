@@ -12,7 +12,8 @@ def commonSettings = Seq(
   Compile / relayDisplayOnlyOnFailure := true,
   Compile / relayNpmDir := (Compile / npmInstallDependencies).value,
   webpack / version := "5.75.0",
-  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.0"
+  libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.8.0",
+  libraryDependencies += "com.goodcover" %%% "scala-relay-macros" % com.goodcover.relay.BuildInfo.version
 )
 
 lazy val root = project

@@ -1,5 +1,7 @@
 package example
 
+import com.goodcover.relay.macros
+
 @graphql("""
     # This is rad!
     query TestQuery {
@@ -22,7 +24,7 @@ object Test {
 
   """)
 
- compiler.graphqlGen("""
+ macros.graphqlGen("""
    fragment Test_foo2 on Foo {
      id
    }

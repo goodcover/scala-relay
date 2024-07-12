@@ -39,11 +39,11 @@ class FragmentWriter(
     val name = fragment.name
     writer.write(name)
     Directives.getRefetchable(fragment.directives).fold {
-      writer.write(" extends _root_.relay.gql.FragmentTaggedNode[")
+      writer.write(" extends _root_.com.goodcover.relay.FragmentTaggedNode[")
       writer.write(name)
       writer.write("] {\n")
     } { refetchable =>
-      writer.write(" extends _root_.relay.gql.FragmentRefetchableTaggedNode[")
+      writer.write(" extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[")
       writer.write(name)
       writer.write(", ")
       writer.write(refetchable.queryName)
@@ -61,7 +61,7 @@ class FragmentWriter(
     writeFragmentImplicits(fragment.name, fragment.selectionSet, name)
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
-    writer.write("  type Query = _root_.relay.gql.")
+    writer.write("  type Query = _root_.com.goodcover.relay.")
     if (Directives.isInline(fragment.directives)) writer.write("ReaderInlineDataFragment")
     else writer.write("ReaderFragment")
     writer.write("[Ctor, Out]\n\n")

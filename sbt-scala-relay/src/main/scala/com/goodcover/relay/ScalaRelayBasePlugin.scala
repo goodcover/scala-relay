@@ -79,7 +79,7 @@ object ScalaRelayBasePlugin extends AutoPlugin {
 
   override lazy val projectSettings: Seq[Setting[_]] =
     Seq(
-      libraryDependencies ++= Seq("com.goodcover.relay" %%% "scala-relay-macros" % com.goodcover.relay.core.SRCVersion.current),
+      libraryDependencies ++= Seq("com.goodcover" %%% "scala-relay-core" % com.goodcover.relay.BuildInfo.version),
       relayDebug := false,
       relayTypeScript := false,
       relayBaseDirectory := baseDirectory.value,

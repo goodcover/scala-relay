@@ -19,7 +19,7 @@ trait TestNoVariablesQuery extends js.Object {
   val noVariables: TestNoVariablesQuery.NoVariables | Null
 }
 
-object TestNoVariablesQuery extends _root_.relay.gql.QueryTaggedNode[TestNoVariablesQueryInput, TestNoVariablesQuery] {
+object TestNoVariablesQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestNoVariablesQueryInput, TestNoVariablesQuery] {
   type Ctor[T] = T
 
   @js.native
@@ -29,7 +29,7 @@ object TestNoVariablesQuery extends _root_.relay.gql.QueryTaggedNode[TestNoVaria
 
   def newInput(): TestNoVariablesQueryInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesQueryInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestNoVariablesQuery.graphql", JSImport.Default)

@@ -22,18 +22,18 @@ fragment Test_node on Node {
 */
 
 @js.native
-trait Test_node extends _root_.relay.gql.Introspectable[Test_node] {
+trait Test_node extends _root_.com.goodcover.relay.Introspectable[Test_node] {
   val moniker: String | Null
   val content: Test_node.Content | Null
 }
 
-object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
+object Test_node extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_node] {
   type Ctor[T] = T
 
   object __typename {
-    @js.native sealed trait User extends _root_.relay.gql.Introspectable.TypeName[Test_node.User]
+    @js.native sealed trait User extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.User]
     @inline def User: User = "User".asInstanceOf[User]
-    @js.native sealed trait `%other` extends _root_.relay.gql.Introspectable.TypeName[Test_node]
+    @js.native sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node]
     @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
   }
 
@@ -53,15 +53,15 @@ object Test_node extends _root_.relay.gql.FragmentTaggedNode[Test_node] {
     val msg: UserMsg | Null
   }
 
-  implicit class Content2Test_textRef(f: Content) extends _root_.relay.gql.CastToFragmentRef[Content, Test_text](f) {
-    def toTest_text: _root_.relay.gql.FragmentRef[Test_text] = castToRef
+  implicit class Content2Test_textRef(f: Content) extends _root_.com.goodcover.relay.CastToFragmentRef[Content, Test_text](f) {
+    def toTest_text: _root_.com.goodcover.relay.FragmentRef[Test_text] = castToRef
   }
 
   implicit class Test_node_Ops(f: Test_node) {
-    def asUser: Option[User] = _root_.relay.gql.Introspectable.as(f, Test_node.__typename.User)
+    def asUser: Option[User] = _root_.com.goodcover.relay.Introspectable.as(f, Test_node.__typename.User)
   }
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_node.graphql", JSImport.Default)

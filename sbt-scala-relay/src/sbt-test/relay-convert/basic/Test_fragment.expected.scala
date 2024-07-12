@@ -21,7 +21,7 @@ trait Test_fragment extends js.Object {
   val actor: Test_fragment.Actor | Null
 }
 
-object Test_fragment extends _root_.relay.gql.FragmentTaggedNode[Test_fragment] {
+object Test_fragment extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_fragment] {
   type Ctor[T] = T
 
   @js.native
@@ -36,7 +36,7 @@ object Test_fragment extends _root_.relay.gql.FragmentTaggedNode[Test_fragment] 
     val address: ActorAddress | Null
   }
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_fragment.graphql", JSImport.Default)

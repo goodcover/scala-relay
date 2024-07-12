@@ -17,7 +17,7 @@ trait Test_fragment4 extends js.Object {
   val objArg: Test_fragment4.ObjArg
 }
 
-object Test_fragment4 extends _root_.relay.gql.FragmentRefetchableTaggedNode[Test_fragment4, ObjectArgsInput, ObjectArgs] {
+object Test_fragment4 extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment4, ObjectArgsInput, ObjectArgs] {
   type Ctor[T] = T
 
   @js.native
@@ -25,7 +25,7 @@ object Test_fragment4 extends _root_.relay.gql.FragmentRefetchableTaggedNode[Tes
     val bar: String | Null
   }
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_fragment4.graphql", JSImport.Default)

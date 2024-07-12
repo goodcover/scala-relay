@@ -29,7 +29,7 @@ trait TestMutation extends js.Object {
   val actorSubscribe: TestMutation.ActorSubscribe | Null
 }
 
-object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInput, TestMutation] {
+object TestMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestMutationInput, TestMutation] {
   type Ctor[T] = T
 
   @js.native
@@ -59,7 +59,7 @@ object TestMutation extends _root_.relay.gql.MutationTaggedNode[TestMutationInpu
       "subscribeeId" -> subscribeeId.asInstanceOf[js.Any]
     ).asInstanceOf[TestMutationInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestMutation.graphql", JSImport.Default)

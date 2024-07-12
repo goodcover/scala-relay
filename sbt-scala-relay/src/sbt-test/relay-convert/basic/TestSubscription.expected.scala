@@ -37,7 +37,7 @@ trait TestSubscription extends js.Object {
   val feedbackLikeSubscribe: TestSubscription.FeedbackLikeSubscribe | Null
 }
 
-object TestSubscription extends _root_.relay.gql.SubscriptionTaggedNode[TestSubscriptionInput, TestSubscription] {
+object TestSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestSubscriptionInput, TestSubscription] {
   type Ctor[T] = T
 
   @js.native
@@ -52,7 +52,7 @@ object TestSubscription extends _root_.relay.gql.SubscriptionTaggedNode[TestSubs
       "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestSubscriptionInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/TestSubscription.graphql", JSImport.Default)

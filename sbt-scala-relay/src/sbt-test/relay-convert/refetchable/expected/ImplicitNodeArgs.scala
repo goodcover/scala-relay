@@ -14,11 +14,11 @@ trait ImplicitNodeArgsInput extends js.Object {
 @js.native
 trait ImplicitNodeArgs extends js.Object
 
-object ImplicitNodeArgs extends _root_.relay.gql.QueryTaggedNode[ImplicitNodeArgsInput, ImplicitNodeArgs] {
+object ImplicitNodeArgs extends _root_.com.goodcover.relay.QueryTaggedNode[ImplicitNodeArgsInput, ImplicitNodeArgs] {
   type Ctor[T] = T
 
-  implicit class ImplicitNodeArgs2Test_fragment5Ref(f: ImplicitNodeArgs) extends _root_.relay.gql.CastToFragmentRef[ImplicitNodeArgs, Test_fragment5](f) {
-    def toTest_fragment5: _root_.relay.gql.FragmentRef[Test_fragment5] = castToRef
+  implicit class ImplicitNodeArgs2Test_fragment5Ref(f: ImplicitNodeArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[ImplicitNodeArgs, Test_fragment5](f) {
+    def toTest_fragment5: _root_.com.goodcover.relay.FragmentRef[Test_fragment5] = castToRef
   }
 
   def newInput(
@@ -28,7 +28,7 @@ object ImplicitNodeArgs extends _root_.relay.gql.QueryTaggedNode[ImplicitNodeArg
       "id" -> id.asInstanceOf[js.Any]
     ).asInstanceOf[ImplicitNodeArgsInput]
 
-  type Query = _root_.relay.gql.ConcreteRequest
+  type Query = _root_.com.goodcover.relay.ConcreteRequest
 
   @js.native
   @JSImport("__generated__/ImplicitNodeArgs.graphql", JSImport.Default)

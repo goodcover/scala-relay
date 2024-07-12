@@ -1,6 +1,6 @@
 package example
 
-import relay.compiler.graphqlGen
+import com.goodcover.relay.macros.graphqlGen
 import relay.generated.TaskComponent_task
 
 object TaskComponent {

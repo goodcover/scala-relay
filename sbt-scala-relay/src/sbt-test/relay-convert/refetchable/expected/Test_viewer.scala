@@ -15,10 +15,10 @@ trait Test_viewer extends js.Object {
   val name: String
 }
 
-object Test_viewer extends _root_.relay.gql.FragmentRefetchableTaggedNode[Test_viewer, ViewerQueryInput, ViewerQuery] {
+object Test_viewer extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_viewer, ViewerQueryInput, ViewerQuery] {
   type Ctor[T] = T
 
-  type Query = _root_.relay.gql.ReaderFragment[Ctor, Out]
+  type Query = _root_.com.goodcover.relay.ReaderFragment[Ctor, Out]
 
   @js.native
   @JSImport("__generated__/Test_viewer.graphql", JSImport.Default)
