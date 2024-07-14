@@ -3,7 +3,7 @@ package example
 import scala.scalajs.js
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.Dynamic.literal
-import relay.graphql
+import com.goodcover.relay.graphql
 import org.scalajs.dom
 
 import scala.scalajs.js.annotation.JSImport

@@ -7,7 +7,7 @@ There are three parts to this:
 - Sbt plugin - handles code generation sbt hooks (`relayConvert` and `relayCompile`).
  
   ```sbt
-  addSbtPlugin("com.goodcover.relay" % "sbt-scala-relay" % "<version>")
+  addSbtPlugin("com.goodcover" % "sbt-scala-relay" % "<version>")
   ```
  
 - Scala.js runtime (plain scalajs) - handles the runtime, which is very small (intentionally).

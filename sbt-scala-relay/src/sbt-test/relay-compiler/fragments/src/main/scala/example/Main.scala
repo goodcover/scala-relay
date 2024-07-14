@@ -2,8 +2,8 @@ package example
 
 import java.util.NoSuchElementException
 import relay.generated._
-import relay.graphql
-import relay.gql.FragmentRef
+import com.goodcover.relay.graphql
+import com.goodcover.relay.FragmentRef
 import scala.scalajs.js.|
 
 // The order here matters.
