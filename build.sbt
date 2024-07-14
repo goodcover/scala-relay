@@ -39,6 +39,7 @@ lazy val `sbt-scala-relay` = project
     scriptedBufferLog := false,
     scriptedDependencies := {
       scriptedDependencies.value
+      (`scala-relay-core` / publishLocal).value
       (`scala-relay-macros` / publishLocal).value
     },
     scalaVersion := Versions.Scala212,
