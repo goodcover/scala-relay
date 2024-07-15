@@ -229,6 +229,7 @@ object ScalaRelayBasePlugin extends AutoPlugin {
     }
 
     IO.createDirectory(outpath)
+    persisted.foreach(_.getParentFile.mkdirs())
 
     // We give the JavaScript/TypeScript files from above that contain the graphql "macros" to the relay-compiler and
     // get it to do its usual thing, completely unaware of Scala.js since it no longer supports language plugins.
