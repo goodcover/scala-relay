@@ -12,8 +12,6 @@ object ScalaRelayBasePlugin extends AutoPlugin {
 
   override def requires: Plugins = ScalaJSPlugin
 
-  override def trigger = noTrigger
-
   object autoImport {
     val relaySchema: SettingKey[File] = settingKey[File]("Path to schema file")
     val relayTypeScriptPluginVersion: SettingKey[String] =

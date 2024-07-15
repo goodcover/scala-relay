@@ -29,6 +29,7 @@ lazy val `sbt-scala-relay` = project
   .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
+    addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
     libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
     buildInfoKeys := Seq[BuildInfoKey](version),
     buildInfoPackage := "com.goodcover.relay",

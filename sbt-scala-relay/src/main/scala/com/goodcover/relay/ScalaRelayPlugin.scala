@@ -7,8 +7,6 @@ object ScalaRelayPlugin extends AutoPlugin {
 
   override def requires: Plugins = ScalaRelayBasePlugin
 
-  override def trigger = noTrigger
-
   import ScalaRelayBasePlugin.autoImport._
 
   override lazy val projectSettings: Seq[Setting[_]] =
