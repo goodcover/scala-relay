@@ -17,23 +17,16 @@ subscription TestSubscription($input: FeedbackLikeInput!) {
 */
 
 trait TestSubscriptionInput extends js.Object {
-  val input: TestSubscriptionFeedbackLikeInput
+  val input: FeedbackLikeInput
 }
 
-trait TestSubscriptionFeedbackLikeInput extends js.Object {
-  val clientMutationId: String | Null
-  val feedbackId: String | Null
-}
-
-object TestSubscriptionFeedbackLikeInput {
+object TestSubscriptionInput {
   def apply(
-    clientMutationId: String | Null = null,
-    feedbackId: String | Null = null
-  ): TestSubscriptionFeedbackLikeInput =
+    input: FeedbackLikeInput
+  ): TestSubscriptionInput =
     js.Dynamic.literal(
-      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
-      "feedbackId" -> feedbackId.asInstanceOf[js.Any]
-    ).asInstanceOf[TestSubscriptionFeedbackLikeInput]
+      "input" -> input.asInstanceOf[js.Any]
+    ).asInstanceOf[TestSubscriptionInput]
 }
 
 @js.native
@@ -62,11 +55,11 @@ object TestSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNod
   }
 
   def newInput(
-    input: TestSubscriptionFeedbackLikeInput
-  ): TestSubscriptionInput =
-    js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
-    ).asInstanceOf[TestSubscriptionInput]
+    input: _root_.relay.generated.FeedbackLikeInput
+  ): _root_.relay.generated.TestSubscriptionInput =
+    _root_.relay.generated.TestSubscriptionInput(
+      input
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

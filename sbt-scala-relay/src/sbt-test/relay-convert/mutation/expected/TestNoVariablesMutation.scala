@@ -14,6 +14,10 @@ mutation TestNoVariablesMutation {
 
 trait TestNoVariablesMutationInput extends js.Object
 
+object TestNoVariablesMutationInput {
+  def apply(): TestNoVariablesMutationInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesMutationInput]
+}
+
 @js.native
 trait TestNoVariablesMutation extends js.Object {
   val noVariables: TestNoVariablesMutation.NoVariables
@@ -27,7 +31,7 @@ object TestNoVariablesMutation extends _root_.com.goodcover.relay.MutationTagged
     val id: String
   }
 
-  def newInput(): TestNoVariablesMutationInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesMutationInput]
+  def newInput(): _root_.relay.generated.TestNoVariablesMutationInput = _root_.relay.generated.TestNoVariablesMutationInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

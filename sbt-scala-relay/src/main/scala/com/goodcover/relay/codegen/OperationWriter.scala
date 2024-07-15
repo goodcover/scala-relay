@@ -2,6 +2,7 @@ package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
+import caliban.parsing.adt.Document
 import com.goodcover.relay.GraphQLSchema
 import com.goodcover.relay.GraphQLText.startOfOperation
 
@@ -10,14 +11,16 @@ import java.io.Writer
 abstract class OperationWriter(
   writer: Writer,
   operation: OperationDefinition,
+  // TODO: GC-3158 - Remove documentText.
   documentText: String,
+  document: Document,
   schema: GraphQLSchema,
-  typeMappings: Map[String, String]
-) extends ExecutableDefinitionWriter(writer, documentText, schema, typeMappings) {
+  typeConverter: TypeConverter
+) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
 
-  override protected def definitionName: String = DocumentWriter.getOperationName(operation)
+  override protected def definitionName: String = DocumentConverter.getOperationName(operation)
 
-  protected val inputWriter = new InputWriter(writer, scalaWriter, typeConverter, operation, schema)
+  protected val operationInputWriter = new OperationInputWriter(writer, operation, document, typeConverter)
 
   override protected def containsStartOfDefinition(line: String): Boolean =
     startOfOperation(line, operation)
@@ -38,7 +41,7 @@ abstract class OperationWriter(
     writer.write('[')
     // TODO: It's kinda weird getting the name from here.
     // FIXME: This should use the other overload but it'll probably break stuff.
-    writer.write(typeConverter.convertToScalaType(inputWriter.operationInputName))
+    writer.write(typeConverter.convertToScalaType(operationInputWriter.operationInputName, fullyQualified = false))
     writer.write(", ")
     writer.write(name)
     // TODO: Ctor is redundant for queries. Only fragments can be plural.
@@ -49,7 +52,7 @@ abstract class OperationWriter(
     writeNestedTypeNameObject(None, operation.selectionSet, name, "  ", compact = false)
     writeNestedTraits(name, operation.selectionSet, fieldTypeDefinition, name)
     writeFragmentImplicits(name, operation.selectionSet, name)
-    inputWriter.writeNewInputMethod()
+    operationInputWriter.writeNewInputMethod()
     // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
     // In v11 it is either ReaderFragment or ConcreteRequest.
     writer.write("  type Query = _root_.com.goodcover.relay.ConcreteRequest\n\n")

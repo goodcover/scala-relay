@@ -1,5 +1,9 @@
 ## Changes
 
+### 0.45.0
+
+- Use shared input types.
+
 ### 0.44.0
 
 - Remove unwrapping of mutation inputs.

@@ -2,6 +2,7 @@ package com.goodcover.relay.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
+import caliban.parsing.adt.Document
 import com.goodcover.relay.GraphQLSchema
 
 import java.io.Writer
@@ -9,14 +10,16 @@ import java.io.Writer
 class MutationWriter(
   writer: Writer,
   mutation: OperationDefinition,
+  // TODO: GC-3158 - Remove documentText.
   documentText: String,
+  document: Document,
   schema: GraphQLSchema,
-  typeMappings: Map[String, String]
-) extends OperationWriter(writer, mutation, documentText, schema, typeMappings) {
+  typeConverter: TypeConverter
+) extends OperationWriter(writer, mutation, documentText, document, schema, typeConverter) {
 
   override def write(): Unit = {
     writePreamble()
-    inputWriter.writeOperationInputTypes()
+    operationInputWriter.writeOperationInputType()
     writeOperationTrait()
     writeOperationObject()
   }

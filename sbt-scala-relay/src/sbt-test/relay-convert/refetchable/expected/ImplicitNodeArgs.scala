@@ -11,6 +11,15 @@ trait ImplicitNodeArgsInput extends js.Object {
   val id: String
 }
 
+object ImplicitNodeArgsInput {
+  def apply(
+    id: String
+  ): ImplicitNodeArgsInput =
+    js.Dynamic.literal(
+      "id" -> id.asInstanceOf[js.Any]
+    ).asInstanceOf[ImplicitNodeArgsInput]
+}
+
 @js.native
 trait ImplicitNodeArgs extends js.Object
 
@@ -23,10 +32,10 @@ object ImplicitNodeArgs extends _root_.com.goodcover.relay.QueryTaggedNode[Impli
 
   def newInput(
     id: String
-  ): ImplicitNodeArgsInput =
-    js.Dynamic.literal(
-      "id" -> id.asInstanceOf[js.Any]
-    ).asInstanceOf[ImplicitNodeArgsInput]
+  ): _root_.relay.generated.ImplicitNodeArgsInput =
+    _root_.relay.generated.ImplicitNodeArgsInput(
+      id
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

@@ -1,5 +1,7 @@
 package com.goodcover
 
+import caliban.parsing.adt.{Definition, Document}
+import caliban.rendering.DocumentRenderer
 import sbt.io.Using
 import sbt.util.CacheImplicits
 import sjsonnew._
@@ -8,6 +10,9 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, 
 import java.util.Base64
 
 package object relay {
+
+  def renderDefinition(definition: Definition, document: Document): String =
+    trimBlankLines(DocumentRenderer.render(Document(List(definition), document.sourceMapper)))
 
   def serializableFormat[A <: Serializable]: JsonFormat[A] =
     CacheImplicits.isoStringFormat(serializableIso)

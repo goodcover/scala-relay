@@ -9,6 +9,10 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 trait NoArgsInput extends js.Object
 
+object NoArgsInput {
+  def apply(): NoArgsInput = js.Dynamic.literal().asInstanceOf[NoArgsInput]
+}
+
 @js.native
 trait NoArgs extends js.Object
 
@@ -19,7 +23,7 @@ object NoArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NoArgsInput, No
     def toTest_fragment: _root_.com.goodcover.relay.FragmentRef[Test_fragment] = castToRef
   }
 
-  def newInput(): NoArgsInput = js.Dynamic.literal().asInstanceOf[NoArgsInput]
+  def newInput(): _root_.relay.generated.NoArgsInput = _root_.relay.generated.NoArgsInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

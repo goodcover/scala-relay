@@ -16,6 +16,15 @@ trait TestPrimitiveVariableMutationInput extends js.Object {
   val a: String
 }
 
+object TestPrimitiveVariableMutationInput {
+  def apply(
+    a: String
+  ): TestPrimitiveVariableMutationInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestPrimitiveVariableMutationInput]
+}
+
 @js.native
 trait TestPrimitiveVariableMutation extends js.Object {
   val primitiveVariable: TestPrimitiveVariableMutation.PrimitiveVariable
@@ -31,10 +40,10 @@ object TestPrimitiveVariableMutation extends _root_.com.goodcover.relay.Mutation
 
   def newInput(
     a: String
-  ): TestPrimitiveVariableMutationInput =
-    js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
-    ).asInstanceOf[TestPrimitiveVariableMutationInput]
+  ): _root_.relay.generated.TestPrimitiveVariableMutationInput =
+    _root_.relay.generated.TestPrimitiveVariableMutationInput(
+      a
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

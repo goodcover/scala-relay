@@ -13,19 +13,15 @@ query TestObjectVariableQuery($input: Input!) {
 */
 
 trait TestObjectVariableQueryInput extends js.Object {
-  val input: TestObjectVariableQueryInput
-}
-
-trait TestObjectVariableQueryInput extends js.Object {
-  val a: String
+  val input: Input
 }
 
 object TestObjectVariableQueryInput {
   def apply(
-    a: String
+    input: Input
   ): TestObjectVariableQueryInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestObjectVariableQueryInput]
 }
 
@@ -43,11 +39,11 @@ object TestObjectVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNod
   }
 
   def newInput(
-    input: TestObjectVariableQueryInput
-  ): TestObjectVariableQueryInput =
-    js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
-    ).asInstanceOf[TestObjectVariableQueryInput]
+    input: _root_.relay.generated.Input
+  ): _root_.relay.generated.TestObjectVariableQueryInput =
+    _root_.relay.generated.TestObjectVariableQueryInput(
+      input
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

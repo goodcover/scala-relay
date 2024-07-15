@@ -14,6 +14,15 @@ trait TestPrimitiveResponseQueryInput extends js.Object {
   val a: String
 }
 
+object TestPrimitiveResponseQueryInput {
+  def apply(
+    a: String
+  ): TestPrimitiveResponseQueryInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestPrimitiveResponseQueryInput]
+}
+
 @js.native
 trait TestPrimitiveResponseQuery extends js.Object {
   val primitiveResponse: String
@@ -24,10 +33,10 @@ object TestPrimitiveResponseQuery extends _root_.com.goodcover.relay.QueryTagged
 
   def newInput(
     a: String
-  ): TestPrimitiveResponseQueryInput =
-    js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
-    ).asInstanceOf[TestPrimitiveResponseQueryInput]
+  ): _root_.relay.generated.TestPrimitiveResponseQueryInput =
+    _root_.relay.generated.TestPrimitiveResponseQueryInput(
+      a
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

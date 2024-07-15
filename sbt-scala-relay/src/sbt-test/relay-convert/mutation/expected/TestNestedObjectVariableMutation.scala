@@ -13,32 +13,15 @@ mutation TestNestedObjectVariableMutation($nested: Nested) {
 */
 
 trait TestNestedObjectVariableMutationInput extends js.Object {
-  val nested: TestNestedObjectVariableMutationNested | Null
-}
-
-trait TestNestedObjectVariableMutationNested extends js.Object {
-  val input: TestNestedObjectVariableMutationInput
-}
-
-object TestNestedObjectVariableMutationNested {
-  def apply(
-    input: TestNestedObjectVariableMutationInput
-  ): TestNestedObjectVariableMutationNested =
-    js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
-    ).asInstanceOf[TestNestedObjectVariableMutationNested]
-}
-
-trait TestNestedObjectVariableMutationInput extends js.Object {
-  val a: String
+  val nested: Nested | Null
 }
 
 object TestNestedObjectVariableMutationInput {
   def apply(
-    a: String
+    nested: Nested | Null = null
   ): TestNestedObjectVariableMutationInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      "nested" -> nested.asInstanceOf[js.Any]
     ).asInstanceOf[TestNestedObjectVariableMutationInput]
 }
 
@@ -56,11 +39,11 @@ object TestNestedObjectVariableMutation extends _root_.com.goodcover.relay.Mutat
   }
 
   def newInput(
-    nested: TestNestedObjectVariableMutationNested | Null = null
-  ): TestNestedObjectVariableMutationInput =
-    js.Dynamic.literal(
-      "nested" -> nested.asInstanceOf[js.Any]
-    ).asInstanceOf[TestNestedObjectVariableMutationInput]
+    nested: _root_.relay.generated.Nested | Null = null
+  ): _root_.relay.generated.TestNestedObjectVariableMutationInput =
+    _root_.relay.generated.TestNestedObjectVariableMutationInput(
+      nested
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

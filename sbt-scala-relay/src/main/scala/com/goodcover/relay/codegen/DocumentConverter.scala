@@ -4,62 +4,68 @@ import caliban.InputValue
 import caliban.InputValue.{ListValue, ObjectValue, VariableValue}
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
 import caliban.parsing.adt.Type.{NamedType, innerType}
-import caliban.parsing.adt.{OperationType, Selection, VariableDefinition}
+import caliban.parsing.adt.{Document, OperationType, Selection, VariableDefinition}
 import com.goodcover.relay.GraphQLSchema
 import com.goodcover.relay.codegen.Directives.{Refetchable, getRefetchable}
-import com.goodcover.relay.codegen.DocumentWriter.{getOperationName, variableArguments}
+import com.goodcover.relay.codegen.DocumentConverter.{getOperationName, variableArguments}
 import sbt._
 import sbt.io.Using.fileWriter
 
 import java.io.Writer
 import java.nio.charset.StandardCharsets
 
-class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[String, String], outputs: Set[File]) {
+class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[String, String], outputs: Set[File]) {
 
-  def write(file: File): Set[File] = {
-    write(IO.read(file, StandardCharsets.UTF_8))
+  private val typeConverter = new TypeConverter(schema, typeMappings)
+
+  def convertSchema(): Set[File] = {
+    val inputs = schema.inputObjectTypes.values.map(writeInput(_, schema.document)).toSet
+    inputs
   }
 
-  def write(documentText: String): Set[File] = {
-    val document   = Parser.parseQuery(documentText).right.get
-    val operations = document.operationDefinitions.map(writeOperation(documentText, _)).toSet
-    val fragments  = document.fragmentDefinitions.map(writeFragment(documentText, _)).toSet
+  def convert(file: File): Set[File] = {
+    convert(IO.read(file, StandardCharsets.UTF_8))
+  }
+
+  def convert(documentText: String): Set[File] = {
+    val document = Parser.parseQuery(documentText).right.get
+    // TODO: GC-3158 - Remove documentText from these.
+    val operations = document.operationDefinitions.map(writeOperation(_, documentText, document)).toSet
+    val fragments  = document.fragmentDefinitions.map(writeFragment(_, documentText)).toSet
     val refetchables = {
       for {
         fragment    <- document.fragmentDefinitions
         refetchable <- getRefetchable(fragment.directives)
-      } yield writeRefetchableFragment(documentText, fragment, refetchable)
+      } yield writeRefetchableFragment(fragment, refetchable, documentText, document)
     }.toSet
     operations ++ fragments ++ refetchables
   }
 
-  private def writeOperation(documentText: String, operation: OperationDefinition): File = {
-    operation.operationType match {
-      case OperationType.Query        => writeQuery(documentText, operation)
-      case OperationType.Mutation     => writeMutation(documentText, operation)
-      case OperationType.Subscription => writeSubscription(documentText, operation)
+  private def writeInput(input: InputObjectTypeDefinition, document: Document): File =
+    writeDefinition(inputFile(input))(new InputWriter(_, input, document, typeConverter))
+
+  private def writeOperation(operation: OperationDefinition, documentText: String, document: Document): File =
+    writeDefinition(operationFile(operation)) { writer =>
+      operation.operationType match {
+        case OperationType.Query =>
+          new QueryWriter(writer, operation, documentText, document, schema, typeConverter)
+        case OperationType.Mutation =>
+          new MutationWriter(writer, operation, documentText, document, schema, typeConverter)
+        case OperationType.Subscription =>
+          new SubscriptionWriter(writer, operation, documentText, document, schema, typeConverter)
+      }
     }
-  }
 
-  private def writeQuery(documentText: String, query: OperationDefinition): File =
-    writeDefinition(operationFile(query))(new QueryWriter(_, query, documentText, schema, typeMappings))
-
-  private def writeMutation(documentText: String, mutation: OperationDefinition): File =
-    writeDefinition(operationFile(mutation))(new MutationWriter(_, mutation, documentText, schema, typeMappings))
-
-  private def writeSubscription(documentText: String, subscription: OperationDefinition): File =
-    writeDefinition(operationFile(subscription))(
-      new SubscriptionWriter(_, subscription, documentText, schema, typeMappings)
-    )
-
-  private def writeFragment(documentText: String, fragment: FragmentDefinition): File =
-    writeDefinition(fragmentFile(fragment))(new FragmentWriter(_, fragment, documentText, schema, typeMappings))
+  private def writeFragment(fragment: FragmentDefinition, documentText: String): File =
+    writeDefinition(fragmentFile(fragment))(new FragmentWriter(_, fragment, documentText, schema, typeConverter))
 
   private def writeRefetchableFragment(
-    documentText: String,
     fragment: FragmentDefinition,
-    refetchable: Refetchable
+    refetchable: Refetchable,
+    documentText: String,
+    document: Document
   ): File = {
     val variables = refetchableFragmentVariables(fragment)
     // TODO: Add directives.
@@ -69,14 +75,17 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
       OperationDefinition(OperationType.Query, Some(refetchable.queryName), variables, directives, List(selection))
     // FIXME: This doesn't adequately check for duplicate outputs.
     // FIXME: The definition text is missing because it is looking for the wrong thing.
-    writeDefinition(operationFile(query))(new QueryWriter(_, query, documentText, schema, typeMappings))
+    writeOperation(query, documentText, document)
   }
 
-  private def writeDefinition(file: File)(f: Writer => ExecutableDefinitionWriter): File =
+  private def writeDefinition(file: File)(f: Writer => DefinitionWriter): File =
     fileWriter(StandardCharsets.UTF_8)(file) { writer =>
       f(writer).write()
       file
     }
+
+  private def inputFile(input: InputObjectTypeDefinition) =
+    outputFile(input.name)
 
   private def operationFile(operation: OperationDefinition) =
     outputFile(getOperationName(operation))
@@ -146,7 +155,7 @@ class DocumentWriter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[S
   }
 }
 
-object DocumentWriter {
+object DocumentConverter {
 
   // TODO: Where should this go?
   private[codegen] def getOperationName(operation: OperationDefinition) =

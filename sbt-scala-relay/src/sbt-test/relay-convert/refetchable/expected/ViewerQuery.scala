@@ -9,6 +9,10 @@ import _root_.scala.scalajs.js.annotation.JSImport
 
 trait ViewerQueryInput extends js.Object
 
+object ViewerQueryInput {
+  def apply(): ViewerQueryInput = js.Dynamic.literal().asInstanceOf[ViewerQueryInput]
+}
+
 @js.native
 trait ViewerQuery extends js.Object
 
@@ -19,7 +23,7 @@ object ViewerQuery extends _root_.com.goodcover.relay.QueryTaggedNode[ViewerQuer
     def toTest_viewer: _root_.com.goodcover.relay.FragmentRef[Test_viewer] = castToRef
   }
 
-  def newInput(): ViewerQueryInput = js.Dynamic.literal().asInstanceOf[ViewerQueryInput]
+  def newInput(): _root_.relay.generated.ViewerQueryInput = _root_.relay.generated.ViewerQueryInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

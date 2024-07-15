@@ -11,40 +11,25 @@ import com.goodcover.relay.codegen.Fields.{isID, isMetaField}
 import com.goodcover.relay.codegen.Selections._
 
 import java.io.Writer
+import scala.meta.Term
 
-// TODO: It's kinda weird passing in the whole document text here. It probably should just be the definition text but
-//  we do that in a weird way so we need to refactor that first.
 abstract class ExecutableDefinitionWriter(
   writer: Writer,
+  // TODO: GC-3158 - Remove this.
   documentText: String,
   schema: GraphQLSchema,
-  typeMappings: Map[String, String]
-) {
-
-  protected val scalaWriter   = new ScalaWriter(writer)
-  protected val typeConverter = new TypeConverter(schema, typeMappings)
+  typeConverter: TypeConverter
+) extends DefinitionWriter(writer) {
 
   def write(): Unit
 
-  protected def definitionName: String
-
-  protected def writePreamble(): Unit = {
-    writePackageAndImports()
-    writer.write("/*\n")
-    writeDefinitionText()
-    writer.write("*/\n\n")
+  override protected def writeImports(): Unit = {
+    writer.write("import _root_.scala.scalajs.js\n")
+    writer.write("import _root_.scala.scalajs.js.|\n")
+    writer.write("import _root_.scala.scalajs.js.annotation.JSImport\n\n")
   }
 
-  private def writePackageAndImports(): Unit =
-    writer.write("""package relay.generated
-                   |
-                   |import _root_.scala.scalajs.js
-                   |import _root_.scala.scalajs.js.|
-                   |import _root_.scala.scalajs.js.annotation.JSImport
-                   |
-                   |""".stripMargin)
-
-  // TODO: This is weird.
+  // TODO: GC-3158 - Use DocumentRenderer instead.
   protected def writeDefinitionText(): Unit =
     appendSelectionText(documentText, containsStartOfDefinition)(writeDocumentTextLine)
 
@@ -80,8 +65,8 @@ abstract class ExecutableDefinitionWriter(
   ): Unit = {
     // TODO: This typeName stuff is weird.
     val typeName  = if (hasSelections) s"$definitionName.${name.capitalize}" else innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives)
-    scalaWriter.writeField(name, scalaType, None, "  ")
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    scalaWriter.writeField(Term.Name(name), scalaType, None, "  ")
   }
 
   protected def writeNestedTraits(
@@ -132,10 +117,11 @@ abstract class ExecutableDefinitionWriter(
   private def writeSelectionTrait(name: String, selections: List[Selection], indent: String, parentTraits: Seq[String])(
     writeField: Selection.Field => Unit
   ): Unit = {
+    val tname = meta.Type.Name(name)
     val parents =
-      if (hasTypeName(selections)) parentTraits :+ s"_root_.com.goodcover.relay.Introspectable[$name]" else parentTraits
+      if (hasTypeName(selections)) parentTraits :+ s"_root_.com.goodcover.relay.Introspectable[${tname.syntax}]" else parentTraits
     val fieldSelections = selectableFieldSelections(selections)
-    scalaWriter.writeTrait(name, parents, fieldSelections, jsNative = true, indent)(writeField)
+    scalaWriter.writeTrait(tname, parents, fieldSelections, jsNative = true, indent)(writeField)
   }
 
   private def writeNestedSelection(
@@ -244,6 +230,7 @@ abstract class ExecutableDefinitionWriter(
     writer.write(": ")
     writer.write(name)
     writer.write(""" = """")
+    // TODO: Is this right?
     writer.write(name.stripPrefix("`").stripSuffix("`"))
     writer.write("""".asInstanceOf[""")
     writer.write(name)
@@ -258,8 +245,8 @@ abstract class ExecutableDefinitionWriter(
     fieldDefinitionDirectives: List[Directive]
   ): Unit = {
     val typeName  = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives)
-    scalaWriter.writeField(name, scalaType, None, "    ")
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    scalaWriter.writeField(Term.Name(name), scalaType, None, "    ")
   }
 
   protected def writeFragmentImplicits(

@@ -1,17 +1,19 @@
 # This should convert as expected.
 > relayConvert
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesSubscription.scala TestNoVariablesSubscription.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableSubscription.scala TestObjectVariableSubscription.expected.scala
-# TODO: Implement these remaining tests.
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableSubscription.scala TestOptionalObjectVariableSubscription.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableSubscription.scala TestNestedObjectVariableSubscription.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableSubscription.scala TestPrimitiveVariableSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableSubscription.scala TestOptionalPrimitiveVariableSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableSubscription.scala TestListVariableSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableSubscription.scala TestOptionalListVariableSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesSubscription.scala TestMultipleVariablesSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseSubscription.scala TestPrimitiveResponseSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMandatoryResponseSubscription.scala TestMandatoryResponseSubscription.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseSubscription.scala TestListResponseSubscription.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseSubscription.scala expected/TestListResponseSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableSubscription.scala expected/TestListVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesSubscription.scala expected/TestMultipleVariablesSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableSubscription.scala expected/TestNestedObjectVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Nested.scala expected/Nested.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Input.scala expected/Input.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesSubscription.scala expected/TestNoVariablesSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableSubscription.scala expected/TestObjectVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableSubscription.scala expected/TestOptionalListVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableSubscription.scala expected/TestOptionalObjectVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveResponseSubscription.scala expected/TestOptionalPrimitiveResponseSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableSubscription.scala expected/TestOptionalPrimitiveVariableSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseSubscription.scala expected/TestPrimitiveResponseSubscription.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableSubscription.scala expected/TestPrimitiveVariableSubscription.scala
 
+# FIXME: Optional inputs should be A | () | Null
 # TODO: Defaults

@@ -17,6 +17,17 @@ trait TestMultipleVariablesQueryInput extends js.Object {
   val b: String
 }
 
+object TestMultipleVariablesQueryInput {
+  def apply(
+    a: String,
+    b: String
+  ): TestMultipleVariablesQueryInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any],
+      "b" -> b.asInstanceOf[js.Any]
+    ).asInstanceOf[TestMultipleVariablesQueryInput]
+}
+
 @js.native
 trait TestMultipleVariablesQuery extends js.Object {
   val multipleVariables: TestMultipleVariablesQuery.MultipleVariables
@@ -33,11 +44,11 @@ object TestMultipleVariablesQuery extends _root_.com.goodcover.relay.QueryTagged
   def newInput(
     a: String,
     b: String
-  ): TestMultipleVariablesQueryInput =
-    js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any],
-      "b" -> b.asInstanceOf[js.Any]
-    ).asInstanceOf[TestMultipleVariablesQueryInput]
+  ): _root_.relay.generated.TestMultipleVariablesQueryInput =
+    _root_.relay.generated.TestMultipleVariablesQueryInput(
+      a,
+      b
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 
