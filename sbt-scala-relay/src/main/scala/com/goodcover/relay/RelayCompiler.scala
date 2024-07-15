@@ -144,7 +144,8 @@ object RelayCompiler {
           val versionChanged   = Version != previousAnalysis.version
           val optionsChanged   = options != previousAnalysis.options
           val outputDirChanged = options.outputPath != previousAnalysis.options.outputPath
-          if (versionChanged || outputDirChanged) {
+          val typeScriptChanged = options.typeScript != previousAnalysis.options.typeScript
+          if (versionChanged || outputDirChanged || typeScriptChanged) {
             IO.delete(previousAnalysis.artifacts)
           }
           if (versionChanged ||
