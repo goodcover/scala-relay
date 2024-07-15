@@ -113,7 +113,7 @@ object ScalaRelayBasePlugin extends AutoPlugin {
           case Some((3, 1))             => scala.meta.dialects.Scala31
           case Some((3, 2))             => scala.meta.dialects.Scala32
           case Some((3, 3))             => scala.meta.dialects.Scala33
-          case Some((3, 4))             => scala.meta.dialects.Scala33
+          case Some((3, 4))             => scala.meta.dialects.Scala34
           case _                        => scala.meta.dialects.Scala3Future
         }
       },
