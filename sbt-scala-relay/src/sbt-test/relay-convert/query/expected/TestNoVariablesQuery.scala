@@ -16,7 +16,7 @@ trait TestNoVariablesQueryInput extends js.Object
 
 @js.native
 trait TestNoVariablesQuery extends js.Object {
-  val noVariables: TestNoVariablesQuery.NoVariables | Null
+  val noVariables: TestNoVariablesQuery.NoVariables
 }
 
 object TestNoVariablesQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestNoVariablesQueryInput, TestNoVariablesQuery] {

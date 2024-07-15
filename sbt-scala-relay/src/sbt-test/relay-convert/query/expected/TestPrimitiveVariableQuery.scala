@@ -18,7 +18,7 @@ trait TestPrimitiveVariableQueryInput extends js.Object {
 
 @js.native
 trait TestPrimitiveVariableQuery extends js.Object {
-  val primitiveVariable: TestPrimitiveVariableQuery.PrimitiveVariable | Null
+  val primitiveVariable: TestPrimitiveVariableQuery.PrimitiveVariable
 }
 
 object TestPrimitiveVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestPrimitiveVariableQueryInput, TestPrimitiveVariableQuery] {

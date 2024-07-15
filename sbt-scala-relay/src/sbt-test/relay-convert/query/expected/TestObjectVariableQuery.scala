@@ -5,48 +5,48 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-query TestObjectVariableQuery($filter: ItemFilterInput!) {
-    items(filter: $filter) {
-        date
+query TestObjectVariableQuery($input: Input!) {
+    objectVariable(input: $input) {
+        id
     }
 }
 */
 
 trait TestObjectVariableQueryInput extends js.Object {
-  val filter: TestObjectVariableQueryItemFilterInput
+  val input: TestObjectVariableQueryInput
 }
 
-trait TestObjectVariableQueryItemFilterInput extends js.Object {
-  val date: String | Null
+trait TestObjectVariableQueryInput extends js.Object {
+  val a: String
 }
 
-object TestObjectVariableQueryItemFilterInput {
+object TestObjectVariableQueryInput {
   def apply(
-    date: String | Null = null
-  ): TestObjectVariableQueryItemFilterInput =
+    a: String
+  ): TestObjectVariableQueryInput =
     js.Dynamic.literal(
-      "date" -> date.asInstanceOf[js.Any]
-    ).asInstanceOf[TestObjectVariableQueryItemFilterInput]
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestObjectVariableQueryInput]
 }
 
 @js.native
 trait TestObjectVariableQuery extends js.Object {
-  val items: TestObjectVariableQuery.Items | Null
+  val objectVariable: TestObjectVariableQuery.ObjectVariable
 }
 
 object TestObjectVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestObjectVariableQueryInput, TestObjectVariableQuery] {
   type Ctor[T] = T
 
   @js.native
-  trait Items extends js.Object {
-    val date: String | Null
+  trait ObjectVariable extends js.Object {
+    val id: String
   }
 
   def newInput(
-    filter: TestObjectVariableQueryItemFilterInput
+    input: TestObjectVariableQueryInput
   ): TestObjectVariableQueryInput =
     js.Dynamic.literal(
-      "filter" -> filter.asInstanceOf[js.Any]
+      "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestObjectVariableQueryInput]
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
