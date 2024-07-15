@@ -8,14 +8,14 @@ There are three parts to this:
   (`relayCompiler` and `relayConvert`).
  
   ```sbt
-  addSbtPlugin("com.goodcover" % "sbt-scala-relay" % "<version>")
+  addSbtPlugin("com.goodcover.relay" % "sbt-scala-relay" % "<version>")
   ```
 
 - `scala-relay-core` - Contains the Scala.js equivalent to relay types as well as the `@graphql` annotation which
   allows GraphQL definitions to be defined inline.
 
   ```sbt
-  libraryDependencies += "com.goodcover" %%% "scala-relay-core" % "<version>"
+  libraryDependencies += "com.goodcover.relay" %%% "scala-relay-core" % "<version>"
   ```
   
   > ℹ️ This is added automatically by `sbt-scala-relay`.
@@ -25,7 +25,7 @@ There are three parts to this:
   IDE.
 
   ```sbt
-  libraryDependencies += "com.goodcover" %%% "scala-relay-macros" % "<version>"
+  libraryDependencies += "com.goodcover.relay" %%% "scala-relay-macros" % "<version>"
   ```
 
   > ℹ️ This has to be added manually.
@@ -35,7 +35,7 @@ There are three parts to this:
 Add the `sbt-scala-relay` sbt plugin to `project/plugins.sbt`:
 
 ```sbt
-addSbtPlugin("com.goodcover" % "sbt-scala-relay" % "<version>")
+addSbtPlugin("com.goodcover.relay" % "sbt-scala-relay" % "<version>")
 ```
 
 Enable the `ScalaRelayPlugin` on your frontend project:

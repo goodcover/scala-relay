@@ -150,8 +150,8 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:higherKinds",         // Allow higher-kinded types
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
-  organization := "com.goodcover",
-  sonatypeProfileName := "com.goodcover",
+  organization := "com.goodcover.relay",
+  sonatypeProfileName := "com.goodcover.relay",
   pomExtra :=
     <developers>
       <developer>
