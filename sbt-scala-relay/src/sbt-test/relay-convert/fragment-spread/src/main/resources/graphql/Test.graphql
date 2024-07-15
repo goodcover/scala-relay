@@ -21,11 +21,27 @@ mutation TestMutation($input: ActorSubscribeInput!) {
     }
 }
 
+subscription TestSubscription($input: FeedbackLikeInput!) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+        ...Test_payload2
+        feedback {
+            ...Test_feedback
+        }
+    }
+}
+
 fragment Test_payload on ActorSubscribeResponsePayload {
     subscribee {
         address {
             ...Test_address
         }
+    }
+}
+
+fragment Test_payload2 on FeedbackLikeResponsePayload {
+    feedback {
+        ...Test_feedback
     }
 }
 
@@ -49,4 +65,8 @@ fragment Test_viewer2 on Viewer {
 fragment Test_address on StreetAddress {
     city
     country
+}
+
+fragment Test_feedback on Feedback {
+    lastName
 }

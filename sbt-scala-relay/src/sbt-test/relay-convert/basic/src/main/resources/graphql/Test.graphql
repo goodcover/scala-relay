@@ -47,5 +47,3 @@ fragment Test_fragment on Viewer {
 fragment Test_fragmentInterface on Node {
     name
 }
-
-# TODO: Subscription
