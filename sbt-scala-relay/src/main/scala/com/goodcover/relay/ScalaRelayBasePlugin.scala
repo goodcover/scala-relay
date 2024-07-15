@@ -70,9 +70,6 @@ object ScalaRelayBasePlugin extends AutoPlugin {
     val relayCompilePersist: TaskKey[Option[File]] = taskKey[Option[File]]("Compile with persisted queries")
     val relayCustomScalars: TaskKey[Map[String, String]] =
       taskKey[Map[String, String]]("translates custom scalars to scala types, **use the full path.**")
-
-    // Unset
-    val relayNpmDir: TaskKey[File] = taskKey[File]("Set the directory to the parent of node_modules")
   }
 
   import autoImport._
@@ -81,6 +78,7 @@ object ScalaRelayBasePlugin extends AutoPlugin {
     Seq(
       libraryDependencies ++= Seq("com.goodcover" %%% "scala-relay-core" % com.goodcover.relay.BuildInfo.version),
       relayDebug := false,
+      relayDisplayOnlyOnFailure := false,
       relayTypeScript := false,
       relayBaseDirectory := baseDirectory.value,
       relayWorkingDirectory := file(sys.props("user.dir")),
@@ -141,9 +139,6 @@ object ScalaRelayBasePlugin extends AutoPlugin {
       relayExclude ++= relayCompileDirectory.value.relativeTo(relayBaseDirectory.value).map(_.getPath + "/**"),
       relayExtensions := Seq.empty,
       relayPersistedPath := None,
-      // Display output only on a failure, this works well with persisted queries because they delete all the files
-      // before outputting them.
-      relayDisplayOnlyOnFailure := false,
       relayCompilePersist := relayCompilePersistTask.value,
       relayCustomScalars := Map.empty
     )
