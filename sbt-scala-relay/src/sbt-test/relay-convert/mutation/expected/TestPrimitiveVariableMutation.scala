@@ -7,23 +7,34 @@ import _root_.scala.scalajs.js.annotation.JSImport
 /*
 mutation TestPrimitiveVariableMutation($a: String!) {
     primitiveVariable(a: $a) {
-        clientMutationId
+        id
     }
 }
 */
 
-@js.native
-trait TestPrimitiveVariableMutation extends js.Object {
-  val primitiveVariable: TestPrimitiveVariableMutation.PrimitiveVariable | Null
+trait TestPrimitiveVariableMutationInput extends js.Object {
+  val a: String
 }
 
-object TestPrimitiveVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[String, TestPrimitiveVariableMutation] {
+@js.native
+trait TestPrimitiveVariableMutation extends js.Object {
+  val primitiveVariable: TestPrimitiveVariableMutation.PrimitiveVariable
+}
+
+object TestPrimitiveVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestPrimitiveVariableMutationInput, TestPrimitiveVariableMutation] {
   type Ctor[T] = T
 
   @js.native
   trait PrimitiveVariable extends js.Object {
-    val clientMutationId: String | Null
+    val id: String
   }
+
+  def newInput(
+    a: String
+  ): TestPrimitiveVariableMutationInput =
+    js.Dynamic.literal(
+      "a" -> a.asInstanceOf[js.Any]
+    ).asInstanceOf[TestPrimitiveVariableMutationInput]
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

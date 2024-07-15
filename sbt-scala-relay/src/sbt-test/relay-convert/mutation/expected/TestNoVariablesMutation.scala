@@ -7,7 +7,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 /*
 mutation TestNoVariablesMutation {
     noVariables {
-        clientMutationId
+        id
     }
 }
 */
@@ -16,7 +16,7 @@ trait TestNoVariablesMutationInput extends js.Object
 
 @js.native
 trait TestNoVariablesMutation extends js.Object {
-  val noVariables: TestNoVariablesMutation.NoVariables | Null
+  val noVariables: TestNoVariablesMutation.NoVariables
 }
 
 object TestNoVariablesMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestNoVariablesMutationInput, TestNoVariablesMutation] {
@@ -24,7 +24,7 @@ object TestNoVariablesMutation extends _root_.com.goodcover.relay.MutationTagged
 
   @js.native
   trait NoVariables extends js.Object {
-    val clientMutationId: String | Null
+    val id: String
   }
 
   def newInput(): TestNoVariablesMutationInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesMutationInput]

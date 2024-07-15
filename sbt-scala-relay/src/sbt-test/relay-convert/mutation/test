@@ -1,17 +1,17 @@
 # This should convert as expected.
 > relayConvert
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesMutation.scala TestNoVariablesMutation.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableMutation.scala TestObjectVariableMutation.expected.scala
-# TODO: Implement these remaining tests.
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableMutation.scala TestOptionalObjectVariableMutation.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala TestNestedObjectVariableMutation.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableMutation.scala TestPrimitiveVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableMutation.scala TestOptionalPrimitiveVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableMutation.scala TestListVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableMutation.scala TestOptionalListVariableMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesMutation.scala TestMultipleVariablesMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseMutation.scala TestPrimitiveResponseMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMandatoryResponseMutation.scala TestMandatoryResponseMutation.expected.scala
-#$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseMutation.scala TestListResponseMutation.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseMutation.scala expected/TestListResponseMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableMutation.scala expected/TestListVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesMutation.scala expected/TestMultipleVariablesMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala expected/TestNestedObjectVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesMutation.scala expected/TestNoVariablesMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableMutation.scala expected/TestObjectVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableMutation.scala expected/TestOptionalListVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableMutation.scala expected/TestOptionalObjectVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveResponseMutation.scala expected/TestOptionalPrimitiveResponseMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableMutation.scala expected/TestOptionalPrimitiveVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseMutation.scala expected/TestPrimitiveResponseMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableMutation.scala expected/TestPrimitiveVariableMutation.scala
 
+# FIXME: Optional inputs should be A | () | Null
 # TODO: Defaults
