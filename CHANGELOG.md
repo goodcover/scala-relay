@@ -1,5 +1,9 @@
 ## Changes
 
+### 0.43.0
+
+- Rename organization to `com.goodcover` and standardize artifact naming.
+
 ### 0.42.0
 
 - Replace the relay-compiler plugin with a sbt based generator in preparation for supporting newer relay versions that
