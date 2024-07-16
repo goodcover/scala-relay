@@ -110,11 +110,10 @@ lazy val `scala-relay-ijext` = project
     }
   )
 
-lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-})
+lazy val mavenSettings: Seq[Setting[_]] = Seq( //
+  publishMavenStyle := true,
+  publishTo := sonatypePublishToBundle.value
+)
 
 lazy val macroAnnotationSettings = Seq(
   resolvers ++= Resolver.sonatypeOssRepos("releases"),
