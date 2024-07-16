@@ -12,7 +12,7 @@ import sjsonnew._
 object GraphQLConverter {
 
   // Increment when the code changes to bust the cache.
-  private val Version = 1
+  private val Version = 2
 
   final case class Options(outputDir: File, typeMappings: Map[String, String])
 
