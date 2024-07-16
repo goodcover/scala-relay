@@ -151,7 +151,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
   organization := "com.goodcover.relay",
-  sonatypeProfileName := "com.goodcover.relay",
+  sonatypeProfileName := "com.goodcover",
   pomExtra :=
     <developers>
       <developer>
