@@ -1,0 +1,8 @@
+query TestQuery {
+  defaultSettings {
+    notificationSounds {
+      enabled
+    }
+    cache_id
+  }
+}

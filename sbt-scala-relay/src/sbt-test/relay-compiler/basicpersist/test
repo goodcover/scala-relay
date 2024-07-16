@@ -1,0 +1,16 @@
+> Compile/relayCompile
+> Compile/npmUpdate
+#$ pause
+$ exec echo "//" >> src/main/scala/example/Main.scala
+> Compile/relayCompile
+#$ pause
+$ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
+> Compile/relayCompile
+#$ pause
+$ delete src/main/scala/example/Test.scala
+$ exec echo "//" >> src/main/scala/example/Main.scala
+> show Compile/relayExtract
+> show Compile/relayWrap
+> show Compile/relayCompile
+#$ pause
+# > fastOptJS/webpack

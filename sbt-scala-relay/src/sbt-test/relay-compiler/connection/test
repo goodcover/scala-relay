@@ -1,0 +1,2 @@
+> relayCompile
+$ must-mirror target/scala-2.13/resource_managed/main/__generated__/Test_fragment.graphql.ts expected/Test_fragment.graphql.ts

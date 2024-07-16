@@ -1,0 +1,47 @@
+schema {
+    query: Query
+}
+
+scalar Foo
+
+type Query {
+    clientType(input: ClientTypeInput): ClientTypeOutput
+    primitiveVariable(a: Foo): ClientTypeOutput
+}
+
+input ClientTypeInput {
+    id: ID
+    number: Float
+    required: Foo!
+    optional: Foo
+    requiredListRequiredElements: [Foo!]!
+    requiredListOptionalElements: [Foo]!
+    optionalListRequiredElements: [Foo!]
+    optionalListOptionalElements: [Foo]
+    nested: ClientTypeNestedInput!
+}
+
+input ClientTypeNestedInput {
+    nested: Foo!
+}
+
+type ClientTypeOutput {
+    id: ID
+    number: Float
+    required: Foo!
+    optional: Foo
+    requiredListRequiredElements: [Foo!]!
+    requiredListOptionalElements: [Foo]!
+    optionalListRequiredElements: [Foo!]
+    optionalListOptionalElements: [Foo]
+    object: ClientTypeNestedObject!
+    interface: ClientTypeNestedInterface!
+}
+
+type ClientTypeNestedObject {
+    required: Foo!
+}
+
+interface ClientTypeNestedInterface {
+    required: Foo!
+}

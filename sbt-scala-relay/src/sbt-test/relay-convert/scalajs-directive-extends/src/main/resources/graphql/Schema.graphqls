@@ -1,0 +1,15 @@
+schema {
+    query: Query
+}
+
+type Query {
+    foo: Foo!
+}
+
+type Foo {
+    bar: Bar!
+}
+
+type Bar {
+    baz: String!
+}

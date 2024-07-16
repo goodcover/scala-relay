@@ -1,0 +1,3 @@
+> relayConvert
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala TestQuery.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.scala Test_fragment.expected.scala

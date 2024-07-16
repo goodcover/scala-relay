@@ -1,0 +1,18 @@
+fragment Test_node on Node {
+    no: __typename
+    moniker: name
+    content: body {
+        words: text
+        ...Test_text
+    }
+    ... on User {
+        surname: lastName
+        msg: message {
+            txt: text
+        }
+    }
+}
+
+fragment Test_text on Text {
+    gab: text
+}

@@ -1,0 +1,3 @@
+fragment Test_fragment on Node @inline {
+    name
+}

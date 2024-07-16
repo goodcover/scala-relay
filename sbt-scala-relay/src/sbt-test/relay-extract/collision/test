@@ -1,0 +1,39 @@
+# Ensure that if there are multiple sources with the same name they can extract to the same file.
+> relayExtract
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+
+# Changing a source should replace the old extract.
+$ copy-file src/main/scala/example2/Test.bak src/main/scala/example2/Test.scala
+> relayExtract
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+
+# Modifying an extract should replace the old extract from all sources.
+$ touch src/main/scala/example2/Test.scala
+> relayExtract
+$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+
+# Deleting one of the sources should replace the old extract from the remaining sources.
+$ delete src/main/scala/example2/Test.scala
+> relayExtract
+$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+
+# Adding a source with a collision should replace the old extract from all sources.
+$ copy-file src/main/scala/example2/Test.bak src/main/scala/example2/Test.scala
+> relayExtract
+$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql

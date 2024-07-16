@@ -1,0 +1,10 @@
+fragment Test_fragment on Viewer {
+    changes(first: 10) @connection(key: "Test_fragment_changes") {
+        __id
+        edges {
+            node {
+                description
+            }
+        }
+    }
+}

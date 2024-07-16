@@ -2,109 +2,76 @@ import sbtrelease.ReleaseCustom
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 
-import java.nio.file.Files
-import scala.sys.process._
-
-// Run slinky-relay-ijext/updateIntellij
+// Run scala-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
 ThisBuild / intellijBuild := "241.17890.1"
 
-lazy val root =
-  project
-    .in(file("."))
-    .settings(commonSettings)
-    .settings(PgpKeys.publishSigned := {}, publishLocal := {}, publishArtifact := false, publish := {})
-    .settings(
-      // crossScalaVersions must be set to Nil on the aggregating project
-      crossScalaVersions := Nil,
-      publish / skip := true
-    )
-    .aggregate(`sbt-relay-compiler`, `relay-macro`)
+lazy val root = project
+  .in(file("."))
+  .settings(commonSettings)
+  .settings(
+    // crossScalaVersions must be set to Nil on the aggregating project
+    crossScalaVersions := Nil,
+    publish / skip := true,
+    PgpKeys.publishSigned := {},
+    publishLocal := {},
+    publishArtifact := false,
+    publish := {}
+  )
+  .aggregate( //
+    `sbt-scala-relay`,
+    `scala-relay-core`,
+    `scala-relay-macros`
+  )
 
-def RuntimeLibPlugins = Sonatype
-def SbtPluginPlugins  = Sonatype
-
-lazy val `sbt-relay-compiler` = project
-  .in(file("sbt-plugin"))
-  .enablePlugins(SbtPluginPlugins)
-  .enablePlugins(SbtPlugin)
+lazy val `sbt-scala-relay` = project
+  .enablePlugins(SbtPlugin, BuildInfoPlugin, Sonatype)
   .settings(commonSettings ++ mavenSettings)
   .settings(
     sbtPlugin := true,
-    addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % Version.Scalajs),
-    addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2"),
+    addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
+    libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
+    buildInfoKeys := Seq[BuildInfoKey](version),
+    buildInfoPackage := "com.goodcover.relay",
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
       scriptedDependencies.value
-
-      (`relay-macro` / publishLocal).value
-
-      val rootDir     = (LocalRootProject / baseDirectory).value
-      val sourceDir   = "node-compiler"
-      val packageName = "relay-compiler-language-scalajs"
-      val cwd         = rootDir / sourceDir
-      require(Process(Seq("yarn", "install"), cwd).! == 0)
-      require(Process(Seq("yarn", "build"), cwd).! == 0)
-
-      // Create a link in each test directory to the plugin so that it will get copied into the test.
-      // Be careful of https://github.com/sbt/sbt/issues/7331.
-      val testGroups = sbtTestDirectory.value.listFiles()
-      testGroups.foreach { group =>
-        val tests = group.listFiles()
-        tests.foreach { test =>
-          val nodeModulesDir = test / "node_modules"
-          nodeModulesDir.mkdirs()
-          val link = nodeModulesDir / packageName
-          if (!link.exists()) {
-            val target = rootDir / sourceDir
-            Files.createSymbolicLink(link.toPath, target.toPath)
-          }
-        }
-      }
+      (`scala-relay-core` / publishLocal).value
+      (`scala-relay-macros` / publishLocal).value
     },
-    scalaVersion := {
-      (pluginCrossBuild / sbtBinaryVersion).value match {
-        case "0.13" => "2.10.6"
-        case _      => Version.Scala212
-      }
-    },
-    crossScalaVersions := Nil,
-    Compile / sourceGenerators += Def.task {
-      Generators.version(version.value, (Compile / sourceManaged).value)
-    }.taskValue
+    scalaVersion := Versions.Scala212,
+    crossScalaVersions := Nil
   )
 
-lazy val `relay-macro` = project
-  .in(file("relay-macro"))
-  .enablePlugins(RuntimeLibPlugins && ScalaJSPlugin)
+lazy val `scala-relay-core` = project
+  .enablePlugins(ScalaJSPlugin, Sonatype)
+  .settings(commonSettings ++ mavenSettings)
+
+lazy val `scala-relay-macros` = project
+  .enablePlugins(ScalaJSPlugin, Sonatype)
   .settings(commonSettings ++ mavenSettings)
   .settings(
+    libraryDependencies += Dependencies.ScalaReflect.value,
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
-
+      val id = (`scala-relay-ijext` / projectID).value
       IO.write(
         rootFolder / "intellij-compat.json",
-        s"""{"artifact": "${organization.value} % slinky-relay-ijext_2.13 % ${version.value}" }""".stripMargin
+        s"""{"artifact": "${id.organization} % ${id.name} % ${id.revision}" }""".stripMargin
       )
-
       Seq(rootFolder / "intellij-compat.json")
     },
-    scalacOptions ++= {
-      if (scalaJSVersion.startsWith("0.6.")) Seq("-P:scalajs:sjsDefinedByDefault")
-      else Nil
-    },
-    libraryDependencies ++= Seq(Library.scalatest, "org.scala-lang" % "scala-reflect" % scalaVersion.value),
     macroAnnotationSettings
   )
 
-lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
-  .enablePlugins(RuntimeLibPlugins && SbtIdeaPlugin)
+lazy val `scala-relay-ijext` = project
+  .enablePlugins(SbtIdeaPlugin, Sonatype)
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
   .settings(commonSettings ++ mavenSettings)
   .settings(
-    crossScalaVersions := Seq(Version.Scala213),
+    crossScalaVersions := Seq(Versions.Scala213),
     intellijPluginName := name.value,
     intellijPlugins ++= Seq("org.intellij.scala".toPlugin),
     intellijBuild := (ThisBuild / intellijBuild).value,
@@ -125,7 +92,7 @@ lazy val `slinky-relay-ijext` = (project in file("slinky-relay-ijext"))
           |<!DOCTYPE intellij-compat PUBLIC "Plugin/DTD"
           |        "https://raw.githubusercontent.com/JetBrains/intellij-scala/idea183.x/scala/scala-impl/src/org/jetbrains/plugins/scala/components/libextensions/intellij-compat.dtd">
           |<intellij-compat>
-          |    <name>Slinky Relay Intellij Support</name>
+          |    <name>Scala Relay Intellij Support</name>
           |    <description>Expands Slinky relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
@@ -152,18 +119,18 @@ lazy val mavenSettings: Seq[Setting[_]] = Seq(publishMavenStyle := true, publish
 lazy val macroAnnotationSettings = Seq(
   resolvers ++= Resolver.sonatypeOssRepos("releases"),
   scalacOptions ++= {
-    if (scalaVersion.value == Version.Scala213) Seq("-Ymacro-annotations")
+    if (scalaVersion.value == Versions.Scala213) Seq("-Ymacro-annotations")
     else Seq("-Xfuture")
   },
   libraryDependencies ++= {
-    if (scalaVersion.value == Version.Scala213) Seq.empty
+    if (scalaVersion.value == Versions.Scala213) Seq.empty
     else Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
   }
 )
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := Version.Scala213,
-  crossScalaVersions := Seq(Version.Scala213),
+  scalaVersion := Versions.Scala213,
+  crossScalaVersions := Seq(Versions.Scala213),
   scalacOptions ++= Seq(
     "-feature",
     "-deprecation",
@@ -183,21 +150,26 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:higherKinds",         // Allow higher-kinded types
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
-  organization := "com.dispalt.relay",  // TODO - Coordinates
-  sonatypeProfileName := "com.dispalt", // TODO - Coordinates
+  organization := "com.goodcover.relay",
+  sonatypeProfileName := "com.goodcover.relay",
   pomExtra :=
     <developers>
-        <developer>
-          <id>dispalt</id>
-          <name>Dan Di Spaltro</name>
-          <url>http://dispalt.com</url>
-        </developer>
-        <developer>
-          <id>kolarm</id>
-          <name>Marko Kolar</name>
-          <url>https://github.com/kolarm</url>
-        </developer>
-      </developers>,
+      <developer>
+        <id>dispalt</id>
+        <name>Dan Di Spaltro</name>
+        <url>http://dispalt.com</url>
+      </developer>
+      <developer>
+        <id>kolarm</id>
+        <name>Marko Kolar</name>
+        <url>https://github.com/kolarm</url>
+      </developer>
+      <developer>
+        <id>steinybot</id>
+        <name>Jason Pickens</name>
+        <url>https://github.com/steinybot</url>
+      </developer>
+    </developers>,
   homepage := Some(url(s"https://github.com/goodcover/scala-relay")),
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
@@ -215,18 +187,17 @@ releaseProcess :=
     inquireVersions,
     runClean,
     releaseStepCommandAndRemaining("+ test"),
-    releaseStepCommandAndRemaining(";+ slinky-relay-ijext/updateIntellij ;+ slinky-relay-ijext/test"),
+    releaseStepCommandAndRemaining(";+ scala-relay-ijext/updateIntellij ;+ scala-relay-ijext/test"),
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+ publishSigned"),
-    releaseStepCommandAndRemaining("^ sbt-relay-compiler/publishSigned"),
-    releaseStepCommandAndRemaining("+ slinky-relay-ijext/publishSigned"),
+    releaseStepCommandAndRemaining("^ sbt-scala-relay/publishSigned"),
+    releaseStepCommandAndRemaining("+ scala-relay-ijext/publishSigned"),
     releaseStepCommandAndRemaining("sonatypeReleaseAll"),
-    ReleaseCustom.doReleaseYarn,
     setNextVersion,
     ReleaseCustom.commitNextVersion,
     pushChanges
   )
 
-addCommandAlias("publishLocalAll", ";publishLocal ;slinky-relay-ijext/publishLocal")
+addCommandAlias("publishLocalAll", ";publishLocal ;scala-relay-ijext/publishLocal")

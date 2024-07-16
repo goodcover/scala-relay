@@ -1,0 +1,72 @@
+mutation TestNoVariablesMutation {
+    noVariables {
+        clientMutationId
+    }
+}
+
+mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
+    actorSubscribe(input: $input) {
+        clientMutationId
+        subscribee {
+            id
+            address {
+                city
+                country
+            }
+        }
+    }
+}
+
+mutation TestOptionalObjectVariableMutation($input: ActorSubscribeInput) {
+    actorSubscribe(input: $input) {
+        clientMutationId
+    }
+}
+
+mutation TestNestedObjectVariableMutation($input: CommentCreateInput) {
+    commentCreate(input: $input) {
+        clientMutationId
+    }
+}
+
+mutation TestPrimitiveVariableMutation($a: String!) {
+    primitiveVariable(a: $a) {
+        clientMutationId
+    }
+}
+
+mutation TestOptionalPrimitiveVariableMutation($a: String) {
+    primitiveVariable(a: $a) {
+        clientMutationId
+    }
+}
+
+mutation TestListVariableMutation($as: [String]!) {
+    listVariable(as: $as) {
+        clientMutationId
+    }
+}
+
+mutation TestOptionalListVariableMutation($as: [String]) {
+    listVariable(as: $as) {
+        clientMutationId
+    }
+}
+
+mutation TestMultipleVariablesMutation($a: String!, $b: String!) {
+    multipleVariables(a: $a, b: $b) {
+        clientMutationId
+    }
+}
+
+mutation TestPrimitiveResponseMutation($a: String) {
+    primitiveResponse(a: $a)
+}
+
+mutation TestMandatoryResponseMutation($a: String) {
+    mandatoryResponse(a: $a)
+}
+
+mutation TestListResponseMutation($a: String) {
+    listResponse(a: $a)
+}

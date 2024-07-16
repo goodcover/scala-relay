@@ -1,0 +1,11 @@
+schema {
+    query: Query
+}
+
+type Query {
+
+}
+
+type Node {
+    name: String!
+}

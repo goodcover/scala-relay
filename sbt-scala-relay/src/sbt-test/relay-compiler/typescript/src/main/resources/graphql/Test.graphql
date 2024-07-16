@@ -1,0 +1,65 @@
+query TestNoVariablesQuery {
+    noVariables {
+        id
+    }
+}
+
+query TestObjectVariableQuery($input: Input!) {
+    objectVariable(input: $input) {
+        id
+    }
+}
+
+query TestOptionalObjectVariableQuery($input: Input) {
+    objectVariable(input: $input) {
+        id
+    }
+}
+
+query TestNestedObjectVariableQuery($nested: Nested) {
+    nestedObjectVariable(nested: $nested) {
+        id
+    }
+}
+
+query TestPrimitiveVariableQuery($a: String!) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}
+
+query TestOptionalPrimitiveVariableQuery($a: String) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}
+
+query TestListVariableQuery($as: [String!]!) {
+    listVariable(as: $as) {
+        id
+    }
+}
+
+query TestOptionalListVariableQuery($as: [String!]) {
+    listVariable(as: $as) {
+        id
+    }
+}
+
+query TestMultipleVariablesQuery($a: String!, $b: String!) {
+    multipleVariables(a: $a, b: $b) {
+        id
+    }
+}
+
+query TestPrimitiveResponseQuery($a: String!) {
+    primitiveResponse(a: $a)
+}
+
+query TestOptionalPrimitiveResponseQuery($a: String!) {
+    optionalPrimitiveResponse(a: $a)
+}
+
+query TestListResponseQuery($a: String!) {
+    listResponse(a: $a)
+}

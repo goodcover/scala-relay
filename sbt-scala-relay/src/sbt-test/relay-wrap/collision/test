@@ -1,0 +1,39 @@
+# Ensure that if there are multiple resources with the same name they can extract to the same file.
+> relayWrap
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+
+# Changing a resource should replace the old wrapper.
+$ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
+> relayWrap
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ copy-file target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+
+# Modifying a wrapper should replace the old wrapper from all resources.
+$ touch src/main/scala/example/Test.scala
+> relayWrap
+$ newer target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ copy-file target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+
+# Deleting one of the resources should replace the old wrapper from the remaining resources.
+$ delete src/main/scala/example/Test.scala
+> relayWrap
+$ newer target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ copy-file target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+
+# Adding a resource with a collision should replace the old wrapper from all resources.
+$ copy-file src/main/scala/example/Test.bak src/main/scala/example/Test.scala
+> relayWrap
+$ newer target/scala-2.13/resource_managed/main/relay/js/Test.js js/Test.js
+$ exec grep 'query TestQuery' target/scala-2.13/resource_managed/main/relay/js/Test.js
+-$ exec grep 'query Test2Query' target/scala-2.13/resource_managed/main/relay/js/Test.js
+$ exec grep 'query Test3Query' target/scala-2.13/resource_managed/main/relay/js/Test.js

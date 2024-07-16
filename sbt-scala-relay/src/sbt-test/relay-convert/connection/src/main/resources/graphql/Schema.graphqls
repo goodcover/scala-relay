@@ -1,0 +1,32 @@
+schema {
+    query: Query
+}
+
+type Query {
+    viewer: Viewer
+}
+
+type Viewer {
+    changes(before: String, after: String, first: Int, last: Int): ChangesConnection!
+}
+
+type ChangesConnection {
+    pageInfo: PageInfo!
+    edges: [ChangeEdge!]!
+}
+
+type ChangeEdge {
+    cursor: String!
+    node: Change!
+}
+
+type Change {
+    description: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}

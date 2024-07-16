@@ -1,5 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="relay-compiler scalajs" type="NodeJSConfigurationType" node-parameters="./node_modules/.bin/relay-compiler --language scalajs --schema ./schema.graphql --src src/ --artifactDirectory target/ --customScalars.Protobuf=com.pack.Class" working-dir="$PROJECT_DIR$/node-example">
-    <method v="2" />
-  </configuration>
-</component>

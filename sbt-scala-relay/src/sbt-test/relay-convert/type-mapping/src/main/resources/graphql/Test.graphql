@@ -1,0 +1,41 @@
+query TestQuery($input: ClientTypeInput!) {
+    clientType(input: $input) {
+        id
+        number
+        required
+        optional
+        requiredListRequiredElements
+        requiredListOptionalElements
+        optionalListRequiredElements
+        optionalListOptionalElements
+        object {
+            required
+        }
+        interface {
+            required
+        }
+    }
+}
+
+fragment Test_fragment on ClientTypeOutput {
+    id
+    number
+    required
+    optional
+    requiredListRequiredElements
+    requiredListOptionalElements
+    optionalListRequiredElements
+    optionalListOptionalElements
+    object {
+        required
+    }
+    interface {
+        required
+    }
+}
+
+query TestPrimitiveVariableQuery($a: String!) {
+    primitiveVariable(a: $a) {
+        id
+    }
+}

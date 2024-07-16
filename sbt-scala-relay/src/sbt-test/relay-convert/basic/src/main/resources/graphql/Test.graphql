@@ -1,0 +1,49 @@
+# Extracted from src/main/scala/example/Test.scala
+# This is rad!
+query TestQuery {
+    viewer {
+        actor {
+            id
+            address {
+                city
+                country
+            }
+        }
+        allTimezones {
+            timezone
+        }
+    }
+}
+
+mutation TestMutation($input: ActorSubscribeInput!) {
+    actorSubscribe(input: $input) {
+        clientMutationId
+        subscribee {
+            id
+            address {
+                city
+                country
+            }
+        }
+    }
+}
+
+subscription TestSubscription($input: FeedbackLikeInput!) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+    }
+}
+
+fragment Test_fragment on Viewer {
+    actor {
+        id
+        address {
+            city
+            country
+        }
+    }
+}
+
+fragment Test_fragmentInterface on Node {
+    name
+}

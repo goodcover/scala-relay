@@ -1,0 +1,5 @@
+fragment Test_fragment on Foo {
+    bar @scalajs(extends: "ThingamyWhatsit") {
+        baz
+    }
+}

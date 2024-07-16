@@ -1,0 +1,49 @@
+fragment Test_fragment on Query @refetchable(queryName: "NoArgs") {
+    foo {
+        bar
+    }
+}
+
+fragment Test_fragment2 on Query @refetchable(queryName: "Args") {
+    oneArg(a: $b) {
+        bar
+    }
+}
+
+fragment Test_fragment3 on Query @refetchable(queryName: "NestedArgs") {
+    foo {
+        args {
+            oneArg(a: $b) {
+                bar
+            }
+        }
+    }
+}
+
+fragment Test_fragment4 on Query @refetchable(queryName: "ObjectArgs") {
+    objArg(thing: $thing) {
+        bar
+    }
+}
+
+fragment Test_fragment5 on ImplicitNode @refetchable(queryName: "ImplicitNodeArgs") {
+    name
+}
+
+fragment Test_args on Args {
+    oneArg(a: $b) {
+        bar
+    }
+}
+
+fragment Test_fragment6 on Query @refetchable(queryName: "ArgsOfSpread") {
+    foo {
+        args {
+            ...Test_args
+        }
+    }
+}
+
+fragment Test_viewer on Viewer @refetchable(queryName: "ViewerQuery") {
+    name
+}

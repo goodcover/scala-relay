@@ -1,0 +1,42 @@
+schema {
+    query: Query
+}
+
+type Query {
+    foo: Foo!
+    oneArg(a: String): Foo!
+    objArg(thing: Thing): Foo!
+    node(nodeID: ID!): Node
+    viewer: Viewer
+}
+
+interface Node {
+  id: ID!
+}
+
+type Foo {
+    bar: String
+    args: Args
+}
+
+type Args {
+    oneArg(a: String): Foo!
+    objArg(thing: Thing): Foo!
+}
+
+input Thing {
+    stuff: Stuff!
+}
+
+input Stuff {
+    junk: String
+}
+
+interface ImplicitNode {
+    id: ID!
+    name: String!
+}
+
+type Viewer {
+    name: String!
+}

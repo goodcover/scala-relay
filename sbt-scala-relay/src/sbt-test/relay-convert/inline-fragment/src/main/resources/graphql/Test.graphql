@@ -1,0 +1,32 @@
+fragment Test_node on Node {
+    __typename
+    ... on User {
+        name
+    }
+    ... on Page {
+        name
+        actor {
+            __typename
+            id
+            ... on User {
+                name
+                ...Test_user
+            }
+        }
+    }
+}
+
+fragment Test_user on User {
+    message
+}
+
+query TestQuery {
+    maybeNode {
+        __typename
+        ... on Story {
+            author {
+                lastName
+            }
+        }
+    }
+}

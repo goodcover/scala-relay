@@ -1,0 +1,6 @@
+# This should convert as expected.
+> relayConvert
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala TestQuery.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMutation.scala TestMutation.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestSubscription.scala TestSubscription.expected.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_viewer.scala Test_viewer.expected.scala

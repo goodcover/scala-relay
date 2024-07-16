@@ -1,0 +1,17 @@
+# This should convert as expected.
+> relayConvert
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListResponseQuery.scala expected/TestListResponseQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableQuery.scala expected/TestListVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesQuery.scala expected/TestMultipleVariablesQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableQuery.scala expected/TestNestedObjectVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesQuery.scala expected/TestNoVariablesQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableQuery.scala expected/TestObjectVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableQuery.scala expected/TestOptionalListVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalObjectVariableQuery.scala expected/TestOptionalObjectVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveResponseQuery.scala expected/TestOptionalPrimitiveResponseQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalPrimitiveVariableQuery.scala expected/TestOptionalPrimitiveVariableQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveResponseQuery.scala expected/TestPrimitiveResponseQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestPrimitiveVariableQuery.scala expected/TestPrimitiveVariableQuery.scala
+
+# FIXME: Optional inputs should be A | () | Null
+# TODO: Defaults

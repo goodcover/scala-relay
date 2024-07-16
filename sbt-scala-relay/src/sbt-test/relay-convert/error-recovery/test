@@ -1,0 +1,6 @@
+# Make sure that we can recover from errors.
+# If done incorrectly, the partial file from the previous failed run can cause the collision
+# detection to report a false positive.
+-> relayConvert
+$ copy-file src/main/resources/graphql/Test.graphql.bak src/main/resources/graphql/Test.graphql
+> relayConvert

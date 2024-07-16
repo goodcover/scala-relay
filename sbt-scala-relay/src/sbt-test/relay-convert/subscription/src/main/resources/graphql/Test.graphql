@@ -1,0 +1,65 @@
+subscription TestNoVariablesSubscription {
+    noVariables {
+        clientSubscriptionId
+    }
+}
+
+subscription TestObjectVariableSubscription($input: FeedbackLikeInput!) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestOptionalObjectVariableSubscription($input: ActorSubscribeInput) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestNestedObjectVariableSubscription($input: CommentCreateInput) {
+    commentCreateSubscribe(input: $input) {
+        clientMutationId
+    }
+}
+
+subscription TestPrimitiveVariableSubscription($a: String!) {
+    primitiveVariable(a: $a) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestOptionalPrimitiveVariableSubscription($a: String) {
+    primitiveVariable(a: $a) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestListVariableSubscription($as: [String]!) {
+    listVariable(as: $as) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestOptionalListVariableSubscription($as: [String]) {
+    listVariable(as: $as) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestMultipleVariablesSubscription($a: String!, $b: String!) {
+    multipleVariables(a: $a, b: $b) {
+        clientSubscriptionId
+    }
+}
+
+subscription TestPrimitiveResponseSubscription($a: String) {
+    primitiveResponse(a: $a)
+}
+
+subscription TestMandatoryResponseSubscription($a: String) {
+    mandatoryResponse(a: $a)
+}
+
+subscription TestListResponseSubscription($a: String) {
+    listResponse(a: $a)
+}

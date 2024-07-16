@@ -1,0 +1,72 @@
+query TestQuery {
+    viewer {
+        ...Test_viewer
+        actor {
+            address {
+                ...Test_address
+            }
+        }
+    }
+}
+
+mutation TestMutation($input: ActorSubscribeInput!) {
+    actorSubscribe(input: $input) {
+        clientMutationId
+        ...Test_payload
+        subscribee {
+            address {
+                ...Test_address
+            }
+        }
+    }
+}
+
+subscription TestSubscription($input: FeedbackLikeInput!) {
+    feedbackLikeSubscribe(input: $input) {
+        clientSubscriptionId
+        ...Test_payload2
+        feedback {
+            ...Test_feedback
+        }
+    }
+}
+
+fragment Test_payload on ActorSubscribeResponsePayload {
+    subscribee {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_payload2 on FeedbackLikeResponsePayload {
+    feedback {
+        ...Test_feedback
+    }
+}
+
+fragment Test_viewer on Viewer {
+    ...Test_viewer2
+    actor {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_viewer2 on Viewer {
+    actor {
+        address {
+            ...Test_address
+        }
+    }
+}
+
+fragment Test_address on StreetAddress {
+    city
+    country
+}
+
+fragment Test_feedback on Feedback {
+    lastName
+}

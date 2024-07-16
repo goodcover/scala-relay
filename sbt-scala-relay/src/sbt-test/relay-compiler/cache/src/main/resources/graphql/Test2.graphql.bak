@@ -1,0 +1,5 @@
+query Test2Query {
+  defaultSettings {
+    notificationSounds
+  }
+}

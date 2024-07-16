@@ -1,0 +1,31 @@
+query TestQuery($input: ClientTypeInput!) {
+    clientType(input: $input) {
+        required
+        optional
+        requiredListRequiredElements
+        requiredListOptionalElements
+        optionalListRequiredElements
+        optionalListOptionalElements
+        object {
+            required
+        }
+        interface {
+            required
+        }
+    }
+}
+
+fragment Test_fragment on ClientTypeOutput {
+    required
+    optional
+    requiredListRequiredElements
+    requiredListOptionalElements
+    optionalListRequiredElements
+    optionalListOptionalElements
+    object {
+        required
+    }
+    interface {
+        required
+    }
+}

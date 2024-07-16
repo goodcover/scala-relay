@@ -1,0 +1,12 @@
+package example
+
+@graphql("""
+    query TestQuery2 {
+      defaultSettings {
+        notificationSounds
+      }
+    }
+  """)
+object Test2 {
+
+}

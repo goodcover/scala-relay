@@ -1,0 +1,76 @@
+# Create the caches.
+> relayExtract
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/last cache/last
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/sources cache/sources
+$ copy-file target/streams/compile/relayExtract/_global/streams/relay/extract/outputs cache/outputs
+
+# Running again should do nothing.
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/last cache/last
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/sources cache/sources
+$ must-mirror target/streams/compile/relayExtract/_global/streams/relay/extract/outputs cache/outputs
+
+# Changing the version should re-extract everything.
+$ exec ./replace-version.sh
+> relayExtract
+$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
+
+# Changing the output directory should re-extract everything.
+> set relayExtractDirectory in Compile := file("target/scala-2.13/resource_managed/main/relay/graphql2")
+> relayExtract
+$ absent target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
+$ absent target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+
+# Removing a source should delete its extract.
+$ exec mv src/main/scala/example/Test2.scala src/main/scala/example/Test2.bak
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ absent target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+
+# Adding a source should extract it.
+$ exec mv src/main/scala/example/Test2.bak src/main/scala/example/Test2.scala
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+
+# Modifying a source should extract it.
+$ copy-file src/main/scala/example/Test2.scala.bak src/main/scala/example/Test2.scala
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+-$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ copy-file target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+
+# Deleting an extract should extract it.
+$ delete target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+
+# Modifying an extract should re-extract it.
+$ touch target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql
+> relayExtract
+-$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test.graphql graphql/Test.graphql
+$ newer target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql
+$ must-mirror target/scala-2.13/resource_managed/main/relay/graphql2/Test2.graphql graphql/Test2.graphql

@@ -1,0 +1,28 @@
+module.exports = {
+  "entry": {
+    "b-fastopt": [`${PWD}/target/scala-2.13/scalajs-bundler/main/b-fastopt.js`]
+  },
+  "output": {
+    "path": "${PWD}/target/scala-2.13/scalajs-bundler/main",
+    "filename": "[name]-bundle.js"
+  },
+  "mode": "development",
+  "devServer": {
+    "port": 8080
+  },
+  "devtool": "source-map",
+  "module": {
+    "rules": [{
+      "test": new RegExp("\\.js$"),
+      "enforce": "pre",
+      "use": ["source-map-loader"]
+    }]
+  },
+  "resolve": {
+    "modules": [
+        "node_modules",
+        "${PWD}/target/scala-2.13/resource_managed/main",
+        "${PWD}/../a/target/scala-2.13/resource_managed/main"
+    ]
+  }
+}

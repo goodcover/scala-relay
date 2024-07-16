@@ -1,0 +1,5 @@
+fragment StoryComponent_story on Story {
+    body {
+        text
+    }
+}

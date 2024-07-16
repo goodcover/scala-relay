@@ -1,0 +1,32 @@
+> b/fastOptJS/webpack
+
+$ exists a/target/scala-2.13/resource_managed/main/relay/graphql/TaskComponent.graphql
+-$ exists b/target/scala-2.13/resource_managed/main/relay/graphql/TaskComponent.graphql
+
+$ exists a/target/scala-2.13/resource_managed/main/relay/js/TaskComponent.js
+$ exists a/target/scala-2.13/resource_managed/main/relay/js/StoryComponent.js
+-$ exists b/target/scala-2.13/resource_managed/main/relay/js/TaskComponent.js
+-$ exists b/target/scala-2.13/resource_managed/main/relay/js/StoryComponent.js
+
+$ exists a/target/scala-2.13/resource_managed/main/__generated__/TaskComponent_task.graphql.js
+$ exists a/target/scala-2.13/resource_managed/main/__generated__/StoryComponent_story.graphql.js
+-$ exists b/target/scala-2.13/resource_managed/main/__generated__/TaskComponent_task.graphql.js
+-$ exists b/target/scala-2.13/resource_managed/main/__generated__/StoryComponent_story.graphql.js
+
+$ exists a/target/scala-2.13/src_managed/main/relay/generated/TaskComponent_task.scala
+$ exists a/target/scala-2.13/src_managed/main/relay/generated/StoryComponent_story.scala
+-$ exists b/target/scala-2.13/src_managed/main/relay/generated/TaskComponent_task.scala
+-$ exists b/target/scala-2.13/src_managed/main/relay/generated/StoryComponent_story.scala
+
+
+$ exists b/target/scala-2.13/resource_managed/main/relay/graphql/Main.graphql
+
+$ exists b/target/scala-2.13/resource_managed/main/relay/js/Main.js
+
+$ exists b/target/scala-2.13/resource_managed/main/__generated__/MainQuery.graphql.js
+$ exists b/target/scala-2.13/resource_managed/main/__generated__/Main_fragment.graphql.js
+$ exists b/target/scala-2.13/resource_managed/main/__generated__/Main_fragment_Query.graphql.js
+
+$ exists b/target/scala-2.13/src_managed/main/relay/generated/MainQuery.scala
+$ exists b/target/scala-2.13/src_managed/main/relay/generated/Main_fragment.scala
+$ exists b/target/scala-2.13/src_managed/main/relay/generated/Main_fragment_Query.scala
