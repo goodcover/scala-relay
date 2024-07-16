@@ -2,7 +2,7 @@
 
 ### 0.43.0
 
-- Rename organization to `com.goodcover` and standardize artifact naming.
+- Rename organization and package to `com.goodcover.relay` and standardize artifact naming.
 
 ### 0.42.0
 
