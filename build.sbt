@@ -194,7 +194,7 @@ releaseProcess :=
     releaseStepCommandAndRemaining("+ publishSigned"),
     releaseStepCommandAndRemaining("^ sbt-scala-relay/publishSigned"),
     releaseStepCommandAndRemaining("+ scala-relay-ijext/publishSigned"),
-    releaseStepCommandAndRemaining("sonatypeReleaseAll"),
+    releaseStepCommandAndRemaining("sonatypeBundleRelease"),
     setNextVersion,
     ReleaseCustom.commitNextVersion,
     pushChanges
