@@ -93,12 +93,12 @@ lazy val `scala-relay-ijext` = project
           |        "https://raw.githubusercontent.com/JetBrains/intellij-scala/idea183.x/scala/scala-impl/src/org/jetbrains/plugins/scala/components/libextensions/intellij-compat.dtd">
           |<intellij-compat>
           |    <name>Scala Relay Intellij Support</name>
-          |    <description>Expands Slinky relay macros</description>
+          |    <description>Expands scala-relay macros</description>
           |    <version>${version.value}</version>
           |    <vendor>Goodcover</vendor>
           |    <ideaVersion since-build="2020.3.0" until-build="2028.1.0">
           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
-          |             implementation="slinkyrelay.GraphQLGenInjector">
+          |             implementation="com.goodcover.relay.GraphQLGenInjector">
           |            <name>graphqlGen whitebox mac library Support</name>
           |            <description>Support for graphqlGen macro</description>
           |        </extension>
