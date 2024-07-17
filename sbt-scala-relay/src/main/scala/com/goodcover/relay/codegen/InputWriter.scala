@@ -3,7 +3,7 @@ package com.goodcover.relay.codegen
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{InputObjectTypeDefinition, InputValueDefinition}
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, OperationType, Type, VariableDefinition}
+import caliban.parsing.adt.{Directive, Type, VariableDefinition}
 import com.goodcover.relay.GraphQLSchema
 import com.goodcover.relay.codegen.InputWriter.OperationInput
 
@@ -21,37 +21,10 @@ class InputWriter(
 
   private val operationName: String = DocumentWriter.getOperationName(operation)
 
-  private val operationInput: Either[VariableDefinition, OperationInput] =
-    operation.operationType match {
-      case OperationType.Mutation => mutationInput
-      case _                      => nonMutationInput
-    }
+  private val operationInput: OperationInput =
+    OperationInput.fromVariables(operation.variableDefinitions)
 
-  private def nonMutationInput: Either[VariableDefinition, OperationInput] =
-    Right(OperationInput.fromVariables(operation.variableDefinitions))
-
-  // FIXME: Stop doing this. The outer type is not superfluous. The input type is the thing that is superfluous so stop
-  //  doing that if you don't want the double wrapping.
-  private def mutationInput: Either[VariableDefinition, OperationInput] =
-    operation.variableDefinitions match {
-      case Nil => Right(OperationInput(Nil))
-      case variable :: Nil =>
-        schema.inputObjectTypes
-          .get(innerType(variable.variableType))
-          .map { obj =>
-            if (variable.defaultValue.nonEmpty) {
-              throw new UnsupportedOperationException(
-                "A single input object variable to a mutation cannot have a default value."
-              )
-            }
-            OperationInput(obj.fields)
-          }
-          .toRight(variable)
-      case variables => Right(OperationInput.fromVariables(variables))
-    }
-
-  val operationInputName: String =
-    operationInput.fold(single => innerType(single.variableType), _ => operationName + "Input")
+  val operationInputName: String = operationName + "Input"
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
   def writeOperationInputTypes(): Unit = {
@@ -74,10 +47,9 @@ class InputWriter(
       }
     }
 
-    operationInput.foreach { input =>
-      writeOperationInputType(input)
-      loop(input.parameters.map(parameter => innerType(parameter.ofType)).toSet, Set.empty)
-    }
+    writeOperationInputType(operationInput)
+
+    loop(operationInput.parameters.map(parameter => innerType(parameter.ofType)).toSet, Set.empty)
   }
 
   // TODO: Don't do this. We should create the input types from the schema and share them.
@@ -114,11 +86,10 @@ class InputWriter(
   private def writeInputApplyMethod(input: InputObjectTypeDefinition): Unit =
     writeInputFactoryMethod("apply", input.fields, operationName + input.name, compact = true)
 
-  def writeNewInputMethod(): Unit =
-    operationInput.foreach { input =>
-      val parameters = input.parameters
-      writeInputFactoryMethod("newInput", parameters, operationInputName, compact = false)
-    }
+  def writeNewInputMethod(): Unit = {
+    val parameters = operationInput.parameters
+    writeInputFactoryMethod("newInput", parameters, operationInputName, compact = false)
+  }
 
   private def writeInputFactoryMethod(
     name: String,

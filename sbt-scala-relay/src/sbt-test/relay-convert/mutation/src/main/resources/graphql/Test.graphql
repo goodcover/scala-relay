@@ -1,72 +1,65 @@
 mutation TestNoVariablesMutation {
     noVariables {
-        clientMutationId
+        id
     }
 }
 
-mutation TestObjectVariableMutation($input: ActorSubscribeInput!) {
-    actorSubscribe(input: $input) {
-        clientMutationId
-        subscribee {
-            id
-            address {
-                city
-                country
-            }
-        }
+mutation TestObjectVariableMutation($input: Input!) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-mutation TestOptionalObjectVariableMutation($input: ActorSubscribeInput) {
-    actorSubscribe(input: $input) {
-        clientMutationId
+mutation TestOptionalObjectVariableMutation($input: Input) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-mutation TestNestedObjectVariableMutation($input: CommentCreateInput) {
-    commentCreate(input: $input) {
-        clientMutationId
+mutation TestNestedObjectVariableMutation($nested: Nested) {
+    nestedObjectVariable(nested: $nested) {
+        id
     }
 }
 
 mutation TestPrimitiveVariableMutation($a: String!) {
     primitiveVariable(a: $a) {
-        clientMutationId
+        id
     }
 }
 
 mutation TestOptionalPrimitiveVariableMutation($a: String) {
     primitiveVariable(a: $a) {
-        clientMutationId
+        id
     }
 }
 
-mutation TestListVariableMutation($as: [String]!) {
+mutation TestListVariableMutation($as: [String!]!) {
     listVariable(as: $as) {
-        clientMutationId
+        id
     }
 }
 
-mutation TestOptionalListVariableMutation($as: [String]) {
+mutation TestOptionalListVariableMutation($as: [String!]) {
     listVariable(as: $as) {
-        clientMutationId
+        id
     }
 }
 
 mutation TestMultipleVariablesMutation($a: String!, $b: String!) {
     multipleVariables(a: $a, b: $b) {
-        clientMutationId
+        id
     }
 }
 
-mutation TestPrimitiveResponseMutation($a: String) {
+mutation TestPrimitiveResponseMutation($a: String!) {
     primitiveResponse(a: $a)
 }
 
-mutation TestMandatoryResponseMutation($a: String) {
-    mandatoryResponse(a: $a)
+mutation TestOptionalPrimitiveResponseMutation($a: String!) {
+    optionalPrimitiveResponse(a: $a)
 }
 
-mutation TestListResponseMutation($a: String) {
+mutation TestListResponseMutation($a: String!) {
     listResponse(a: $a)
 }

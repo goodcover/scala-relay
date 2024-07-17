@@ -1,5 +1,9 @@
 ## Changes
 
+### 0.44.0
+
+- Remove unwrapping of mutation inputs.
+
 ### 0.43.0
 
 - Rename organization and package to `com.goodcover.relay` and standardize artifact naming.

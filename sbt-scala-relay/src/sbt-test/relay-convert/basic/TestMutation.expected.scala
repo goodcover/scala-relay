@@ -20,8 +20,23 @@ mutation TestMutation($input: ActorSubscribeInput!) {
 */
 
 trait TestMutationInput extends js.Object {
+  val input: TestMutationActorSubscribeInput
+}
+
+trait TestMutationActorSubscribeInput extends js.Object {
   val clientMutationId: String | Null
   val subscribeeId: String | Null
+}
+
+object TestMutationActorSubscribeInput {
+  def apply(
+    clientMutationId: String | Null = null,
+    subscribeeId: String | Null = null
+  ): TestMutationActorSubscribeInput =
+    js.Dynamic.literal(
+      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
+      "subscribeeId" -> subscribeeId.asInstanceOf[js.Any]
+    ).asInstanceOf[TestMutationActorSubscribeInput]
 }
 
 @js.native
@@ -51,12 +66,10 @@ object TestMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestMu
   }
 
   def newInput(
-    clientMutationId: String | Null = null,
-    subscribeeId: String | Null = null
+    input: TestMutationActorSubscribeInput
   ): TestMutationInput =
     js.Dynamic.literal(
-      "clientMutationId" -> clientMutationId.asInstanceOf[js.Any],
-      "subscribeeId" -> subscribeeId.asInstanceOf[js.Any]
+      "input" -> input.asInstanceOf[js.Any]
     ).asInstanceOf[TestMutationInput]
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
