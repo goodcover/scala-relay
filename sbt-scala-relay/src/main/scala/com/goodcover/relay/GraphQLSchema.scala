@@ -11,7 +11,7 @@ import sbt._
 
 import java.nio.charset.StandardCharsets
 
-class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
+class GraphQLSchema(val file: File, val document: Document, additional: Seq[Document]) {
 
   // See https://spec.graphql.org/October2021.
 
@@ -54,6 +54,14 @@ class GraphQLSchema(file: File, document: Document, additional: Seq[Document]) {
 
   def unionType(name: String): TypeDefinition.UnionTypeDefinition =
     unionTypes.getOrElse(name, throw invalidSchema(s"Missing union $name."))
+
+  lazy val scalarTypes: Map[String, TypeDefinition.ScalarTypeDefinition] =
+    additional.foldLeft(document.scalarTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.scalarTypeDefinitions.map(d => d.name    -> d)
+    }
+
+  def scalarType(name: String): TypeDefinition.ScalarTypeDefinition =
+    scalarTypes.getOrElse(name, throw invalidSchema(s"Missing scalar $name."))
 
   lazy val enumTypes: Map[String, TypeDefinition.EnumTypeDefinition] =
     additional.foldLeft(document.enumTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>

@@ -13,32 +13,15 @@ query TestNestedObjectVariableQuery($nested: Nested) {
 */
 
 trait TestNestedObjectVariableQueryInput extends js.Object {
-  val nested: TestNestedObjectVariableQueryNested | Null
-}
-
-trait TestNestedObjectVariableQueryNested extends js.Object {
-  val input: TestNestedObjectVariableQueryInput
-}
-
-object TestNestedObjectVariableQueryNested {
-  def apply(
-    input: TestNestedObjectVariableQueryInput
-  ): TestNestedObjectVariableQueryNested =
-    js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
-    ).asInstanceOf[TestNestedObjectVariableQueryNested]
-}
-
-trait TestNestedObjectVariableQueryInput extends js.Object {
-  val a: String
+  val nested: Nested | Null
 }
 
 object TestNestedObjectVariableQueryInput {
   def apply(
-    a: String
+    nested: Nested | Null = null
   ): TestNestedObjectVariableQueryInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      nested = nested
     ).asInstanceOf[TestNestedObjectVariableQueryInput]
 }
 
@@ -56,11 +39,11 @@ object TestNestedObjectVariableQuery extends _root_.com.goodcover.relay.QueryTag
   }
 
   def newInput(
-    nested: TestNestedObjectVariableQueryNested | Null = null
-  ): TestNestedObjectVariableQueryInput =
-    js.Dynamic.literal(
-      "nested" -> nested.asInstanceOf[js.Any]
-    ).asInstanceOf[TestNestedObjectVariableQueryInput]
+    nested: _root_.relay.generated.Nested | Null = null
+  ): _root_.relay.generated.TestNestedObjectVariableQueryInput =
+    _root_.relay.generated.TestNestedObjectVariableQueryInput(
+      nested
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

@@ -14,6 +14,10 @@ query TestNoVariablesQuery {
 
 trait TestNoVariablesQueryInput extends js.Object
 
+object TestNoVariablesQueryInput {
+  def apply(): TestNoVariablesQueryInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesQueryInput]
+}
+
 @js.native
 trait TestNoVariablesQuery extends js.Object {
   val noVariables: TestNoVariablesQuery.NoVariables
@@ -27,7 +31,7 @@ object TestNoVariablesQuery extends _root_.com.goodcover.relay.QueryTaggedNode[T
     val id: String
   }
 
-  def newInput(): TestNoVariablesQueryInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesQueryInput]
+  def newInput(): _root_.relay.generated.TestNoVariablesQueryInput = _root_.relay.generated.TestNoVariablesQueryInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

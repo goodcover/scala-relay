@@ -7,7 +7,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 /*
 subscription TestPrimitiveVariableSubscription($a: String!) {
     primitiveVariable(a: $a) {
-        clientSubscriptionId
+        id
     }
 }
 */
@@ -16,9 +16,18 @@ trait TestPrimitiveVariableSubscriptionInput extends js.Object {
   val a: String
 }
 
+object TestPrimitiveVariableSubscriptionInput {
+  def apply(
+    a: String
+  ): TestPrimitiveVariableSubscriptionInput =
+    js.Dynamic.literal(
+      a = a
+    ).asInstanceOf[TestPrimitiveVariableSubscriptionInput]
+}
+
 @js.native
 trait TestPrimitiveVariableSubscription extends js.Object {
-  val primitiveVariable: TestPrimitiveVariableSubscription.PrimitiveVariable | Null
+  val primitiveVariable: TestPrimitiveVariableSubscription.PrimitiveVariable
 }
 
 object TestPrimitiveVariableSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestPrimitiveVariableSubscriptionInput, TestPrimitiveVariableSubscription] {
@@ -26,15 +35,15 @@ object TestPrimitiveVariableSubscription extends _root_.com.goodcover.relay.Subs
 
   @js.native
   trait PrimitiveVariable extends js.Object {
-    val clientSubscriptionId: String | Null
+    val id: String
   }
 
   def newInput(
     a: String
-  ): TestPrimitiveVariableSubscriptionInput =
-    js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
-    ).asInstanceOf[TestPrimitiveVariableSubscriptionInput]
+  ): _root_.relay.generated.TestPrimitiveVariableSubscriptionInput =
+    _root_.relay.generated.TestPrimitiveVariableSubscriptionInput(
+      a
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

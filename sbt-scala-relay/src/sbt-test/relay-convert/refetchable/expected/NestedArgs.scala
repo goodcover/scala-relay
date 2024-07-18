@@ -11,6 +11,15 @@ trait NestedArgsInput extends js.Object {
   val b: String | Null
 }
 
+object NestedArgsInput {
+  def apply(
+    b: String | Null = null
+  ): NestedArgsInput =
+    js.Dynamic.literal(
+      b = b
+    ).asInstanceOf[NestedArgsInput]
+}
+
 @js.native
 trait NestedArgs extends js.Object
 
@@ -23,10 +32,10 @@ object NestedArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NestedArgsI
 
   def newInput(
     b: String | Null = null
-  ): NestedArgsInput =
-    js.Dynamic.literal(
-      "b" -> b.asInstanceOf[js.Any]
-    ).asInstanceOf[NestedArgsInput]
+  ): _root_.relay.generated.NestedArgsInput =
+    _root_.relay.generated.NestedArgsInput(
+      b
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

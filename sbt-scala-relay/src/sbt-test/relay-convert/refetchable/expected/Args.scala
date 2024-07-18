@@ -11,6 +11,15 @@ trait ArgsInput extends js.Object {
   val b: String | Null
 }
 
+object ArgsInput {
+  def apply(
+    b: String | Null = null
+  ): ArgsInput =
+    js.Dynamic.literal(
+      b = b
+    ).asInstanceOf[ArgsInput]
+}
+
 @js.native
 trait Args extends js.Object
 
@@ -23,10 +32,10 @@ object Args extends _root_.com.goodcover.relay.QueryTaggedNode[ArgsInput, Args] 
 
   def newInput(
     b: String | Null = null
-  ): ArgsInput =
-    js.Dynamic.literal(
-      "b" -> b.asInstanceOf[js.Any]
-    ).asInstanceOf[ArgsInput]
+  ): _root_.relay.generated.ArgsInput =
+    _root_.relay.generated.ArgsInput(
+      b
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

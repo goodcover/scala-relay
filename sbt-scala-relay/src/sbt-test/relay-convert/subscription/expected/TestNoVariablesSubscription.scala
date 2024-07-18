@@ -7,16 +7,20 @@ import _root_.scala.scalajs.js.annotation.JSImport
 /*
 subscription TestNoVariablesSubscription {
     noVariables {
-        clientSubscriptionId
+        id
     }
 }
 */
 
 trait TestNoVariablesSubscriptionInput extends js.Object
 
+object TestNoVariablesSubscriptionInput {
+  def apply(): TestNoVariablesSubscriptionInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesSubscriptionInput]
+}
+
 @js.native
 trait TestNoVariablesSubscription extends js.Object {
-  val noVariables: TestNoVariablesSubscription.NoVariables | Null
+  val noVariables: TestNoVariablesSubscription.NoVariables
 }
 
 object TestNoVariablesSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestNoVariablesSubscriptionInput, TestNoVariablesSubscription] {
@@ -24,10 +28,10 @@ object TestNoVariablesSubscription extends _root_.com.goodcover.relay.Subscripti
 
   @js.native
   trait NoVariables extends js.Object {
-    val clientSubscriptionId: String | Null
+    val id: String
   }
 
-  def newInput(): TestNoVariablesSubscriptionInput = js.Dynamic.literal().asInstanceOf[TestNoVariablesSubscriptionInput]
+  def newInput(): _root_.relay.generated.TestNoVariablesSubscriptionInput = _root_.relay.generated.TestNoVariablesSubscriptionInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

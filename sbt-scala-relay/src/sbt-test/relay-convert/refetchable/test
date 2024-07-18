@@ -11,6 +11,8 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated/Args.scala expe
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/NestedArgs.scala expected/NestedArgs.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/NoArgs.scala expected/NoArgs.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/ObjectArgs.scala expected/ObjectArgs.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Thing.scala expected/Thing.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Stuff.scala expected/Stuff.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/ImplicitNodeArgs.scala expected/ImplicitNodeArgs.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/ArgsOfSpread.scala expected/ArgsOfSpread.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/ViewerQuery.scala expected/ViewerQuery.scala

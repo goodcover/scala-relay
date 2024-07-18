@@ -2,7 +2,6 @@ package com.goodcover.relay
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.{Definition, Document}
-import caliban.rendering.DocumentRenderer
 import sbt._
 import sbt.io.Using.fileWriter
 import sbt.util.CacheImplicits._
@@ -203,7 +202,7 @@ object GraphQLWrapper {
 
   private def writeWrapper(writer: BufferedWriter, definition: Definition, document: Document, logger: Logger): Unit = {
     writer.write("graphql`\n")
-    val rendered = DocumentRenderer.render(Document(List(definition), document.sourceMapper))
+    val rendered = renderDefinition(definition, document)
     writer.write(escape(trimBlankLines(rendered)))
     writer.write("`\n\n")
   }

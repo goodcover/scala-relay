@@ -1,6 +1,6 @@
 package com.goodcover.relay
 
-import com.goodcover.relay.codegen.DocumentWriter
+import com.goodcover.relay.codegen.DocumentConverter
 import sbt._
 import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
@@ -12,7 +12,7 @@ import sjsonnew._
 object GraphQLConverter {
 
   // Increment when the code changes to bust the cache.
-  private val Version = 2
+  private val Version = 3
 
   final case class Options(outputDir: File, typeMappings: Map[String, String])
 
@@ -187,11 +187,16 @@ object GraphQLConverter {
     options: Options,
     logger: Logger
   ): Conversions = {
-    val (conversions, _) = files.foldLeft((Conversions.empty, Set.empty[File])) {
+    logger.debug(s"Converting schema: ${schema.file}")
+    val converter          = new DocumentConverter(options.outputDir, schema, options.typeMappings, Set.empty[File])
+    val outputs            = converter.convertSchema()
+    val initialConversions = Map(schema.file -> outputs)
+    val (conversions, _) = files.foldLeft((initialConversions, outputs)) {
       case ((conversions, outputs), file) =>
-        val writer = new DocumentWriter(options.outputDir, schema, options.typeMappings, outputs)
         logger.debug(s"Converting file: $file")
-        val newOutputs      = writer.write(file)
+        // This is kind of silly since only the outputs change but oh well, it saves passing them around everywhere.
+        val converter       = new DocumentConverter(options.outputDir, schema, options.typeMappings, outputs)
+        val newOutputs      = converter.convert(file)
         val nextConversions = conversions + (file -> newOutputs)
         val nextOutputs     = outputs ++ newOutputs
         (nextConversions, nextOutputs)

@@ -8,33 +8,16 @@ import _root_.scala.scalajs.js.annotation.JSImport
 */
 
 trait ObjectArgsInput extends js.Object {
-  val thing: ObjectArgsThing | Null
+  val thing: Thing | Null
 }
 
-trait ObjectArgsThing extends js.Object {
-  val stuff: ObjectArgsStuff
-}
-
-object ObjectArgsThing {
+object ObjectArgsInput {
   def apply(
-    stuff: ObjectArgsStuff
-  ): ObjectArgsThing =
+    thing: Thing | Null = null
+  ): ObjectArgsInput =
     js.Dynamic.literal(
-      "stuff" -> stuff.asInstanceOf[js.Any]
-    ).asInstanceOf[ObjectArgsThing]
-}
-
-trait ObjectArgsStuff extends js.Object {
-  val junk: String | Null
-}
-
-object ObjectArgsStuff {
-  def apply(
-    junk: String | Null = null
-  ): ObjectArgsStuff =
-    js.Dynamic.literal(
-      "junk" -> junk.asInstanceOf[js.Any]
-    ).asInstanceOf[ObjectArgsStuff]
+      thing = thing
+    ).asInstanceOf[ObjectArgsInput]
 }
 
 @js.native
@@ -48,11 +31,11 @@ object ObjectArgs extends _root_.com.goodcover.relay.QueryTaggedNode[ObjectArgsI
   }
 
   def newInput(
-    thing: ObjectArgsThing | Null = null
-  ): ObjectArgsInput =
-    js.Dynamic.literal(
-      "thing" -> thing.asInstanceOf[js.Any]
-    ).asInstanceOf[ObjectArgsInput]
+    thing: _root_.relay.generated.Thing | Null = null
+  ): _root_.relay.generated.ObjectArgsInput =
+    _root_.relay.generated.ObjectArgsInput(
+      thing
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

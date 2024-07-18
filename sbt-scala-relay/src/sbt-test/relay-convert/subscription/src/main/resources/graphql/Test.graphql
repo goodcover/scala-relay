@@ -1,65 +1,65 @@
 subscription TestNoVariablesSubscription {
     noVariables {
-        clientSubscriptionId
+        id
     }
 }
 
-subscription TestObjectVariableSubscription($input: FeedbackLikeInput!) {
-    feedbackLikeSubscribe(input: $input) {
-        clientSubscriptionId
+subscription TestObjectVariableSubscription($input: Input!) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-subscription TestOptionalObjectVariableSubscription($input: ActorSubscribeInput) {
-    feedbackLikeSubscribe(input: $input) {
-        clientSubscriptionId
+subscription TestOptionalObjectVariableSubscription($input: Input) {
+    objectVariable(input: $input) {
+        id
     }
 }
 
-subscription TestNestedObjectVariableSubscription($input: CommentCreateInput) {
-    commentCreateSubscribe(input: $input) {
-        clientMutationId
+subscription TestNestedObjectVariableSubscription($nested: Nested) {
+    nestedObjectVariable(nested: $nested) {
+        id
     }
 }
 
 subscription TestPrimitiveVariableSubscription($a: String!) {
     primitiveVariable(a: $a) {
-        clientSubscriptionId
+        id
     }
 }
 
 subscription TestOptionalPrimitiveVariableSubscription($a: String) {
     primitiveVariable(a: $a) {
-        clientSubscriptionId
+        id
     }
 }
 
-subscription TestListVariableSubscription($as: [String]!) {
+subscription TestListVariableSubscription($as: [String!]!) {
     listVariable(as: $as) {
-        clientSubscriptionId
+        id
     }
 }
 
-subscription TestOptionalListVariableSubscription($as: [String]) {
+subscription TestOptionalListVariableSubscription($as: [String!]) {
     listVariable(as: $as) {
-        clientSubscriptionId
+        id
     }
 }
 
 subscription TestMultipleVariablesSubscription($a: String!, $b: String!) {
     multipleVariables(a: $a, b: $b) {
-        clientSubscriptionId
+        id
     }
 }
 
-subscription TestPrimitiveResponseSubscription($a: String) {
+subscription TestPrimitiveResponseSubscription($a: String!) {
     primitiveResponse(a: $a)
 }
 
-subscription TestMandatoryResponseSubscription($a: String) {
-    mandatoryResponse(a: $a)
+subscription TestOptionalPrimitiveResponseSubscription($a: String!) {
+    optionalPrimitiveResponse(a: $a)
 }
 
-subscription TestListResponseSubscription($a: String) {
+subscription TestListResponseSubscription($a: String!) {
     listResponse(a: $a)
 }

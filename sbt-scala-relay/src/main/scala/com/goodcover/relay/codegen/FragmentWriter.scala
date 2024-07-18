@@ -12,8 +12,8 @@ class FragmentWriter(
   fragment: FragmentDefinition,
   documentText: String,
   schema: GraphQLSchema,
-  typeMappings: Map[String, String]
-) extends ExecutableDefinitionWriter(writer, documentText, schema, typeMappings) {
+  typeConverter: TypeConverter
+) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
 
   private val typeName = fragment.typeCondition.name
   private val fields   = schema.fieldType(typeName).fields.map(d => d.name -> d).toMap

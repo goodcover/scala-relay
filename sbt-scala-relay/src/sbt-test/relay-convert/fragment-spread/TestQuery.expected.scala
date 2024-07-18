@@ -19,6 +19,10 @@ query TestQuery {
 
 trait TestQueryInput extends js.Object
 
+object TestQueryInput {
+  def apply(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]
+}
+
 @js.native
 trait TestQuery extends js.Object {
   val viewer: TestQuery.Viewer | Null
@@ -48,7 +52,7 @@ object TestQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestQueryInp
     def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 
-  def newInput(): TestQueryInput = js.Dynamic.literal().asInstanceOf[TestQueryInput]
+  def newInput(): _root_.relay.generated.TestQueryInput = _root_.relay.generated.TestQueryInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

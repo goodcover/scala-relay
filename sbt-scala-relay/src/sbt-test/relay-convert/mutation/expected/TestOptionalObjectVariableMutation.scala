@@ -13,19 +13,15 @@ mutation TestOptionalObjectVariableMutation($input: Input) {
 */
 
 trait TestOptionalObjectVariableMutationInput extends js.Object {
-  val input: TestOptionalObjectVariableMutationInput | Null
-}
-
-trait TestOptionalObjectVariableMutationInput extends js.Object {
-  val a: String
+  val input: Input | Null
 }
 
 object TestOptionalObjectVariableMutationInput {
   def apply(
-    a: String
+    input: Input | Null = null
   ): TestOptionalObjectVariableMutationInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestOptionalObjectVariableMutationInput]
 }
 
@@ -43,11 +39,11 @@ object TestOptionalObjectVariableMutation extends _root_.com.goodcover.relay.Mut
   }
 
   def newInput(
-    input: TestOptionalObjectVariableMutationInput | Null = null
-  ): TestOptionalObjectVariableMutationInput =
-    js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
-    ).asInstanceOf[TestOptionalObjectVariableMutationInput]
+    input: _root_.relay.generated.Input | Null = null
+  ): _root_.relay.generated.TestOptionalObjectVariableMutationInput =
+    _root_.relay.generated.TestOptionalObjectVariableMutationInput(
+      input
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

@@ -11,6 +11,15 @@ trait ArgsOfSpreadInput extends js.Object {
   val b: String | Null
 }
 
+object ArgsOfSpreadInput {
+  def apply(
+    b: String | Null = null
+  ): ArgsOfSpreadInput =
+    js.Dynamic.literal(
+      b = b
+    ).asInstanceOf[ArgsOfSpreadInput]
+}
+
 @js.native
 trait ArgsOfSpread extends js.Object
 
@@ -23,10 +32,10 @@ object ArgsOfSpread extends _root_.com.goodcover.relay.QueryTaggedNode[ArgsOfSpr
 
   def newInput(
     b: String | Null = null
-  ): ArgsOfSpreadInput =
-    js.Dynamic.literal(
-      "b" -> b.asInstanceOf[js.Any]
-    ).asInstanceOf[ArgsOfSpreadInput]
+  ): _root_.relay.generated.ArgsOfSpreadInput =
+    _root_.relay.generated.ArgsOfSpreadInput(
+      b
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

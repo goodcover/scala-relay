@@ -1,5 +1,5 @@
 > relayConvert
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala TestQuery.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.scala Test_fragment.expected.scala
-$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.scala Test_fragment.expected.scala
-# TODO: Test all the other cases from mutation/query tests.
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala expected/TestQuery.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/ClientTypeInput.scala expected/ClientTypeInput.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/ClientTypeNestedInput.scala expected/ClientTypeNestedInput.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Test_fragment.scala expected/Test_fragment.scala

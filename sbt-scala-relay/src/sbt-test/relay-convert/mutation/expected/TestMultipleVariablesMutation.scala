@@ -17,6 +17,17 @@ trait TestMultipleVariablesMutationInput extends js.Object {
   val b: String
 }
 
+object TestMultipleVariablesMutationInput {
+  def apply(
+    a: String,
+    b: String
+  ): TestMultipleVariablesMutationInput =
+    js.Dynamic.literal(
+      a = a,
+      b = b
+    ).asInstanceOf[TestMultipleVariablesMutationInput]
+}
+
 @js.native
 trait TestMultipleVariablesMutation extends js.Object {
   val multipleVariables: TestMultipleVariablesMutation.MultipleVariables
@@ -33,11 +44,11 @@ object TestMultipleVariablesMutation extends _root_.com.goodcover.relay.Mutation
   def newInput(
     a: String,
     b: String
-  ): TestMultipleVariablesMutationInput =
-    js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any],
-      "b" -> b.asInstanceOf[js.Any]
-    ).asInstanceOf[TestMultipleVariablesMutationInput]
+  ): _root_.relay.generated.TestMultipleVariablesMutationInput =
+    _root_.relay.generated.TestMultipleVariablesMutationInput(
+      a,
+      b
+    )
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

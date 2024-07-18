@@ -4,6 +4,8 @@ $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListRespons
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestListVariableMutation.scala expected/TestListVariableMutation.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestMultipleVariablesMutation.scala expected/TestMultipleVariablesMutation.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNestedObjectVariableMutation.scala expected/TestNestedObjectVariableMutation.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Nested.scala expected/Nested.scala
+$ must-mirror target/scala-2.13/src_managed/main/relay/generated/Input.scala expected/Input.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestNoVariablesMutation.scala expected/TestNoVariablesMutation.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestObjectVariableMutation.scala expected/TestObjectVariableMutation.scala
 $ must-mirror target/scala-2.13/src_managed/main/relay/generated/TestOptionalListVariableMutation.scala expected/TestOptionalListVariableMutation.scala
