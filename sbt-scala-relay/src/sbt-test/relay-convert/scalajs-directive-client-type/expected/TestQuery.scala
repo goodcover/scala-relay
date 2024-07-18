@@ -32,7 +32,7 @@ object TestQueryInput {
     input: ClientTypeInput
   ): TestQueryInput =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestQueryInput]
 }
 

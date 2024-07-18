@@ -19,7 +19,7 @@ object TestListResponseSubscriptionInput {
     a: String
   ): TestListResponseSubscriptionInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestListResponseSubscriptionInput]
 }
 

@@ -21,7 +21,7 @@ object TestOptionalObjectVariableQueryInput {
     input: Input | Null = null
   ): TestOptionalObjectVariableQueryInput =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestOptionalObjectVariableQueryInput]
 }
 

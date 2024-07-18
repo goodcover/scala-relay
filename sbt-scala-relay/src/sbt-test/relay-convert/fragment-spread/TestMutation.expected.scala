@@ -27,7 +27,7 @@ object TestMutationInput {
     input: ActorSubscribeInput
   ): TestMutationInput =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestMutationInput]
 }
 

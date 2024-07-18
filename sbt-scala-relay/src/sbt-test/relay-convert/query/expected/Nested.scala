@@ -18,6 +18,6 @@ object Nested {
     input: Input
   ): Nested =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[Nested]
 }

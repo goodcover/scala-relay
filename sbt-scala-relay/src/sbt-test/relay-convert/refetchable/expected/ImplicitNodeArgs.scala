@@ -16,7 +16,7 @@ object ImplicitNodeArgsInput {
     id: String
   ): ImplicitNodeArgsInput =
     js.Dynamic.literal(
-      "id" -> id.asInstanceOf[js.Any]
+      id = id
     ).asInstanceOf[ImplicitNodeArgsInput]
 }
 

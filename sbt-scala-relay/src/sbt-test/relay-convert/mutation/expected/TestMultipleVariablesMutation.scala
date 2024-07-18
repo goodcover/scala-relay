@@ -23,8 +23,8 @@ object TestMultipleVariablesMutationInput {
     b: String
   ): TestMultipleVariablesMutationInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any],
-      "b" -> b.asInstanceOf[js.Any]
+      a = a,
+      b = b
     ).asInstanceOf[TestMultipleVariablesMutationInput]
 }
 

@@ -16,7 +16,7 @@ object ObjectArgsInput {
     thing: Thing | Null = null
   ): ObjectArgsInput =
     js.Dynamic.literal(
-      "thing" -> thing.asInstanceOf[js.Any]
+      thing = thing
     ).asInstanceOf[ObjectArgsInput]
 }
 

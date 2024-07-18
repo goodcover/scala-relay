@@ -21,7 +21,7 @@ object TestPrimitiveVariableSubscriptionInput {
     a: String
   ): TestPrimitiveVariableSubscriptionInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestPrimitiveVariableSubscriptionInput]
 }
 

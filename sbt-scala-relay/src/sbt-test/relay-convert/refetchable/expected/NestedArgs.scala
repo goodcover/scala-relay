@@ -16,7 +16,7 @@ object NestedArgsInput {
     b: String | Null = null
   ): NestedArgsInput =
     js.Dynamic.literal(
-      "b" -> b.asInstanceOf[js.Any]
+      b = b
     ).asInstanceOf[NestedArgsInput]
 }
 

@@ -19,7 +19,7 @@ object TestListResponseMutationInput {
     a: String
   ): TestListResponseMutationInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestListResponseMutationInput]
 }
 

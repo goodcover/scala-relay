@@ -21,7 +21,7 @@ object TestListVariableSubscriptionInput {
     as: js.Array[String]
   ): TestListVariableSubscriptionInput =
     js.Dynamic.literal(
-      "as" -> as.asInstanceOf[js.Any]
+      as = as
     ).asInstanceOf[TestListVariableSubscriptionInput]
 }
 

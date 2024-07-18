@@ -86,12 +86,10 @@ class ScalaWriter(writer: Writer) {
         foreachParameter(parameters) {
           case (field, hasMore) =>
             writer.write(indent)
-            writer.write("""    """")
+            writer.write("""    """)
             writer.write(field.ename.syntax)
-            writer.write("""" -> """)
+            writer.write(""" = """)
             writer.write(field.ename.syntax)
-            // TODO: GC-3153 - We shouldn't need this now that the objects are js.Object.
-            writer.write(".asInstanceOf[js.Any]")
             if (hasMore) writer.write(',')
             writer.write('\n')
         }

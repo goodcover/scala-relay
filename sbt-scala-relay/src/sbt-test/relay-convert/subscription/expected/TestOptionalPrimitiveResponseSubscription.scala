@@ -19,7 +19,7 @@ object TestOptionalPrimitiveResponseSubscriptionInput {
     a: String
   ): TestOptionalPrimitiveResponseSubscriptionInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestOptionalPrimitiveResponseSubscriptionInput]
 }
 

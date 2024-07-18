@@ -21,7 +21,7 @@ object TestObjectVariableMutationInput {
     input: Input
   ): TestObjectVariableMutationInput =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestObjectVariableMutationInput]
 }
 

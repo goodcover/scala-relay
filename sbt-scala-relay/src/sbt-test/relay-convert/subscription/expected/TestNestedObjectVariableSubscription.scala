@@ -21,7 +21,7 @@ object TestNestedObjectVariableSubscriptionInput {
     nested: Nested | Null = null
   ): TestNestedObjectVariableSubscriptionInput =
     js.Dynamic.literal(
-      "nested" -> nested.asInstanceOf[js.Any]
+      nested = nested
     ).asInstanceOf[TestNestedObjectVariableSubscriptionInput]
 }
 

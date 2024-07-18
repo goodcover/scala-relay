@@ -21,7 +21,7 @@ object TestOptionalListVariableMutationInput {
     as: js.Array[String] | Null = null
   ): TestOptionalListVariableMutationInput =
     js.Dynamic.literal(
-      "as" -> as.asInstanceOf[js.Any]
+      as = as
     ).asInstanceOf[TestOptionalListVariableMutationInput]
 }
 

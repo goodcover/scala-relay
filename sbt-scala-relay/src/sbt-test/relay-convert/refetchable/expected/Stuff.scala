@@ -18,6 +18,6 @@ object Stuff {
     junk: String | Null = null
   ): Stuff =
     js.Dynamic.literal(
-      "junk" -> junk.asInstanceOf[js.Any]
+      junk = junk
     ).asInstanceOf[Stuff]
 }

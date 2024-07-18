@@ -25,7 +25,7 @@ object TestSubscriptionInput {
     input: FeedbackLikeInput
   ): TestSubscriptionInput =
     js.Dynamic.literal(
-      "input" -> input.asInstanceOf[js.Any]
+      input = input
     ).asInstanceOf[TestSubscriptionInput]
 }
 

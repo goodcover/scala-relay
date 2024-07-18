@@ -18,6 +18,6 @@ object ClientTypeNestedInput {
     nested: Bar
   ): ClientTypeNestedInput =
     js.Dynamic.literal(
-      "nested" -> nested.asInstanceOf[js.Any]
+      nested = nested
     ).asInstanceOf[ClientTypeNestedInput]
 }

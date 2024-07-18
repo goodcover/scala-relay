@@ -21,7 +21,7 @@ object TestNestedObjectVariableMutationInput {
     nested: Nested | Null = null
   ): TestNestedObjectVariableMutationInput =
     js.Dynamic.literal(
-      "nested" -> nested.asInstanceOf[js.Any]
+      nested = nested
     ).asInstanceOf[TestNestedObjectVariableMutationInput]
 }
 

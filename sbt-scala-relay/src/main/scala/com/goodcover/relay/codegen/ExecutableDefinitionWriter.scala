@@ -230,7 +230,6 @@ abstract class ExecutableDefinitionWriter(
     writer.write(": ")
     writer.write(name)
     writer.write(""" = """")
-    // TODO: Is this right?
     writer.write(name.stripPrefix("`").stripSuffix("`"))
     writer.write("""".asInstanceOf[""")
     writer.write(name)

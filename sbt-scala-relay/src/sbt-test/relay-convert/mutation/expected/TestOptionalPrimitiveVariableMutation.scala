@@ -21,7 +21,7 @@ object TestOptionalPrimitiveVariableMutationInput {
     a: String | Null = null
   ): TestOptionalPrimitiveVariableMutationInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestOptionalPrimitiveVariableMutationInput]
 }
 

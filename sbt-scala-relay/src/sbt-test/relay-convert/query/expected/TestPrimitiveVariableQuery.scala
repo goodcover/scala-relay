@@ -21,7 +21,7 @@ object TestPrimitiveVariableQueryInput {
     a: String
   ): TestPrimitiveVariableQueryInput =
     js.Dynamic.literal(
-      "a" -> a.asInstanceOf[js.Any]
+      a = a
     ).asInstanceOf[TestPrimitiveVariableQueryInput]
 }
 

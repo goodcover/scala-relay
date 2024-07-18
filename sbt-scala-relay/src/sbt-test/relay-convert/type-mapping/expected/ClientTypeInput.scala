@@ -42,14 +42,14 @@ object ClientTypeInput {
     nested: ClientTypeNestedInput
   ): ClientTypeInput =
     js.Dynamic.literal(
-      "id" -> id.asInstanceOf[js.Any],
-      "number" -> number.asInstanceOf[js.Any],
-      "required" -> required.asInstanceOf[js.Any],
-      "optional" -> optional.asInstanceOf[js.Any],
-      "requiredListRequiredElements" -> requiredListRequiredElements.asInstanceOf[js.Any],
-      "requiredListOptionalElements" -> requiredListOptionalElements.asInstanceOf[js.Any],
-      "optionalListRequiredElements" -> optionalListRequiredElements.asInstanceOf[js.Any],
-      "optionalListOptionalElements" -> optionalListOptionalElements.asInstanceOf[js.Any],
-      "nested" -> nested.asInstanceOf[js.Any]
+      id = id,
+      number = number,
+      required = required,
+      optional = optional,
+      requiredListRequiredElements = requiredListRequiredElements,
+      requiredListOptionalElements = requiredListOptionalElements,
+      optionalListRequiredElements = optionalListRequiredElements,
+      optionalListOptionalElements = optionalListOptionalElements,
+      nested = nested
     ).asInstanceOf[ClientTypeInput]
 }
