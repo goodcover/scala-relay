@@ -63,3 +63,11 @@ query TestOptionalPrimitiveResponseQuery($a: String!) {
 query TestListResponseQuery($a: String!) {
     listResponse(a: $a)
 }
+
+query TestNestedObjectResponseQuery {
+    nestedObjectResponse {
+        output {
+            b
+        }
+    }
+}

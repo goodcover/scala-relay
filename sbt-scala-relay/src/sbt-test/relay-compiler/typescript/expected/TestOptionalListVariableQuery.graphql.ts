@@ -23,6 +23,7 @@ query TestOptionalListVariableQuery(
   $as: [String!]
 ) {
   listVariable(as: $as) {
+    __typename
     id
   }
 }
@@ -38,37 +39,38 @@ var v0 = [
 ],
 v1 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "as",
-        "variableName": "as"
-      }
-    ],
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "listVariable",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "as",
+    "variableName": "as"
   }
-];
+],
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "TestOptionalListVariableQuery",
-    "selections": (v1/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "listVariable",
+        "plural": false,
+        "selections": [
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -77,15 +79,35 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "TestOptionalListVariableQuery",
-    "selections": (v1/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "listVariable",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "07f082c03659cab4b4ecf8feb5e6f737",
+    "cacheID": "8cb009685ccc1785fba4816343ab804d",
     "id": null,
     "metadata": {},
     "name": "TestOptionalListVariableQuery",
     "operationKind": "query",
-    "text": "query TestOptionalListVariableQuery(\n  $as: [String!]\n) {\n  listVariable(as: $as) {\n    id\n  }\n}\n"
+    "text": "query TestOptionalListVariableQuery(\n  $as: [String!]\n) {\n  listVariable(as: $as) {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

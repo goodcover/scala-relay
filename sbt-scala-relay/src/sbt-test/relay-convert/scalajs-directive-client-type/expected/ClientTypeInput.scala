@@ -17,22 +17,22 @@ input ClientTypeInput {
 
 trait ClientTypeInput extends js.Object {
   val required: String[Required]
-  val optional: String[Optional] | Null
+  val optional: js.UndefOr[String[Optional] | Null]
   val requiredListRequiredElements: js.Array[String[RequiredListRequiredElements]]
-  val requiredListOptionalElements: js.Array[String[RequiredListOptionalElements] | Null]
-  val optionalListRequiredElements: js.Array[String[OptionalListRequiredElements]] | Null
-  val optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null
+  val requiredListOptionalElements: js.Array[js.UndefOr[String[RequiredListOptionalElements] | Null]]
+  val optionalListRequiredElements: js.UndefOr[js.Array[String[OptionalListRequiredElements]] | Null]
+  val optionalListOptionalElements: js.UndefOr[js.Array[js.UndefOr[String[OptionalListOptionalElements] | Null]] | Null]
   val nested: ClientTypeNestedInput
 }
 
 object ClientTypeInput {
   def apply(
     required: String[Required],
-    optional: String[Optional] | Null = null,
+    optional: js.UndefOr[String[Optional] | Null] = js.undefined,
     requiredListRequiredElements: js.Array[String[RequiredListRequiredElements]],
-    requiredListOptionalElements: js.Array[String[RequiredListOptionalElements] | Null],
-    optionalListRequiredElements: js.Array[String[OptionalListRequiredElements]] | Null = null,
-    optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null = null,
+    requiredListOptionalElements: js.Array[js.UndefOr[String[RequiredListOptionalElements] | Null]],
+    optionalListRequiredElements: js.UndefOr[js.Array[String[OptionalListRequiredElements]] | Null] = js.undefined,
+    optionalListOptionalElements: js.UndefOr[js.Array[js.UndefOr[String[OptionalListOptionalElements] | Null]] | Null] = js.undefined,
     nested: ClientTypeNestedInput
   ): ClientTypeInput =
     js.Dynamic.literal(

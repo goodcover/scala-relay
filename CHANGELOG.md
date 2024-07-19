@@ -1,5 +1,9 @@
 ## Changes
 
+### 0.46.0
+
+- Allow `null` or `js.undefined` for optional input fields.
+
 ### 0.45.0
 
 - Use shared input types.

@@ -13,12 +13,12 @@ query TestOptionalListVariableQuery($as: [String!]) {
 */
 
 trait TestOptionalListVariableQueryInput extends js.Object {
-  val as: js.Array[String] | Null
+  val as: js.UndefOr[js.Array[String] | Null]
 }
 
 object TestOptionalListVariableQueryInput {
   def apply(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): TestOptionalListVariableQueryInput =
     js.Dynamic.literal(
       as = as
@@ -39,7 +39,7 @@ object TestOptionalListVariableQuery extends _root_.com.goodcover.relay.QueryTag
   }
 
   def newInput(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalListVariableQueryInput =
     _root_.relay.generated.TestOptionalListVariableQueryInput(
       as

@@ -13,12 +13,12 @@ subscription TestOptionalObjectVariableSubscription($input: Input) {
 */
 
 trait TestOptionalObjectVariableSubscriptionInput extends js.Object {
-  val input: Input | Null
+  val input: js.UndefOr[Input | Null]
 }
 
 object TestOptionalObjectVariableSubscriptionInput {
   def apply(
-    input: Input | Null = null
+    input: js.UndefOr[Input | Null] = js.undefined
   ): TestOptionalObjectVariableSubscriptionInput =
     js.Dynamic.literal(
       input = input
@@ -39,7 +39,7 @@ object TestOptionalObjectVariableSubscription extends _root_.com.goodcover.relay
   }
 
   def newInput(
-    input: _root_.relay.generated.Input | Null = null
+    input: js.UndefOr[_root_.relay.generated.Input | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalObjectVariableSubscriptionInput =
     _root_.relay.generated.TestOptionalObjectVariableSubscriptionInput(
       input

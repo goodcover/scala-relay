@@ -13,12 +13,12 @@ mutation TestOptionalListVariableMutation($as: [String!]) {
 */
 
 trait TestOptionalListVariableMutationInput extends js.Object {
-  val as: js.Array[String] | Null
+  val as: js.UndefOr[js.Array[String] | Null]
 }
 
 object TestOptionalListVariableMutationInput {
   def apply(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): TestOptionalListVariableMutationInput =
     js.Dynamic.literal(
       as = as
@@ -39,7 +39,7 @@ object TestOptionalListVariableMutation extends _root_.com.goodcover.relay.Mutat
   }
 
   def newInput(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalListVariableMutationInput =
     _root_.relay.generated.TestOptionalListVariableMutationInput(
       as

@@ -23,6 +23,7 @@ query TestOptionalPrimitiveVariableQuery(
   $a: String
 ) {
   primitiveVariable(a: $a) {
+    __typename
     id
   }
 }
@@ -38,37 +39,38 @@ var v0 = [
 ],
 v1 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "a",
-        "variableName": "a"
-      }
-    ],
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "primitiveVariable",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "a",
+    "variableName": "a"
   }
-];
+],
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "TestOptionalPrimitiveVariableQuery",
-    "selections": (v1/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "primitiveVariable",
+        "plural": false,
+        "selections": [
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -77,15 +79,35 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "TestOptionalPrimitiveVariableQuery",
-    "selections": (v1/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "primitiveVariable",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "e3260e365d12e54904a328e80b465cc2",
+    "cacheID": "1504e6ac28226b64b19fd74a1a8f418a",
     "id": null,
     "metadata": {},
     "name": "TestOptionalPrimitiveVariableQuery",
     "operationKind": "query",
-    "text": "query TestOptionalPrimitiveVariableQuery(\n  $a: String\n) {\n  primitiveVariable(a: $a) {\n    id\n  }\n}\n"
+    "text": "query TestOptionalPrimitiveVariableQuery(\n  $a: String\n) {\n  primitiveVariable(a: $a) {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

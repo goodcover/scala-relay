@@ -13,12 +13,12 @@ mutation TestNestedObjectVariableMutation($nested: Nested) {
 */
 
 trait TestNestedObjectVariableMutationInput extends js.Object {
-  val nested: Nested | Null
+  val nested: js.UndefOr[Nested | Null]
 }
 
 object TestNestedObjectVariableMutationInput {
   def apply(
-    nested: Nested | Null = null
+    nested: js.UndefOr[Nested | Null] = js.undefined
   ): TestNestedObjectVariableMutationInput =
     js.Dynamic.literal(
       nested = nested
@@ -39,7 +39,7 @@ object TestNestedObjectVariableMutation extends _root_.com.goodcover.relay.Mutat
   }
 
   def newInput(
-    nested: _root_.relay.generated.Nested | Null = null
+    nested: js.UndefOr[_root_.relay.generated.Nested | Null] = js.undefined
   ): _root_.relay.generated.TestNestedObjectVariableMutationInput =
     _root_.relay.generated.TestNestedObjectVariableMutationInput(
       nested

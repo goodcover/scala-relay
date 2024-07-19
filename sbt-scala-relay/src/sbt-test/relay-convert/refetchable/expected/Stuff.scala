@@ -10,12 +10,12 @@ input Stuff {
 */
 
 trait Stuff extends js.Object {
-  val junk: String | Null
+  val junk: js.UndefOr[String | Null]
 }
 
 object Stuff {
   def apply(
-    junk: String | Null = null
+    junk: js.UndefOr[String | Null] = js.undefined
   ): Stuff =
     js.Dynamic.literal(
       junk = junk

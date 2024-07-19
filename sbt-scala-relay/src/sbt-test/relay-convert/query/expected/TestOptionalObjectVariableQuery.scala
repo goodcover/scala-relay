@@ -13,12 +13,12 @@ query TestOptionalObjectVariableQuery($input: Input) {
 */
 
 trait TestOptionalObjectVariableQueryInput extends js.Object {
-  val input: Input | Null
+  val input: js.UndefOr[Input | Null]
 }
 
 object TestOptionalObjectVariableQueryInput {
   def apply(
-    input: Input | Null = null
+    input: js.UndefOr[Input | Null] = js.undefined
   ): TestOptionalObjectVariableQueryInput =
     js.Dynamic.literal(
       input = input
@@ -39,7 +39,7 @@ object TestOptionalObjectVariableQuery extends _root_.com.goodcover.relay.QueryT
   }
 
   def newInput(
-    input: _root_.relay.generated.Input | Null = null
+    input: js.UndefOr[_root_.relay.generated.Input | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalObjectVariableQueryInput =
     _root_.relay.generated.TestOptionalObjectVariableQueryInput(
       input

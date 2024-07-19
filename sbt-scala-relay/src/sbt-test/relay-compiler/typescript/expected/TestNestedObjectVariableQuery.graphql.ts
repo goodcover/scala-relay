@@ -29,6 +29,7 @@ query TestNestedObjectVariableQuery(
   $nested: Nested
 ) {
   nestedObjectVariable(nested: $nested) {
+    __typename
     id
   }
 }
@@ -44,37 +45,38 @@ var v0 = [
 ],
 v1 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "nested",
-        "variableName": "nested"
-      }
-    ],
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "nestedObjectVariable",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "nested",
+    "variableName": "nested"
   }
-];
+],
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "TestNestedObjectVariableQuery",
-    "selections": (v1/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "nestedObjectVariable",
+        "plural": false,
+        "selections": [
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -83,15 +85,35 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "TestNestedObjectVariableQuery",
-    "selections": (v1/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "nestedObjectVariable",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "821c92ae2cfb86f1c8e42afa85a4ea75",
+    "cacheID": "61d2d5449b0e48535e74dd17e4daed9c",
     "id": null,
     "metadata": {},
     "name": "TestNestedObjectVariableQuery",
     "operationKind": "query",
-    "text": "query TestNestedObjectVariableQuery(\n  $nested: Nested\n) {\n  nestedObjectVariable(nested: $nested) {\n    id\n  }\n}\n"
+    "text": "query TestNestedObjectVariableQuery(\n  $nested: Nested\n) {\n  nestedObjectVariable(nested: $nested) {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

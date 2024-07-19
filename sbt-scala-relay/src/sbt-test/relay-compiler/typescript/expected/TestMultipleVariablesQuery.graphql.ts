@@ -25,6 +25,7 @@ query TestMultipleVariablesQuery(
   $b: String!
 ) {
   multipleVariables(a: $a, b: $b) {
+    __typename
     id
   }
 }
@@ -45,42 +46,43 @@ var v0 = [
 ],
 v1 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "a",
-        "variableName": "a"
-      },
-      {
-        "kind": "Variable",
-        "name": "b",
-        "variableName": "b"
-      }
-    ],
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "multipleVariables",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "a",
+    "variableName": "a"
+  },
+  {
+    "kind": "Variable",
+    "name": "b",
+    "variableName": "b"
   }
-];
+],
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "TestMultipleVariablesQuery",
-    "selections": (v1/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "multipleVariables",
+        "plural": false,
+        "selections": [
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -89,15 +91,35 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "TestMultipleVariablesQuery",
-    "selections": (v1/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "multipleVariables",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "f3583e1b46be02d1bc9b5d7b9df9964e",
+    "cacheID": "a443434c6d4c7fbc04443d83c205066a",
     "id": null,
     "metadata": {},
     "name": "TestMultipleVariablesQuery",
     "operationKind": "query",
-    "text": "query TestMultipleVariablesQuery(\n  $a: String!\n  $b: String!\n) {\n  multipleVariables(a: $a, b: $b) {\n    id\n  }\n}\n"
+    "text": "query TestMultipleVariablesQuery(\n  $a: String!\n  $b: String!\n) {\n  multipleVariables(a: $a, b: $b) {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

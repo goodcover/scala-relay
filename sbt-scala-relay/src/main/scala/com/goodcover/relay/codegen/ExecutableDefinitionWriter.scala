@@ -65,7 +65,7 @@ abstract class ExecutableDefinitionWriter(
   ): Unit = {
     // TODO: This typeName stuff is weird.
     val typeName  = if (hasSelections) s"$definitionName.${name.capitalize}" else innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false, input = false)
     scalaWriter.writeField(Term.Name(name), scalaType, None, "  ")
   }
 
@@ -244,7 +244,7 @@ abstract class ExecutableDefinitionWriter(
     fieldDefinitionDirectives: List[Directive]
   ): Unit = {
     val typeName  = if (hasSelections) typePrefix + name.capitalize else innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false, input = false)
     scalaWriter.writeField(Term.Name(name), scalaType, None, "    ")
   }
 

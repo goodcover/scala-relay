@@ -8,12 +8,12 @@ import _root_.scala.scalajs.js.annotation.JSImport
 */
 
 trait ArgsInput extends js.Object {
-  val b: String | Null
+  val b: js.UndefOr[String | Null]
 }
 
 object ArgsInput {
   def apply(
-    b: String | Null = null
+    b: js.UndefOr[String | Null] = js.undefined
   ): ArgsInput =
     js.Dynamic.literal(
       b = b
@@ -31,7 +31,7 @@ object Args extends _root_.com.goodcover.relay.QueryTaggedNode[ArgsInput, Args] 
   }
 
   def newInput(
-    b: String | Null = null
+    b: js.UndefOr[String | Null] = js.undefined
   ): _root_.relay.generated.ArgsInput =
     _root_.relay.generated.ArgsInput(
       b

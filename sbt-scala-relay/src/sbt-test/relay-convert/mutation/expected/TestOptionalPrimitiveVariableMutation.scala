@@ -13,12 +13,12 @@ mutation TestOptionalPrimitiveVariableMutation($a: String) {
 */
 
 trait TestOptionalPrimitiveVariableMutationInput extends js.Object {
-  val a: String | Null
+  val a: js.UndefOr[String | Null]
 }
 
 object TestOptionalPrimitiveVariableMutationInput {
   def apply(
-    a: String | Null = null
+    a: js.UndefOr[String | Null] = js.undefined
   ): TestOptionalPrimitiveVariableMutationInput =
     js.Dynamic.literal(
       a = a
@@ -39,7 +39,7 @@ object TestOptionalPrimitiveVariableMutation extends _root_.com.goodcover.relay.
   }
 
   def newInput(
-    a: String | Null = null
+    a: js.UndefOr[String | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalPrimitiveVariableMutationInput =
     _root_.relay.generated.TestOptionalPrimitiveVariableMutationInput(
       a

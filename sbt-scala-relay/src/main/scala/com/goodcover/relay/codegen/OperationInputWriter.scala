@@ -27,9 +27,9 @@ class OperationInputWriter(
   private val parameters = operation.variableDefinitions.map { variable =>
     val tpe       = variable.variableType
     val typeName  = innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, variable.directives, fullyQualified = true)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, variable.directives, fullyQualified = true, input = true)
     // TODO: Default value.
-    val initializer = if (tpe.nonNull) None else Some("null")
+    val initializer = if (tpe.nonNull) None else Some("js.undefined")
     Parameter(Term.Name(variable.name), scalaType, initializer)
   }
 

@@ -19,39 +19,40 @@ export type TestNoVariablesQuery = {
 /*
 query TestNoVariablesQuery {
   noVariables {
+    __typename
     id
   }
 }
 */
 
 const node: ConcreteRequest = (function(){
-var v0 = [
-  {
-    "alias": null,
-    "args": null,
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "noVariables",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
-  }
-];
+var v0 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": [],
     "kind": "Fragment",
     "metadata": null,
     "name": "TestNoVariablesQuery",
-    "selections": (v0/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": null,
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "noVariables",
+        "plural": false,
+        "selections": [
+          (v0/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -60,15 +61,35 @@ return {
     "argumentDefinitions": [],
     "kind": "Operation",
     "name": "TestNoVariablesQuery",
-    "selections": (v0/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": null,
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "noVariables",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v0/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "0ce07dd31c974ecc80ead2d604b9c0f6",
+    "cacheID": "ccbb9e9444e304c2861f66b66321eaf2",
     "id": null,
     "metadata": {},
     "name": "TestNoVariablesQuery",
     "operationKind": "query",
-    "text": "query TestNoVariablesQuery {\n  noVariables {\n    id\n  }\n}\n"
+    "text": "query TestNoVariablesQuery {\n  noVariables {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

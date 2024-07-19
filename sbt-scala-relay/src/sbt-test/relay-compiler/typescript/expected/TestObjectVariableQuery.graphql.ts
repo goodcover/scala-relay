@@ -26,6 +26,7 @@ query TestObjectVariableQuery(
   $input: Input!
 ) {
   objectVariable(input: $input) {
+    __typename
     id
   }
 }
@@ -41,37 +42,38 @@ var v0 = [
 ],
 v1 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "input",
-        "variableName": "input"
-      }
-    ],
-    "concreteType": "Node",
-    "kind": "LinkedField",
-    "name": "objectVariable",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "id",
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "input",
+    "variableName": "input"
   }
-];
+],
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "id",
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Fragment",
     "metadata": null,
     "name": "TestObjectVariableQuery",
-    "selections": (v1/*: any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "objectVariable",
+        "plural": false,
+        "selections": [
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Query",
     "abstractKey": null
   },
@@ -80,15 +82,35 @@ return {
     "argumentDefinitions": (v0/*: any*/),
     "kind": "Operation",
     "name": "TestObjectVariableQuery",
-    "selections": (v1/*: any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v1/*: any*/),
+        "concreteType": null,
+        "kind": "LinkedField",
+        "name": "objectVariable",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "__typename",
+            "storageKey": null
+          },
+          (v2/*: any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "d6f2445fbd0cbeb633f27e872a22d5f2",
+    "cacheID": "b57eec83e26769b68e5f2b4b2af1334f",
     "id": null,
     "metadata": {},
     "name": "TestObjectVariableQuery",
     "operationKind": "query",
-    "text": "query TestObjectVariableQuery(\n  $input: Input!\n) {\n  objectVariable(input: $input) {\n    id\n  }\n}\n"
+    "text": "query TestObjectVariableQuery(\n  $input: Input!\n) {\n  objectVariable(input: $input) {\n    __typename\n    id\n  }\n}\n"
   }
 };
 })();

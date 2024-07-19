@@ -16,9 +16,9 @@ class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Do
   private val parameters = input.fields.map { field =>
     val tpe       = field.ofType
     val typeName  = innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false, input = true)
     // TODO: Default value.
-    val initializer = if (tpe.nonNull) None else Some("null")
+    val initializer = if (tpe.nonNull) None else Some("js.undefined")
     Parameter(Term.Name(field.name), scalaType, initializer)
   }
 
@@ -48,7 +48,7 @@ class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Do
 
   private def writeInputField(name: String, tpe: Type, fieldDefinitionDirectives: List[Directive]): Unit = {
     val typeName  = innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false, input = true)
     scalaWriter.writeField(Term.Name(name), scalaType, None, "  ")
   }
 

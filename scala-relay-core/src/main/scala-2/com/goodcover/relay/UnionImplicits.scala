@@ -1,5 +1,6 @@
 package com.goodcover.relay
 
+import scala.annotation.unused
 import scala.scalajs.js
 import scala.scalajs.js.|
 import scala.scalajs.js.|.Evidence
@@ -42,8 +43,11 @@ trait UnionImplicits {
   implicit val stringEv: Evidence[String, js.Any] =
     baseEv.asInstanceOf[Evidence[String, js.Any]]
 
-  implicit def mergeUnion[A, B, C](ab: A | B)(implicit evA: Evidence[A, C], evB: Evidence[B, C]): C =
+  implicit def mergeUnion[A, B, C](ab: A | B)(implicit @unused evA: Evidence[A, C], @unused evB: Evidence[B, C]): C =
     ab.asInstanceOf[C]
+
+  implicit def undefOrToJsAny[A](ab: js.UndefOr[A])(implicit @unused evA: Evidence[A, js.Any]): js.Any =
+    ab.asInstanceOf[js.Any]
 
 }
 

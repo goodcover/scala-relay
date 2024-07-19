@@ -13,12 +13,12 @@ query TestNestedObjectVariableQuery($nested: Nested) {
 */
 
 trait TestNestedObjectVariableQueryInput extends js.Object {
-  val nested: Nested | Null
+  val nested: js.UndefOr[Nested | Null]
 }
 
 object TestNestedObjectVariableQueryInput {
   def apply(
-    nested: Nested | Null = null
+    nested: js.UndefOr[Nested | Null] = js.undefined
   ): TestNestedObjectVariableQueryInput =
     js.Dynamic.literal(
       nested = nested
@@ -39,7 +39,7 @@ object TestNestedObjectVariableQuery extends _root_.com.goodcover.relay.QueryTag
   }
 
   def newInput(
-    nested: _root_.relay.generated.Nested | Null = null
+    nested: js.UndefOr[_root_.relay.generated.Nested | Null] = js.undefined
   ): _root_.relay.generated.TestNestedObjectVariableQueryInput =
     _root_.relay.generated.TestNestedObjectVariableQueryInput(
       nested

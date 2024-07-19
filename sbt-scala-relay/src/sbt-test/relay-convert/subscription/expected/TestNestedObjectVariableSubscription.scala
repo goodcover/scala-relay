@@ -13,12 +13,12 @@ subscription TestNestedObjectVariableSubscription($nested: Nested) {
 */
 
 trait TestNestedObjectVariableSubscriptionInput extends js.Object {
-  val nested: Nested | Null
+  val nested: js.UndefOr[Nested | Null]
 }
 
 object TestNestedObjectVariableSubscriptionInput {
   def apply(
-    nested: Nested | Null = null
+    nested: js.UndefOr[Nested | Null] = js.undefined
   ): TestNestedObjectVariableSubscriptionInput =
     js.Dynamic.literal(
       nested = nested
@@ -39,7 +39,7 @@ object TestNestedObjectVariableSubscription extends _root_.com.goodcover.relay.S
   }
 
   def newInput(
-    nested: _root_.relay.generated.Nested | Null = null
+    nested: js.UndefOr[_root_.relay.generated.Nested | Null] = js.undefined
   ): _root_.relay.generated.TestNestedObjectVariableSubscriptionInput =
     _root_.relay.generated.TestNestedObjectVariableSubscriptionInput(
       nested

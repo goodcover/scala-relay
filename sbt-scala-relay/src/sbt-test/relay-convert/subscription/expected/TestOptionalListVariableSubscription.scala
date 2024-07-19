@@ -13,12 +13,12 @@ subscription TestOptionalListVariableSubscription($as: [String!]) {
 */
 
 trait TestOptionalListVariableSubscriptionInput extends js.Object {
-  val as: js.Array[String] | Null
+  val as: js.UndefOr[js.Array[String] | Null]
 }
 
 object TestOptionalListVariableSubscriptionInput {
   def apply(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): TestOptionalListVariableSubscriptionInput =
     js.Dynamic.literal(
       as = as
@@ -39,7 +39,7 @@ object TestOptionalListVariableSubscription extends _root_.com.goodcover.relay.S
   }
 
   def newInput(
-    as: js.Array[String] | Null = null
+    as: js.UndefOr[js.Array[String] | Null] = js.undefined
   ): _root_.relay.generated.TestOptionalListVariableSubscriptionInput =
     _root_.relay.generated.TestOptionalListVariableSubscriptionInput(
       as

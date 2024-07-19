@@ -22,10 +22,13 @@ class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
     tpe: Type,
     gqlTypeName: String,
     fieldDefinitionDirectives: List[Directive],
-    fullyQualified: Boolean
+    fullyQualified: Boolean,
+    input: Boolean
   ): String = {
     val builder = new StringBuilder()
     def loop(tpe: Type): Unit = {
+      if (!tpe.nonNull && input)
+        builder.append("js.UndefOr[")
       tpe match {
         case Type.NamedType(_, _) =>
           builder.append(convertToScalaType(gqlTypeName, fullyQualified))
@@ -40,7 +43,8 @@ class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
           builder.append(']')
       }
       if (!tpe.nonNull) {
-        val _ = builder.append(" | Null")
+        builder.append(" | Null")
+        val _ = if (input) builder.append(']')
       }
     }
 

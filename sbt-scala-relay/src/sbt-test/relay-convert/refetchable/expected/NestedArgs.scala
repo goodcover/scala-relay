@@ -8,12 +8,12 @@ import _root_.scala.scalajs.js.annotation.JSImport
 */
 
 trait NestedArgsInput extends js.Object {
-  val b: String | Null
+  val b: js.UndefOr[String | Null]
 }
 
 object NestedArgsInput {
   def apply(
-    b: String | Null = null
+    b: js.UndefOr[String | Null] = js.undefined
   ): NestedArgsInput =
     js.Dynamic.literal(
       b = b
@@ -31,7 +31,7 @@ object NestedArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NestedArgsI
   }
 
   def newInput(
-    b: String | Null = null
+    b: js.UndefOr[String | Null] = js.undefined
   ): _root_.relay.generated.NestedArgsInput =
     _root_.relay.generated.NestedArgsInput(
       b

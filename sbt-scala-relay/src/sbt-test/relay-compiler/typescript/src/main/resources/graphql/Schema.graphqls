@@ -13,6 +13,7 @@ type Query {
     multipleVariables(a: String, b: String): Node!
     primitiveResponse(a: String): String!
     optionalPrimitiveResponse(a: String): String
+    nestedObjectResponse: NestedOutput
     listResponse(a: String): [String!]!
 }
 
@@ -24,6 +25,14 @@ input Nested {
     input: Input!
 }
 
-type Node {
+type Output {
+    b: String
+}
+
+type NestedOutput {
+    output: Output
+}
+
+interface Node {
     id: ID!
 }
