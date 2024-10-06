@@ -3,7 +3,7 @@ import sbt._
 
 object Versions {
   final val Scala212 = "2.12.19"
-  final val Scala213 = "2.13.14"
+  final val Scala213 = "2.13.15"
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
