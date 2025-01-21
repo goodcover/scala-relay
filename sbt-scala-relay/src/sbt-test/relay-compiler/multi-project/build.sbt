@@ -1,6 +1,6 @@
 name := "multi-project"
 
-Global / scalaVersion := "2.13.15"
+Global / scalaVersion := "2.13.16"
 
 def commonSettings = Seq(
   scalacOptions += "-Ymacro-annotations",
