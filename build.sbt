@@ -59,7 +59,7 @@ lazy val `scala-relay-macros` = project
       val id = (`scala-relay-ijext` / projectID).value
       IO.write(
         rootFolder / "intellij-compat.json",
-        s"""{"artifact": "${id.organization} % ${id.name} % ${id.revision}" }""".stripMargin
+        s"""{"artifact": "${id.organization} % ${id.name}_2.13 % ${id.revision}" }""".stripMargin
       )
       Seq(rootFolder / "intellij-compat.json")
     },

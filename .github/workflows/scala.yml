@@ -25,6 +25,6 @@ jobs:
       run: scripts/import-gpg.sh
     - uses: actions/setup-node@v3
       with:
-        node-version: 18
+        node-version: 21
     - name: Run tests
       run: sbt "all test scriptedAll"

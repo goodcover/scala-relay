@@ -1,5 +1,9 @@
 ## Changes
 
+### 0.45.1
+
+- Use the correct intellij-compat.json version including the scala version
+
 ### 0.45.0
 
 - Use shared input types.
