@@ -4,7 +4,12 @@ import sbtrelease.ReleaseStateTransformations._
 
 // Run scala-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
-ThisBuild / intellijBuild := "241.17890.1"
+ThisBuild / scalaVersion := Versions.Scala213
+ThisBuild / organization := "com.goodcover.relay"
+
+ThisBuild / intellijPluginName := "scala-relay-ijext"
+// See https://www.jetbrains.com/intellij-repository/releases
+ThisBuild / intellijBuild := "233.13135.103"
 
 lazy val root = project
   .in(file("."))
@@ -78,10 +83,9 @@ lazy val `scala-relay-ijext` = project
     intellijBaseDirectory := (ThisBuild / intellijBaseDirectory).value,
     packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
     patchPluginXml := pluginXmlOptions { xml =>
-      // This only works for proper plugins
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
-      xml.untilBuild = "280.*"
+      xml.untilBuild = s"${(ThisBuild / intellijBuild).value.takeWhile(_ != '.')}.*"
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
