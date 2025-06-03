@@ -27,11 +27,11 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: 'sbt'
-    - name: import gpg
-      env:
-        PGP_SECRET: ${{ secrets.gpg_key_priv }}
-        PGP_PUBLIC: ${{ secrets.gpg_key_pub }}
-      run: scripts/import-gpg.sh
+    # - name: import gpg
+    #   env:
+    #     PGP_SECRET: ${{ secrets.gpg_key_priv }}
+    #     PGP_PUBLIC: ${{ secrets.gpg_key_pub }}
+    #   run: scripts/import-gpg.sh
     - uses: actions/setup-node@v3
       with:
         node-version: 21
