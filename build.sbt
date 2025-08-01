@@ -12,6 +12,12 @@ ThisBuild / intellijPluginName := "scala-relay-ijext"
 // search for com.jetbrains.intellij.idea
 ThisBuild / intellijBuild := "252"
 
+ThisBuild / publishTo := {
+  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
+}
+
 lazy val root = project
   .in(file("."))
   .settings(commonSettings)
@@ -31,8 +37,8 @@ lazy val root = project
   )
 
 lazy val `sbt-scala-relay` = project
-  .enablePlugins(SbtPlugin, BuildInfoPlugin, Sonatype)
-  .settings(commonSettings ++ mavenSettings)
+  .enablePlugins(SbtPlugin, BuildInfoPlugin)
+  .settings(commonSettings)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
@@ -51,12 +57,12 @@ lazy val `sbt-scala-relay` = project
   )
 
 lazy val `scala-relay-core` = project
-  .enablePlugins(ScalaJSPlugin, Sonatype)
-  .settings(commonSettings ++ mavenSettings)
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonSettings)
 
 lazy val `scala-relay-macros` = project
-  .enablePlugins(ScalaJSPlugin, Sonatype)
-  .settings(commonSettings ++ mavenSettings)
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonSettings)
   .settings(
     libraryDependencies += Dependencies.ScalaReflect.value,
     Compile / resourceGenerators += Def.task {
@@ -73,9 +79,9 @@ lazy val `scala-relay-macros` = project
   )
 
 lazy val `scala-relay-ijext` = project
-  .enablePlugins(SbtIdeaPlugin, Sonatype)
+  .enablePlugins(SbtIdeaPlugin)
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
-  .settings(commonSettings ++ mavenSettings)
+  .settings(commonSettings)
   .settings(
     crossScalaVersions := Seq(Versions.Scala213),
     intellijPluginName := name.value,
@@ -115,11 +121,6 @@ lazy val `scala-relay-ijext` = project
     }
   )
 
-lazy val mavenSettings: Seq[Setting[_]] = Seq( //
-  publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value
-)
-
 lazy val macroAnnotationSettings = Seq(
   scalacOptions ++= {
     if (scalaVersion.value == Versions.Scala213) Seq("-Ymacro-annotations")
@@ -153,8 +154,6 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
     "-language:higherKinds",         // Allow higher-kinded types
     "-language:implicitConversions"  // Allow definition of implicit functions called views
   ),
-  organization := "com.goodcover.relay",
-  sonatypeProfileName := "com.goodcover",
   pomExtra :=
     <developers>
       <developer>
@@ -177,7 +176,8 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
   licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
   scmInfo := Some(
     ScmInfo(url("https://github.com/goodcover/scala-relay"), "scm:git:git@github.com:goodcover/scala-relay.git")
-  )
+  ),
+  publishMavenStyle := true
 )
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
@@ -197,7 +197,7 @@ releaseProcess :=
     releaseStepCommandAndRemaining("+ publishSigned"),
     releaseStepCommandAndRemaining("^ sbt-scala-relay/publishSigned"),
     releaseStepCommandAndRemaining("+ scala-relay-ijext/publishSigned"),
-    releaseStepCommandAndRemaining("sonatypeBundleRelease"),
+    releaseStepCommand("sonaUpload"),
     setNextVersion,
     ReleaseCustom.commitNextVersion,
     pushChanges
