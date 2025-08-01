@@ -32,7 +32,7 @@ $ exists target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphq
 > relayCompile
 
 # Changing the output directory should re-compile everything.
-> set relayCompileDirectory in Compile := file("target/scala-2.13/resource_managed/main/__generated__2")
+> set Compile/relayCompileDirectory := file("target/scala-2.13/resource_managed/main/__generated__2")
 > relayCompile
 $ absent target/scala-2.13/resource_managed/main/__generated__/TestQuery.graphql.js
 $ absent target/scala-2.13/resource_managed/main/__generated__/Test2Query.graphql.js

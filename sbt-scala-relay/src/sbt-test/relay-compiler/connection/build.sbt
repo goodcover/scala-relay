@@ -24,4 +24,4 @@ webpack / version := "5.75.0"
 
 Compile / relayTypeScript := true
 
-logLevel := Level.Debug
+////logLevel := Level.Debug

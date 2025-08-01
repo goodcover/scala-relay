@@ -34,7 +34,7 @@ jobs:
     #   run: scripts/import-gpg.sh
     - uses: actions/setup-node@v3
       with:
-        node-version: 21
+        node-version: 22
     - name: Setup sbt
       uses: sbt/setup-sbt@v1
     - name: Cache scala dependencies

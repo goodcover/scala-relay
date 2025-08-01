@@ -57,4 +57,4 @@ lazy val b = project
     Some(output)
   })
 
-logLevel := Level.Debug
+//logLevel := Level.Debug

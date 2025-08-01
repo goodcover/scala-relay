@@ -27,4 +27,4 @@ unmanagedSources / excludeFilter ~= (_ || "*.scala")
 
 Compile / relayConvertTypeMappings += "Foo" -> "Bar"
 
-logLevel := Level.Debug
+//logLevel := Level.Debug

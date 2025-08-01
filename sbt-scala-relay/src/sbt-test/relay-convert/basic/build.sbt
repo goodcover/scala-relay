@@ -25,4 +25,4 @@ webpack / version := "5.75.0"
 // Avoid picking up the expected files in the unmanagedSources.
 unmanagedSources / excludeFilter ~= (_ || "*.scala")
 
-logLevel := Level.Debug
+//logLevel := Level.Debug
