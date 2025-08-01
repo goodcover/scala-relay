@@ -9,7 +9,8 @@ ThisBuild / organization := "com.goodcover.relay"
 
 ThisBuild / intellijPluginName := "scala-relay-ijext"
 // See https://www.jetbrains.com/intellij-repository/releases
-ThisBuild / intellijBuild := "233.13135.103"
+// search for com.jetbrains.intellij.idea
+ThisBuild / intellijBuild := "252"
 
 lazy val root = project
   .in(file("."))
@@ -85,7 +86,6 @@ lazy val `scala-relay-ijext` = project
     patchPluginXml := pluginXmlOptions { xml =>
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
-      xml.untilBuild = s"${(ThisBuild / intellijBuild).value.takeWhile(_ != '.')}.*"
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
@@ -121,7 +121,6 @@ lazy val mavenSettings: Seq[Setting[_]] = Seq( //
 )
 
 lazy val macroAnnotationSettings = Seq(
-  resolvers ++= Resolver.sonatypeOssRepos("releases"),
   scalacOptions ++= {
     if (scalaVersion.value == Versions.Scala213) Seq("-Ymacro-annotations")
     else Seq("-Xfuture")

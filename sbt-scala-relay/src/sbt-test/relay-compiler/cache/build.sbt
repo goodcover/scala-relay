@@ -24,4 +24,4 @@ webpack / version := "5.75.0"
 
 Compile / relayExclude += "generated/**"
 
-logLevel := Level.Debug
+//logLevel := Level.Debug
