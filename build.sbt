@@ -188,6 +188,7 @@ releaseProcess :=
   Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
+    ReleaseCustom.checkAuthedGh,
     runClean,
     releaseStepCommandAndRemaining("+ test"),
     releaseStepCommandAndRemaining(";+ scala-relay-ijext/updateIntellij ;+ scala-relay-ijext/test"),
@@ -200,7 +201,8 @@ releaseProcess :=
     releaseStepCommand("sonaUpload"),
     setNextVersion,
     ReleaseCustom.commitNextVersion,
-    pushChanges
+    pushChanges,
+    ReleaseCustom.createGhRelease
   )
 
 addCommandAlias("publishLocalAll", ";publishLocal ;scala-relay-ijext/publishLocal")

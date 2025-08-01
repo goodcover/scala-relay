@@ -53,4 +53,27 @@ object ReleaseCustom {
     }
     newState
   }
+
+  lazy val checkAuthedGh: (State) => State = { (st: State) =>
+    val log = toProcessLogger(st)
+    val (nextVersion, _) = st
+      .get(versions)
+      .getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?"))
+
+    //
+    Process("gh auth status") !! log
+    st
+  }
+
+  lazy val createGhRelease: (State) => State = { (st: State) =>
+    val log = toProcessLogger(st)
+    val (nextVersion, _) = st
+      .get(versions)
+      .getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?"))
+
+    //
+    Process(s"gh release create v$nextVersion --generate-notes") !! log
+    st
+  }
+
 }
