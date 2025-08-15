@@ -32,23 +32,63 @@ lazy val root = project
   )
   .aggregate( //
     `sbt-scala-relay`,
+    `mill-scala-relay`,
+    `scala-relay-build`,
     `scala-relay-core`,
     `scala-relay-macros`
   )
 
+lazy val `scala-relay-build` = project
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
+    scalaVersion := Versions.Scala3,
+    crossScalaVersions := Seq(Versions.Scala212, Versions.Scala3)
+  )
+
+lazy val `mill-scala-relay` = project
+  .settings(commonSettings)
+  .dependsOn(`scala-relay-build`)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "mill-libs" % Versions.Mill
+    ),
+    // Force all dependencies to use Scala 3 versions
+    dependencyOverrides ++= Seq(
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0",
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "2.37.6",
+      "com.lihaoyi" %% "sourcecode" % "0.4.2",
+      "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
+      "org.scalameta" %% "scalameta" % Versions.ScalaMeta,
+      "org.scalameta" %% "parsers" % Versions.ScalaMeta
+    ),
+    // Exclude all Scala 2.13 versions from all dependencies
+    excludeDependencies ++= Seq(
+      ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
+      ExclusionRule("com.github.plokhotnyuk.jsoniter-scala", "jsoniter-scala-core_2.13"),
+      ExclusionRule("com.lihaoyi", "sourcecode_2.13"),
+      ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
+      ExclusionRule("org.scalameta", "scalameta_2.13"),
+      ExclusionRule("org.scalameta", "parsers_2.13")
+    ),
+    scalaVersion := Versions.Scala37,
+    crossScalaVersions := Seq(Versions.Scala37)
+  )
+
 lazy val `sbt-scala-relay` = project
   .enablePlugins(SbtPlugin, BuildInfoPlugin)
+  .dependsOn(`scala-relay-build`)
   .settings(commonSettings)
   .settings(
     sbtPlugin := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
-    libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
     buildInfoKeys := Seq[BuildInfoKey](version),
     buildInfoPackage := "com.goodcover.relay",
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
     scriptedBufferLog := false,
     scriptedDependencies := {
       scriptedDependencies.value
+      (`scala-relay-build` / publishLocal).value
       (`scala-relay-core` / publishLocal).value
       (`scala-relay-macros` / publishLocal).value
     },
@@ -135,25 +175,40 @@ lazy val macroAnnotationSettings = Seq(
 lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalaVersion := Versions.Scala213,
   crossScalaVersions := Seq(Versions.Scala213),
-  scalacOptions ++= Seq(
-    "-feature",
-    "-deprecation",
-    "-encoding",
-    "UTF-8",
-    "-unchecked",
-    "-Xlint",
-//    "-Yno-adapted-args",
-    "-release",
-    "11",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-value-discard",
-    "-language:_",
-    "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
-    "-language:experimental.macros", // Allow macro definition (besides implementation and application)
-    "-language:higherKinds",         // Allow higher-kinded types
-    "-language:implicitConversions"  // Allow definition of implicit functions called views
-  ),
+  scalacOptions ++= {
+    val commonOptions = Seq(
+      "-feature",
+      "-deprecation",
+      "-encoding",
+      "UTF-8",
+      "-unchecked",
+      "-release",
+      "11",
+      "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
+      "-language:experimental.macros", // Allow macro definition (besides implementation and application)
+      "-language:higherKinds",         // Allow higher-kinded types
+      "-language:implicitConversions"  // Allow definition of implicit functions called views
+    )
+
+    val scala2Options = Seq(
+      "-Xlint",
+      "-Ywarn-dead-code",
+      "-Ywarn-numeric-widen",
+      "-Ywarn-value-discard",
+      "-language:_",
+    )
+
+    val scala3Options = Seq(
+      "-Wunused:all",
+      "-Wvalue-discard"
+    )
+
+    if (scalaVersion.value.startsWith("3.")) {
+      commonOptions ++ scala3Options
+    } else {
+      commonOptions ++ scala2Options
+    }
+  },
   pomExtra :=
     <developers>
       <developer>
@@ -196,6 +251,8 @@ releaseProcess :=
     commitReleaseVersion,
     tagRelease,
     releaseStepCommandAndRemaining("+ publishSigned"),
+    releaseStepCommandAndRemaining("+ scala-relay-build/publishSigned"),
+    releaseStepCommandAndRemaining("+ mill-scala-relay/publishSigned"),
     releaseStepCommandAndRemaining("^ sbt-scala-relay/publishSigned"),
     releaseStepCommandAndRemaining("+ scala-relay-ijext/publishSigned"),
     releaseStepCommand("sonaUpload"),
@@ -205,4 +262,7 @@ releaseProcess :=
     ReleaseCustom.createGhRelease
   )
 
-addCommandAlias("publishLocalAll", ";publishLocal ;scala-relay-ijext/publishLocal")
+addCommandAlias(
+  "publishLocalAll",
+  ";publishLocal ;scala-relay-build/publishLocal ;mill-scala-relay/publishLocal ;scala-relay-ijext/publishLocal"
+)

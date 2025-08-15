@@ -5,13 +5,15 @@ import caliban.InputValue.{ListValue, ObjectValue, VariableValue}
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
-import caliban.parsing.adt.Type.{NamedType, innerType}
+import caliban.parsing.adt.Type.{innerType, NamedType}
 import caliban.parsing.adt.{Document, OperationType, Selection, VariableDefinition}
 import com.goodcover.relay.GraphQLSchema
-import com.goodcover.relay.codegen.Directives.{Refetchable, getRefetchable}
+import com.goodcover.relay.codegen.Directives.{getRefetchable, Refetchable}
 import com.goodcover.relay.codegen.DocumentConverter.{getOperationName, variableArguments}
 import sbt._
 import sbt.io.Using.fileWriter
+
+import scala.reflect.Selectable.reflectiveSelectable
 
 import java.io.Writer
 import java.nio.charset.StandardCharsets
