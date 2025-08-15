@@ -98,13 +98,7 @@ lazy val `sbt-scala-relay` = project
 
 lazy val `scala-relay-core` = project
   .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
-
-lazy val `scala-relay-macros` = project
-  .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies += Dependencies.ScalaReflect.value,
+  .settings(commonSettings,
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
@@ -115,6 +109,14 @@ lazy val `scala-relay-macros` = project
       )
       Seq(rootFolder / "intellij-compat.json")
     },
+  )
+
+lazy val `scala-relay-macros` = project
+  .enablePlugins(ScalaJSPlugin)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies += Dependencies.ScalaReflect.value,
+
     macroAnnotationSettings
   )
 
