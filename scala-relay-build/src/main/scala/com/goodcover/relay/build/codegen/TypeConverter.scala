@@ -60,10 +60,3 @@ object TypeConverter {
   )
 
 }
-
-object Directives {
-  def getClientType(directives: List[Directive]): Option[String] = {
-    // Placeholder implementation - would need to parse @client directive
-    None
-  }
-}

@@ -4,8 +4,6 @@ import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
 import scala.meta._
 import scala.meta.inputs.Input
-import scala.meta.internal.inputs.XtensionInput
-import scala.util.Try
 
 // File operations helper
 object FileOps {
@@ -19,7 +17,6 @@ object FileOps {
  * This is a build-tool agnostic version that can be used by both SBT and Mill.
  */
 object GraphQLExtractor {
-  import FileOps._
 
   // Increment when the code changes to bust the cache.
   private val Version = 1
@@ -59,25 +56,35 @@ object GraphQLExtractor {
       val source = input.parse[Source](implicitly, implicitly, dialect).get
       val builder = collection.mutable.ListBuffer[String]()
 
-      def extractFromTree(tree: Tree): Unit = tree match {
-        // The annotation has to be exactly this. It cannot be an alias or qualified.
-        // We could support more but it would require SemanticDB which is slower.
-        case mod"@graphql(${t: Lit.String})" =>
-          builder += t.value
-        case annot @ mod"@graphql(...$exprss)" =>
-          def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
-          logger.error(
-            s"@graphql annotation must have exactly one string literal argument at ${pos.input.syntax}:${pos.startLine + 1}:${pos.startColumn + 1}"
-          )
-        case q"graphqlGen(${t: Lit.String})" =>
-          builder += t.value
-        case q"graphqlGen(...$exprss)" =>
-          def pos = exprss.flatMap(_.headOption).headOption.getOrElse(q"graphqlGen").pos
-          logger.error(
-            s"graphqlGen macro must have exactly one string literal argument at ${pos.input.syntax}:${pos.startLine + 1}:${pos.startColumn + 1}"
-          )
-        case _ =>
-          tree.children.foreach(extractFromTree)
+      def extractFromTree(tree: Tree): Unit = {
+        tree match {
+          // The annotation has to be exactly this. It cannot be an alias or qualified.
+          // We could support more but it would require SemanticDB which is slower.
+          case mod"@graphql(${t: Lit.String})" =>
+            builder += t.value
+          case annot @ mod"@graphql(...$exprss)" =>
+            def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
+            logger.error(
+              s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
+            )
+            logger.error(s"    at ${positionText(pos)}")
+          case q"graphqlGen(${t: Lit.String})" =>
+            builder += t.value
+          case q"${_}.graphqlGen(${t: Lit.String})" =>
+            builder += t.value
+          case app @ q"graphqlGen(...$exprss)" =>
+            // Term.Name("graphqlGen") also matches this. Ignore it.
+            if (!app.isInstanceOf[Term.Name]) {
+              def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
+              logger.error(
+                s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
+              )
+              logger.error(s"    at ${positionText(pos)}")
+            }
+          case _ =>
+            // Recursively traverse children
+            tree.children.foreach(extractFromTree)
+        }
       }
 
       extractFromTree(source)
@@ -86,15 +93,7 @@ object GraphQLExtractor {
         val output = new File(outputDir, file.getName.stripSuffix(".scala") + ".graphql")
         outputDir.mkdirs()
 
-        val writer = new FileWriter(output, StandardCharsets.UTF_8)
-        try {
-          builder.foreach { graphql =>
-            writer.write(graphql)
-            writer.write("\n\n")
-          }
-        } finally {
-          writer.close()
-        }
+        writeGraphql(file, output, builder.toList)
 
         logger.debug(s"Extracted ${builder.size} GraphQL definitions from $file to $output")
         Some(output)
@@ -105,6 +104,58 @@ object GraphQLExtractor {
       case e: Exception =>
         logger.error(s"Failed to extract GraphQL from $file: ${e.getMessage}")
         None
+    }
+  }
+
+  private def writeGraphql(source: File, output: File, definitions: List[String]): Unit = {
+    val writer = new FileWriter(output, StandardCharsets.UTF_8, false) // Don't append, overwrite
+    try {
+      definitions.foreach { definition =>
+        writer.write("# Extracted from ")
+        writer.write(source.getAbsolutePath)
+        writer.write('\n')
+        val trimmed = trimBlankLines(definition)
+        val lines = trimmed.linesIterator
+        val prefix = {
+          if (lines.hasNext) {
+            val firstLine = lines.next()
+            val indent = firstLine.takeWhile(_.isWhitespace)
+            writer.write(firstLine.drop(indent.length))
+            writer.write('\n')
+            indent
+          } else ""
+        }
+        lines.foreach { line =>
+          writer.write(removeLongestPrefix(line, prefix))
+          writer.write('\n')
+        }
+        writer.write('\n')
+      }
+    } finally {
+      writer.close()
+    }
+  }
+
+  private def removeLongestPrefix(s: String, prefix: String): String = {
+    val n = prefix.indices
+      .find { i =>
+        i < s.length && s.charAt(i) != prefix.charAt(i)
+      }
+      .getOrElse(prefix.length)
+    s.drop(n)
+  }
+
+  private def trimBlankLines(s: String): String = {
+    val lines = s.linesIterator.toList
+    val trimmed = lines.dropWhile(_.trim.isEmpty).reverse.dropWhile(_.trim.isEmpty).reverse
+    trimmed.mkString("\n")
+  }
+
+  private def positionText(position: Position): String = {
+    position.input match {
+      case Input.File(path, _) => s"${path.toString}:${position.startLine}:${position.startColumn}"
+      case Input.VirtualFile(path, _) => s"$path:${position.startLine}:${position.startColumn}"
+      case _ => position.toString
     }
   }
 

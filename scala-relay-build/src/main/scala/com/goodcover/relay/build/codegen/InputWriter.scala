@@ -15,7 +15,7 @@ class InputWriter(
   document: Document,
   schema: GraphQLSchema,
   typeConverter: TypeConverter
-) extends DefinitionWriter(writer, "", schema, typeConverter) {
+) extends DefinitionWriter(writer) {
 
   override def write(): Unit = {
     writeHeader()

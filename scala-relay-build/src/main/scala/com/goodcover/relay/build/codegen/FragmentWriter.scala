@@ -14,16 +14,18 @@ class FragmentWriter(
   typeConverter: TypeConverter
 ) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
 
+  override protected def definitionName: String = fragment.name
+
   override def write(): Unit = {
     writeHeader()
     writeFragmentTrait()
     writeFragmentObject()
     writeFooter()
   }
-  
+
   private def writeFragmentTrait(): Unit = {
     val typeName = Type.Name(fragment.name)
-    
+
     // For now, create a simple trait
     scalaWriter.writeTrait(
       tname = typeName,
@@ -33,7 +35,7 @@ class FragmentWriter(
       indent = ""
     ) { _ => }
   }
-  
+
   private def writeFragmentObject(): Unit = {
     writer.write("object ")
     writer.write(fragment.name)

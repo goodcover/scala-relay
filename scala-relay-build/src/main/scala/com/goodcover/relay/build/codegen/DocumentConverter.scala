@@ -4,7 +4,8 @@ import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
 import caliban.parsing.adt.{Document, OperationType}
-import com.goodcover.relay.build.{FileOps, GraphQLSchema}
+import com.goodcover.relay.build.{BuildLogger, FileOps, GraphQLConverter, GraphQLSchema}
+import com.goodcover.relay.build.codegen.Directives.Refetchable
 
 import java.io.{File, FileWriter}
 import java.nio.charset.StandardCharsets
@@ -121,17 +122,44 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
     new File(outputDir, s"${refetchable.queryName}.scala")
 
   // Placeholder implementations - these would need to be copied from the original codegen package
-  private def getRefetchable(directives: List[caliban.parsing.adt.Directive]): Option[Refetchable] = None
+  private def getRefetchable(directives: List[caliban.parsing.adt.Directive]): Option[Refetchable] =
+    Directives.getRefetchable(directives)
 
   private def getOperationName(operation: OperationDefinition): String =
     operation.name.getOrElse("UnnamedOperation")
 }
 
 object DocumentConverter {
-  def getOperationName(operation: OperationDefinition): String =
-    operation.name.getOrElse("UnnamedOperation")
 
-  def variableArguments(operation: OperationDefinition): String = ""
+  // TODO: Where should this go?
+  private[codegen] def getOperationName(operation: OperationDefinition) =
+    operation.name.getOrElse(throw new UnsupportedOperationException("Anonymous operations are not not supported."))
+
+  def convertSimple(
+    graphqlFiles: Set[File],
+    schemaFile: File,
+    dependencies: Set[File],
+    options: GraphQLConverter.Options,
+    logger: BuildLogger
+  ): Set[File] = {
+    logger.info("Running GraphQLConverter...")
+
+    // For now, just create empty .scala files for each GraphQL file
+    graphqlFiles.flatMap { graphqlFile =>
+      try {
+        val outputFile = new File(options.outputDir, s"${graphqlFile.getName.stripSuffix(".graphql")}.scala")
+        outputFile.getParentFile.mkdirs()
+        if (!outputFile.exists()) {
+          outputFile.createNewFile()
+        }
+        Some(outputFile)
+      } catch {
+        case e: Exception =>
+          logger.warn(s"Failed to convert ${graphqlFile.getPath}: ${e.getMessage}")
+          None
+      }
+    }
+  }
 }
 
 // The actual writer implementations are now in separate files

@@ -9,7 +9,7 @@ import scala.util.Try
 /**
   * Mill implementation of ProcessRunner using Mill's process execution
   */
-class MillProcessRunner(implicit ctx: Ctx) extends ProcessRunner {
+class MillProcessRunner extends ProcessRunner {
   override def run(
     command: Seq[String],
     workingDir: File,
@@ -20,7 +20,7 @@ class MillProcessRunner(implicit ctx: Ctx) extends ProcessRunner {
       logger.info(s"Running command: ${command.mkString(" ")}")
       logger.debug(s"Working directory: $workingDir")
 
-      val processBuilder = new ProcessBuilder(command: _*)
+      val processBuilder = new ProcessBuilder(command*)
       processBuilder.directory(workingDir)
 
       val process = processBuilder.start()
@@ -43,5 +43,5 @@ class MillProcessRunner(implicit ctx: Ctx) extends ProcessRunner {
 }
 
 object MillProcessRunner {
-  def apply()(implicit ctx: Ctx): MillProcessRunner = new MillProcessRunner()
+  def apply(): MillProcessRunner = new MillProcessRunner()
 }

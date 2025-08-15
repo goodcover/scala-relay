@@ -98,6 +98,82 @@ class ScalaWriter(writer: Writer) {
     if (!compact) writer.write('\n')
   }
 
+  def writeMethod(
+    ename: Term.Name,
+    parameters: List[Parameter],
+    returnType: String,
+    indent: String
+  )(writeBody: () => Unit): Unit = {
+    writer.write(indent)
+    writer.write("def ")
+    writer.write(ename.syntax)
+    writer.write('(')
+    foreachParameter(parameters) {
+      case (parameter, hasMore) =>
+        writer.write(parameter.ename.syntax)
+        writer.write(": ")
+        writer.write(parameter.scalaType)
+        parameter.initializer.foreach { init =>
+          writer.write(" = ")
+          writer.write(init)
+        }
+        if (hasMore) writer.write(", ")
+    }
+    writer.write("): ")
+    writer.write(returnType)
+    writer.write(" =")
+    writeBody()
+  }
+
+  def writeProxyMethod(
+    ename: Term.Name,
+    parameters: List[Parameter],
+    returnType: String,
+    proxy: String,
+    compact: Boolean,
+    indent: String
+  ): Unit = {
+    writeMethod(ename, parameters, returnType, indent) { () =>
+      if (parameters.nonEmpty) {
+        writer.write("\n  ")
+        writer.write(indent)
+      } else {
+        writer.write(' ')
+      }
+      writer.write(proxy)
+      writer.write('(')
+      if (parameters.nonEmpty) {
+        writer.write('\n')
+        foreachParameter(parameters) {
+          case (field, hasMore) =>
+            writer.write(indent)
+            writer.write("    ")
+            writer.write(field.ename.syntax)
+            if (hasMore) writer.write(',')
+            writer.write('\n')
+        }
+        writer.write(indent)
+        writer.write("  ")
+      }
+      writer.write(")\n")
+      if (!compact) writer.write('\n')
+    }
+  }
+
+  def foreachParameter[T](parameters: List[T])(f: (T, Boolean) => Unit): Unit = {
+    @tailrec
+    def loop(parameters: List[T]): Unit = parameters match {
+      case Nil => ()
+      case field :: Nil =>
+        f(field, false)
+      case field :: tail =>
+        f(field, true)
+        loop(tail)
+    }
+
+    loop(parameters)
+  }
+
   private def writeParameterList[T](parameters: Seq[T])(f: (T, Boolean) => Unit): Unit = {
     @tailrec
     def loop(parameters: List[T]): Unit = parameters match {

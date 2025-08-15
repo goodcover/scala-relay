@@ -125,6 +125,20 @@ class GraphQLSchema(val file: File, val document: Document, additional: Seq[Docu
   private def invalidSchema(message: String): GraphQLSchema.InvalidSchema =
     GraphQLSchema.InvalidSchema(file, message)
 
+  def fieldType(name: String): GraphQLSchema.FieldTypeDefinition =
+    objectInterfaceUnionType(name)
+
+  def fragmentType(name: String): GraphQLSchema.FieldTypeDefinition =
+    objectInterfaceUnionType(name)
+
+  def objectInterfaceUnionType(name: String): GraphQLSchema.FieldTypeDefinition =
+    objectTypes
+      .get(name)
+      .map(GraphQLSchema.FieldTypeDefinition(_))
+      .orElse(interfaceTypes.get(name).map(GraphQLSchema.FieldTypeDefinition(_)))
+      .orElse(unionTypes.get(name).map(GraphQLSchema.FieldTypeDefinition(_)))
+      .getOrElse(throw invalidSchema(s"Missing type, interface, or union $name."))
+
   private def unsupportedOperation(message: String): GraphQLSchema.UnsupportedOperation =
     GraphQLSchema.UnsupportedOperation(file, message)
 }
@@ -153,8 +167,33 @@ object GraphQLSchema {
   final case class UnsupportedOperation(file: File, message: String)
       extends Exception(s"Unsupported operation in schema file: $file", new Exception(message))
 
+  // TODO: Rename
   final case class FieldTypeDefinition(
-    fieldDefinition: TypeDefinition.FieldDefinition,
-    objectTypeDefinition: TypeDefinition.ObjectTypeDefinition
+    description: Option[String],
+    name: String,
+    implementsOrMembers: List[NamedType],
+    directives: List[Directive],
+    fields: List[TypeDefinition.FieldDefinition]
   )
+
+  object FieldTypeDefinition {
+
+    def apply(obj: TypeDefinition.ObjectTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(obj.description, obj.name, obj.implements, obj.directives, obj.fields)
+
+    def apply(int: TypeDefinition.InterfaceTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(int.description, int.name, int.implements, int.directives, int.fields)
+
+    def apply(union: TypeDefinition.UnionTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(
+        union.description,
+        union.name,
+        union.memberTypes.map(Type.NamedType(_, nonNull = true)),
+        union.directives,
+        Nil
+      )
+
+    def apply(`enum`: TypeDefinition.EnumTypeDefinition): FieldTypeDefinition =
+      FieldTypeDefinition(`enum`.description, `enum`.name, Nil, `enum`.directives, Nil)
+  }
 }

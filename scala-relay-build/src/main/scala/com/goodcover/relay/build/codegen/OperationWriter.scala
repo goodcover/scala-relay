@@ -1,6 +1,7 @@
 package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
 import caliban.parsing.adt.Document
 import com.goodcover.relay.build.GraphQLSchema
 
@@ -16,73 +17,45 @@ abstract class OperationWriter(
   typeConverter: TypeConverter
 ) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
 
-  protected def operationName: String = operation.name.getOrElse("UnnamedOperation")
-  
+  override protected def definitionName: String = DocumentConverter.getOperationName(operation)
+
+  protected val operationInputWriter = new OperationInputWriter(writer, operation, document, typeConverter)
+
   protected def operationObjectParent: String
-  
-  override def write(): Unit = {
-    writeHeader()
-    writeOperationInputType()
-    writeOperationTrait()
-    writeOperationObject()
-    writeFooter()
-  }
-  
-  protected def writeOperationInputType(): Unit = {
-    val inputTypeName = operationName + "Input"
-    val typeName = Type.Name(inputTypeName)
-    
-    // For now, create an empty input type
-    scalaWriter.writeTrait(
-      tname = typeName,
-      parentTraits = Seq.empty,
-      fields = Seq.empty,
-      jsNative = true,
-      indent = ""
-    ) { _ => }
-    
-    // Write companion object
-    writer.write("object ")
-    writer.write(inputTypeName)
-    writer.write(" {\n")
-    writer.write("  def apply(): ")
-    writer.write(inputTypeName)
-    writer.write(" = js.Dynamic.literal().asInstanceOf[")
-    writer.write(inputTypeName)
-    writer.write("]\n")
-    writer.write("}\n\n")
-  }
-  
-  protected def writeOperationTrait(): Unit = {
-    val typeName = Type.Name(operationName)
-    
-    // For now, create a simple trait
-    scalaWriter.writeTrait(
-      tname = typeName,
-      parentTraits = Seq.empty,
-      fields = Seq.empty,
-      jsNative = true,
-      indent = ""
-    ) { _ => }
-  }
-  
+
+  // TODO: This is weird.
+  protected def writeOperationTrait(): Unit =
+    writeDefinitionTrait(operation.selectionSet, getFieldDefinition(getOperationField))
+
   protected def writeOperationObject(): Unit = {
-    val inputTypeName = operationName + "Input"
-    
+    // TODO: This is weird.
+    val fieldTypeDefinition: FieldTypeLookup = getFieldDefinitionTypeDefinition(getOperationField)
+
     writer.write("object ")
-    writer.write(operationName)
+    val name = definitionName
+    writer.write(name)
     writer.write(" extends _root_.com.goodcover.relay.")
     writer.write(operationObjectParent)
     writer.write('[')
-    writer.write(inputTypeName)
+    // TODO: It's kinda weird getting the name from here.
+    // FIXME: This should use the other overload but it'll probably break stuff.
+    writer.write(typeConverter.convertToScalaType(operationInputWriter.operationInputName, fullyQualified = false))
     writer.write(", ")
-    writer.write(operationName)
-    writer.write("] {\n")
-    writer.write("  type Ctor[T] = T\n")
-    writer.write("  \n")
-    writer.write("  val node: String = \"\"\"\n")
-    writer.write(documentText)
-    writer.write("\n  \"\"\"\n")
-    writer.write("}\n")
+    writer.write(name)
+    // TODO: Ctor is redundant for queries. Only fragments can be plural.
+    writer.write("""] {
+                   |  type Ctor[T] = T
+                   |
+                   |""".stripMargin)
+    writeNestedTypeNameObject(None, operation.selectionSet, name, "  ", compact = false)
+    writeNestedTraits(name, operation.selectionSet, fieldTypeDefinition, name)
+    writeFragmentImplicits(name, operation.selectionSet, name)
+    operationInputWriter.writeNewInputMethod()
+    // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
+    // In v11 it is either ReaderFragment or ConcreteRequest.
+    writer.write("  type Query = _root_.com.goodcover.relay.ConcreteRequest\n\n")
+    writeGeneratedMapping(writer, name)
   }
+
+  protected def getOperationField(name: String): FieldDefinition
 }
