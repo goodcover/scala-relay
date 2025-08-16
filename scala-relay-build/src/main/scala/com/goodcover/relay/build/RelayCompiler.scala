@@ -122,37 +122,65 @@ object RelayCompiler {
       Seq("sh", "-c")
     }
 
-    val argsList = Seq(
-      compilerCommand,
-      "--language",
-      language,
-      "--watchman",
-      "false",
-      "--schema",
-      schemaPath.getAbsolutePath.quote,
-      "--src",
-      sourceDirectory.getAbsolutePath.quote,
-      "--artifactDirectory",
-      outputPath.getAbsolutePath.quote
-    )
+    // Check if relay.config.js exists in working directory
+    val relayConfigFile = new File(workingDir, "relay.config.js")
+    val packageJsonFile = new File(workingDir, "package.json")
 
-    val verboseList = if (verbose) Seq("--verbose") else Seq.empty
-    val includesList = includes.flatMap(include => Seq("--include", include.quote))
-    val excludesList = excludes.flatMap(exclude => Seq("--exclude", exclude.quote))
-    val extensionsList = extensions.flatMap(extension => Seq("--extensions", extension.quote))
-    val persistedList = persisted match {
-      case Some(value) => Seq("--persist-output", value.getPath.quote)
-      case None => Seq.empty
+    val useConfigFileOnly = relayConfigFile.exists() || packageJsonFile.exists()
+
+    val argsList = if (useConfigFileOnly) {
+      // Modern relay-compiler v17.0.0+ with config file - no CLI arguments needed
+      logger.debug("Using relay.config.js or package.json configuration")
+      Seq(compilerCommand)
+    } else {
+      // Fallback to CLI arguments for older versions or when no config file exists
+      logger.debug("No config file found, using CLI arguments")
+      Seq(
+        compilerCommand,
+        "--schema",
+        schemaPath.getAbsolutePath.quote,
+        "--src",
+        sourceDirectory.getAbsolutePath.quote,
+        "--artifactDirectory",
+        outputPath.getAbsolutePath.quote
+      )
     }
-    val customScalarsArgs = customScalars.map {
-      case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
-    }.toSeq
+
+    // Modern verbosity control (only if not using config file)
+    val verboseList = if (useConfigFileOnly) {
+      Seq.empty // Verbosity configured in config file
+    } else if (verbose) {
+      Seq("--output", "verbose")
+    } else {
+      Seq("--output", "quiet-with-errors")
+    }
+
+    // Note: Modern relay-compiler uses config files for includes, excludes, extensions, etc.
+    // These command-line options are no longer supported in v17.0.0+
+    val includesList = Seq.empty[String] // No longer supported via CLI
+    val excludesList = Seq.empty[String] // No longer supported via CLI
+    val extensionsList = Seq.empty[String] // No longer supported via CLI
+    val persistedList = if (useConfigFileOnly) {
+      Seq.empty // Configured in config file
+    } else {
+      persisted match {
+        case Some(_) => Seq("--repersist") // Modern equivalent
+        case None => Seq.empty
+      }
+    }
+    // Custom scalars are now configured via relay.config.js, not CLI
+    val customScalarsArgs = Seq.empty[String]
 
     val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ extensionsList ++ persistedList ++ customScalarsArgs).mkString(" ")
 
     var output = Vector.empty[String]
 
     logger.info("Running relay-compiler...")
+    logger.debug(s"Command: ${cmd.mkString(" ")}")
+    logger.debug(s"Working directory: ${workingDir.getAbsolutePath}")
+    logger.debug(s"Schema path: ${schemaPath.getAbsolutePath}")
+    logger.debug(s"Source directory: ${sourceDirectory.getAbsolutePath}")
+    logger.debug(s"Output path: ${outputPath.getAbsolutePath}")
 
     processRunner.run(
       cmd,
