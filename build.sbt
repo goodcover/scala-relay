@@ -51,7 +51,9 @@ lazy val `mill-scala-relay` = project
   .dependsOn(`scala-relay-build`)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "mill-libs" % Versions.Mill
+      "com.lihaoyi" %% "mill-libs-scalalib" % Versions.Mill,
+      Dependencies.millTestkit % Test,
+      Dependencies.munit % Test,
     ),
     // Force all dependencies to use Scala 3 versions
     dependencyOverrides ++= Seq(
@@ -72,7 +74,8 @@ lazy val `mill-scala-relay` = project
       ExclusionRule("org.scalameta", "parsers_2.13")
     ),
     scalaVersion := Versions.Scala37,
-    crossScalaVersions := Seq(Versions.Scala37)
+    crossScalaVersions := Seq(Versions.Scala37),
+    testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
 lazy val `sbt-scala-relay` = project

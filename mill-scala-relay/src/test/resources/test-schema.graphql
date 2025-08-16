@@ -1,0 +1,98 @@
+type Query {
+  user(id: ID!): User
+  users: [User!]!
+  post(id: ID!): Post
+  posts: [Post!]!
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String
+  posts: [Post!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+  createdAt: String!
+  updatedAt: String!
+  tags: [String!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User
+  updateUser(id: ID!, input: UpdateUserInput!): User
+  deleteUser(id: ID!): Boolean
+  createPost(input: CreatePostInput!): Post
+  updatePost(id: ID!, input: UpdatePostInput!): Post
+  deletePost(id: ID!): Boolean
+}
+
+type Subscription {
+  userCreated: User
+  postCreated: Post
+}
+
+input CreateUserInput {
+  name: String!
+  email: String
+}
+
+input UpdateUserInput {
+  name: String
+  email: String
+}
+
+input CreatePostInput {
+  title: String!
+  content: String!
+  authorId: ID!
+  tags: [String!]
+}
+
+input UpdatePostInput {
+  title: String
+  content: String
+  tags: [String!]
+}
+
+# Custom scalars
+scalar DateTime
+scalar JSON
+
+# Directives
+directive @deprecated(reason: String = "No longer supported") on FIELD_DEFINITION | ENUM_VALUE
+directive @auth(requires: Role = USER) on FIELD_DEFINITION | OBJECT
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+# Interface example
+interface Node {
+  id: ID!
+}
+
+# Union example  
+union SearchResult = User | Post
+
+# Extended types with interfaces
+type ExtendedUser implements Node {
+  id: ID!
+  name: String!
+  email: String
+  profile: UserProfile
+}
+
+type UserProfile {
+  bio: String
+  avatar: String
+  website: String
+}

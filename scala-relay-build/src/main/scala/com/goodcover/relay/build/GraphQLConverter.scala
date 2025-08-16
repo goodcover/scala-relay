@@ -37,18 +37,8 @@ object GraphQLConverter {
     }
 
     try {
-      // Read schema and create GraphQLSchema instance
-      val schema = GraphQLSchema(schemaFile, dependencies)
-
-      // Convert each GraphQL file
-      val outputs = sources.flatMap { file =>
-        convertFile(file, schema, options, logger)
-      }
-
-      // Also convert schema types
-      val schemaOutputs = convertSchema(schema, options, logger)
-
-      outputs ++ schemaOutputs
+      // Use the DocumentConverter.convertSimple method
+      DocumentConverter.convertSimple(sources, schemaFile, dependencies, options, logger)
     } catch {
       case e: Exception =>
         logger.error(s"Failed to convert GraphQL files: ${e.getMessage}")
@@ -56,47 +46,7 @@ object GraphQLConverter {
     }
   }
 
-  /**
-   * Convert a single GraphQL file to Scala.js facades.
-   */
-  private def convertFile(
-    file: File,
-    schema: GraphQLSchema,
-    options: Options,
-    logger: BuildLogger
-  ): Set[File] = {
-    logger.debug(s"Converting GraphQL file: $file")
 
-    try {
-      val documentText = readFile(file)
-      val converter = new DocumentConverter(options.outputDir, schema, options.typeMappings, Set.empty)
-      converter.convert(documentText)
-    } catch {
-      case e: Exception =>
-        logger.error(s"Failed to convert $file: ${e.getMessage}")
-        Set.empty
-    }
-  }
-
-  /**
-   * Convert schema types to Scala.js facades.
-   */
-  private def convertSchema(
-    schema: GraphQLSchema,
-    options: Options,
-    logger: BuildLogger
-  ): Set[File] = {
-    logger.debug("Converting schema types")
-
-    try {
-      val converter = new DocumentConverter(options.outputDir, schema, options.typeMappings, Set.empty)
-      converter.convertSchema()
-    } catch {
-      case e: Exception =>
-        logger.error(s"Failed to convert schema: ${e.getMessage}")
-        Set.empty
-    }
-  }
 
   /**
    * Read file content as string

@@ -7,7 +7,7 @@ object Versions {
   final val Scala3   = "3.3.6"
   final val Scala37  = "3.7.1"
 
-  final val Mill = "1.0.0"
+  final val Mill = "1.0.3"
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
@@ -19,4 +19,10 @@ object Dependencies {
   val Caliban      = "com.github.ghostdogpr" %% "caliban" % Versions.Caliban
   val ScalaMeta    = "org.scalameta" %% "scalameta" % Versions.ScalaMeta exclude ("com.lihaoyi", "sourcecode_2.13")
   def ScalaReflect = Def.setting { "org.scala-lang" % "scala-reflect" % scalaVersion.value }
+
+  // Test dependencies
+  val UTest       = "com.lihaoyi"   %% "utest"        % "0.8.4"
+  val munit       = "org.scalameta" %% "munit"        % "1.1.0"
+  val millTestkit = "com.lihaoyi"   %% "mill-testkit" % Versions.Mill
+  val ScalaTest   = "org.scalatest" %% "scalatest"    % "3.2.19"
 }
