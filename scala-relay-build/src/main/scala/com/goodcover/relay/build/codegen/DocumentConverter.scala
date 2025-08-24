@@ -144,20 +144,44 @@ object DocumentConverter {
   ): Set[File] = {
     logger.info("Running GraphQLConverter...")
 
-    // For now, just create empty .scala files for each GraphQL file
-    graphqlFiles.flatMap { graphqlFile =>
-      try {
-        val outputFile = new File(options.outputDir, s"${graphqlFile.getName.stripSuffix(".graphql")}.scala")
-        outputFile.getParentFile.mkdirs()
-        if (!outputFile.exists()) {
-          outputFile.createNewFile()
-        }
-        Some(outputFile)
-      } catch {
-        case e: Exception =>
-          logger.warn(s"Failed to convert ${graphqlFile.getPath}: ${e.getMessage}")
-          None
+    if (!schemaFile.exists()) {
+      logger.error(s"Schema file does not exist: $schemaFile")
+      return Set.empty
+    }
+
+    try {
+      // Parse the schema
+      val schemaText = scala.io.Source.fromFile(schemaFile, StandardCharsets.UTF_8.name()).mkString
+      val schemaDocument = Parser.parseQuery(schemaText) match {
+        case Right(doc) => doc
+        case Left(error) =>
+          logger.error(s"Failed to parse schema file $schemaFile: $error")
+          return Set.empty
       }
+
+      val schema = GraphQLSchema(schemaFile, Set.empty)
+      val converter = new DocumentConverter(options.outputDir, schema, options.typeMappings, Set.empty)
+
+      // Convert schema input types
+      val schemaResults = converter.convertSchema()
+
+      // Convert GraphQL operation files
+      val operationResults = graphqlFiles.flatMap { graphqlFile =>
+        try {
+          logger.debug(s"Converting GraphQL file: ${graphqlFile.getName}")
+          converter.convert(graphqlFile)
+        } catch {
+          case e: Exception =>
+            logger.warn(s"Failed to convert ${graphqlFile.getPath}: ${e.getMessage}")
+            Set.empty[File]
+        }
+      }
+
+      schemaResults ++ operationResults
+    } catch {
+      case e: Exception =>
+        logger.error(s"Failed to convert GraphQL files: ${e.getMessage}")
+        Set.empty
     }
   }
 }

@@ -45,7 +45,12 @@ object SharedFunctionalityTest extends TestSuite {
 
   def createTestSchema(dir: File): File = {
     val schemaContent =
-      """type Query {
+      """schema {
+        |  query: Query
+        |  mutation: Mutation
+        |}
+        |
+        |type Query {
         |  user(id: ID!): User
         |}
         |

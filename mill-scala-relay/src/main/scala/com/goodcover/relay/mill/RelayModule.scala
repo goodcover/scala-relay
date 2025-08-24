@@ -108,6 +108,35 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
+    * Directory for wrapped JavaScript/TypeScript files
+    */
+  def relayWrapDir: Task[PathRef] = Task {
+    PathRef(Task.dest / "wrap")
+  }
+
+  /**
+    * Wrap GraphQL definitions in JavaScript/TypeScript files for relay-compiler
+    */
+  def relayWrap: Task[PathRef] = Task {
+    val logger = MillBuildLogger(Task.log)
+    val extractDir = relayExtract().path.toIO
+    val outputDir = relayWrapDir().path.toIO
+    val typeScript = relayTypeScript()
+
+    // Find all .graphql files from the extract step
+    val graphqlFiles = if (extractDir.exists()) {
+      extractDir.listFiles().filter(_.getName.endsWith(".graphql")).toSet
+    } else {
+      Set.empty[File]
+    }
+
+    val options = GraphQLWrapper.Options(outputDir, typeScript)
+    val results = GraphQLWrapper.wrapSimple(graphqlFiles, options, logger)
+
+    PathRef(os.Path(outputDir))
+  }
+
+  /**
     * Convert GraphQL files to Scala.js facades
     */
   def relayConvert: Task[PathRef] = Task {
@@ -147,22 +176,22 @@ trait RelayModule extends ScalaModule {
     val logger = MillBuildLogger(Task.log)
     val processRunner = MillProcessRunner()
 
-    val extractedDir = relayExtract().path.toIO
-    val schemaFile   = relaySchemaFile().path.toIO
-    val outputDir    = relayCompileDir().path.toIO
+    val wrappedDir = relayWrap().path.toIO  // Use wrapped files instead of extracted
+    val schemaFile = relaySchemaFile().path.toIO
+    val outputDir  = relayCompileDir().path.toIO
 
     if (!schemaFile.exists()) {
       logger.error(s"Schema file does not exist: $schemaFile")
       PathRef(os.Path(outputDir))
-    } else if (!extractedDir.exists() || extractedDir.listFiles().isEmpty) {
-      logger.warn("No GraphQL files found to compile")
+    } else if (!wrappedDir.exists() || wrappedDir.listFiles().isEmpty) {
+      logger.warn("No wrapped GraphQL files found to compile")
       PathRef(os.Path(outputDir))
     } else {
       val options = RelayCompiler.Options(
         workingDir = moduleDir.toIO,
         compilerCommand = relayCompilerCommand(),
         schemaPath = schemaFile,
-        sourceDirectory = extractedDir,
+        sourceDirectory = wrappedDir,  // Point to wrapped files
         outputPath = outputDir,
         verbose = relayVerbose(),
         includes = relayIncludes(),
@@ -185,6 +214,7 @@ trait RelayModule extends ScalaModule {
     */
   def relayAll: Task[PathRef] = Task {
     relayExtract()
+    relayWrap()
     relayConvert()
     relayCompile()
   }

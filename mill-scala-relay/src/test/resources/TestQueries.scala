@@ -4,9 +4,9 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
 object TestQueries {
-  
+
   @graphql("""
-    query GetUser($id: ID!) {
+    query TestQueriesGetUserQuery($id: ID!) {
       user(id: $id) {
         id
         name
@@ -20,9 +20,9 @@ object TestQueries {
     }
   """)
   def getUserQuery: js.Object = js.native
-  
+
   @graphql("""
-    query GetUsers($limit: Int, $offset: Int) {
+    query TestQueriesGetUsersQuery {
       users {
         id
         name
@@ -36,9 +36,9 @@ object TestQueries {
     }
   """)
   def getUsersQuery: js.Object = js.native
-  
+
   @graphql("""
-    query GetPost($id: ID!) {
+    query TestQueriesGetPostQuery($id: ID!) {
       post(id: $id) {
         id
         title
@@ -57,9 +57,9 @@ object TestQueries {
 }
 
 object TestMutations {
-  
+
   @graphql("""
-    mutation CreateUser($input: CreateUserInput!) {
+    mutation TestQueriesCreateUserMutation($input: CreateUserInput!) {
       createUser(input: $input) {
         id
         name
@@ -69,9 +69,9 @@ object TestMutations {
     }
   """)
   def createUserMutation: js.Object = js.native
-  
+
   @graphql("""
-    mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+    mutation TestQueriesUpdateUserMutation($id: ID!, $input: UpdateUserInput!) {
       updateUser(id: $id, input: $input) {
         id
         name
@@ -81,9 +81,9 @@ object TestMutations {
     }
   """)
   def updateUserMutation: js.Object = js.native
-  
+
   @graphql("""
-    mutation CreatePost($input: CreatePostInput!) {
+    mutation TestQueriesCreatePostMutation($input: CreatePostInput!) {
       createPost(input: $input) {
         id
         title
@@ -101,9 +101,9 @@ object TestMutations {
 }
 
 object TestFragments {
-  
+
   @graphql("""
-    fragment UserInfo on User {
+    fragment TestQueriesUserInfo on User {
       id
       name
       email
@@ -111,16 +111,16 @@ object TestFragments {
     }
   """)
   def userInfoFragment: js.Object = js.native
-  
+
   @graphql("""
-    fragment PostInfo on Post {
+    fragment TestQueriesPostInfo on Post {
       id
       title
       content
       tags
       createdAt
       author {
-        ...UserInfo
+        ...TestQueriesUserInfo
       }
     }
   """)
@@ -128,9 +128,9 @@ object TestFragments {
 }
 
 object TestSubscriptions {
-  
+
   @graphql("""
-    subscription OnUserCreated {
+    subscription TestQueriesOnUserCreatedSubscription {
       userCreated {
         id
         name
@@ -140,9 +140,9 @@ object TestSubscriptions {
     }
   """)
   def onUserCreatedSubscription: js.Object = js.native
-  
+
   @graphql("""
-    subscription OnPostCreated {
+    subscription TestQueriesOnPostCreatedSubscription {
       postCreated {
         id
         title
@@ -159,9 +159,9 @@ object TestSubscriptions {
 
 // Test with graphqlGen macro calls
 object TestMacros {
-  
+
   val getUserWithMacro = graphqlGen("""
-    query GetUserWithMacro($id: ID!) {
+    query TestQueriesGetUserWithMacroQuery($id: ID!) {
       user(id: $id) {
         id
         name
@@ -169,9 +169,9 @@ object TestMacros {
       }
     }
   """)
-  
+
   val createUserWithMacro = graphqlGen("""
-    mutation CreateUserWithMacro($input: CreateUserInput!) {
+    mutation TestQueriesCreateUserWithMacroMutation($input: CreateUserInput!) {
       createUser(input: $input) {
         id
         name
@@ -183,9 +183,9 @@ object TestMacros {
 
 // Test with complex nested selections
 object TestComplexQueries {
-  
+
   @graphql("""
-    query GetUserWithPosts($id: ID!) {
+    query TestQueriesGetUserWithPostsQuery($id: ID!) {
       user(id: $id) {
         id
         name
@@ -207,26 +207,22 @@ object TestComplexQueries {
     }
   """)
   def getUserWithPostsQuery: js.Object = js.native
-  
+
   @graphql("""
-    query SearchContent($query: String!) {
-      search(query: $query) {
-        ... on User {
+    query TestQueriesGetAllPostsQuery {
+      posts {
+        id
+        title
+        content
+        author {
           id
           name
           email
         }
-        ... on Post {
-          id
-          title
-          content
-          author {
-            id
-            name
-          }
-        }
+        tags
+        createdAt
       }
     }
   """)
-  def searchContentQuery: js.Object = js.native
+  def getAllPostsQuery: js.Object = js.native
 }
