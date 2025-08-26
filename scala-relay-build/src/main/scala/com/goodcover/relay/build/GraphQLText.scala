@@ -46,7 +46,7 @@ object GraphQLText {
         val line = lines.next()
         if (foundStart) {
           append(line)
-          val diff = countSelectionSetDiff(line)
+          val diff      = countSelectionSetDiff(line)
           val nextOpens = opens + diff
           if (nextOpens > 0) {
             loop(foundStart, nextOpens)
@@ -57,8 +57,8 @@ object GraphQLText {
           if (startOfText(line)) {
             append(line)
             val (nonComment, _) = splitComment(line)
-            val opens = countSelectionSetOpens(nonComment)
-            val closes = countSelectionSetCloses(nonComment)
+            val opens           = countSelectionSetOpens(nonComment)
+            val closes          = countSelectionSetCloses(nonComment)
             if (opens > 0 && opens == closes) {
               append(line)
             } else {
@@ -76,8 +76,8 @@ object GraphQLText {
 
   def startOfOperation(s: String, operation: OperationDefinition): Boolean = {
     val operationType = operation.operationType match {
-      case OperationType.Query => "query"
-      case OperationType.Mutation => "mutation"
+      case OperationType.Query        => "query"
+      case OperationType.Mutation     => "mutation"
       case OperationType.Subscription => "subscription"
     }
     operation.name match {
