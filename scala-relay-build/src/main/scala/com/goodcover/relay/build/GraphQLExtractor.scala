@@ -52,6 +52,14 @@ object GraphQLExtractor {
     extracts
   }
 
+  // TODO: Add parallelism.
+
+  /**
+    * Extracts the graphql definitions from the files.
+    *
+    * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
+    * existing extracts are deleted beforehand if required.
+    */
   def extractFiles(files: Map[File, File], dialect: Dialect, logger: BuildLogger): Map[File, File] =
     files.filter {
       case (file, output) =>

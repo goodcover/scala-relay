@@ -1,15 +1,10 @@
 package com.goodcover.relay
 
-import caliban.parsing.Parser
-import caliban.parsing.adt.{Definition, Document}
+import com.goodcover.relay.build.{GraphQLWrapper => BuildGraphQLWrapper}
 import sbt._
-import sbt.io.Using.fileWriter
 import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
 import sjsonnew._
-
-import java.io.BufferedWriter
-import java.nio.charset.StandardCharsets
 
 object GraphQLWrapper {
 
@@ -184,31 +179,7 @@ object GraphQLWrapper {
     * existing wrappers are deleted beforehand if required.
     */
   private def wrapFiles(files: Map[File, File], logger: Logger): Unit =
-    files.foreach {
-      case (file, output) => wrapFile(file, output, logger)
-    }
-
-  private def wrapFile(file: File, output: File, logger: Logger): Unit = {
-    logger.debug(s"Wrapping graphql definitions: $file")
-    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
-      // TODO: We could use the caliban fastparse parsers directly but this seems fast enough for now.
-      val documentText = IO.read(file, StandardCharsets.UTF_8)
-      val document     = Parser.parseQuery(documentText).right.get
-      document.definitions.foreach { definition =>
-        writeWrapper(writer, definition, document, logger)
-      }
-    }
-  }
-
-  private def writeWrapper(writer: BufferedWriter, definition: Definition, document: Document, logger: Logger): Unit = {
-    writer.write("graphql`\n")
-    val rendered = renderDefinition(definition, document)
-    writer.write(escape(trimBlankLines(rendered)))
-    writer.write("`\n\n")
-  }
-
-  private def escape(s: String): String =
-    s.replace("""\""", """\\""").replace("`", """\`""").replaceAll("""\$(?=\{.*?})""", """\$""")
+    BuildGraphQLWrapper.wrapFiles(files, SbtBuildLogger(logger))
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {
     val Stores(last, resources, outputs) = Stores(cacheStoreFactory)
