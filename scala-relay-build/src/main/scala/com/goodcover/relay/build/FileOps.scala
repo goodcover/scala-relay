@@ -52,7 +52,7 @@ object FileOps {
     protected final def open(file: File): T = {
       val parent = file.getParentFile
       if (parent != null) {
-        try Files.createDirectory(parent.toPath)
+        try Files.createDirectories(parent.toPath)
         catch { case _: IOException => }
       }
       openImpl(file)
