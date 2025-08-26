@@ -19,9 +19,6 @@ package object codegen {
   def renderDefinition(definition: Definition, document: Document): String =
     trimBlankLines(DocumentRenderer.render(Document(List(definition), document.sourceMapper)))
 
-  def trimBlankLines(s: String): String =
-    s.replaceFirst("""^\s*(\R+|$)""", "").replaceFirst("""\R\s*$""", "")
-
   def invertOneToOne[A, B](map: Map[A, B]): Map[B, Vector[A]] =
     map.foldLeft(Map.empty[B, Vector[A]]) {
       case (acc, (a, b)) => acc.updated(b, acc.get(b).fold(Vector(a))(_ :+ a))

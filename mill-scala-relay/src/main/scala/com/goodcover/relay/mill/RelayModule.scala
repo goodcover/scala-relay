@@ -142,9 +142,9 @@ trait RelayModule extends ScalaModule {
   def relayConvert: Task[PathRef] = Task {
     val logger = MillBuildLogger(Task.log)
 
-    val extractedDir = relayExtract().path.toIO
-    val schemaFile   = relaySchemaFile().path.toIO
-    val outputDir    = relayConvertDir().path.toIO
+    val extractedDir: File = relayExtract().path.toIO
+    val schemaFile: File   = relaySchemaFile().path.toIO
+    val outputDir: File    = relayConvertDir().path.toIO
 
     if (!schemaFile.exists()) {
       logger.error(s"Schema file does not exist: $schemaFile")
@@ -156,11 +156,11 @@ trait RelayModule extends ScalaModule {
         Set.empty[File]
       }
 
+      val schema  = GraphQLSchema(schemaFile, Set.empty)
       val options = GraphQLConverter.Options(outputDir, relayTypeMappings())
-      val results = GraphQLConverter.convertSimple(
+      val results = GraphQLConverter.convertFiles( //
         graphqlFiles,
-        schemaFile,
-        Set.empty, // dependencies
+        schema,
         options,
         logger
       )

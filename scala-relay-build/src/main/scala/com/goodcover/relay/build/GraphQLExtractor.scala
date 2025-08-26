@@ -1,68 +1,12 @@
 package com.goodcover.relay.build
 
-import java.io.{
-  BufferedReader,
-  BufferedWriter,
-  File,
-  FileInputStream,
-  FileOutputStream,
-  FileWriter,
-  IOException,
-  InputStreamReader,
-  OutputStreamWriter
-}
+import com.goodcover.relay.build.FileOps._
+
+import java.io._
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Files
 import scala.meta._
 import scala.meta.inputs.Input
-
-// File operations helper
-object FileOps {
-  implicit class FileOps(file: File) {
-    def /(child: String): File = new File(file, child)
-  }
-
-  private def closeCloseable[T <: AutoCloseable]: T => Unit = _.close()
-
-  def file[T <: AutoCloseable](openF: File => T): OpenFile[T] = file(openF, closeCloseable)
-
-  def file[T](openF: File => T, closeF: T => Unit): OpenFile[T] =
-    new OpenFile[T] {
-      def openImpl(file: File) = openF(file)
-      def close(t: T)          = closeF(t)
-    }
-
-  def fileWriter(charset: Charset = StandardCharsets.UTF_8, append: Boolean = false) =
-    file(f => new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f, append), charset)))
-
-  def fileReader(charset: Charset) =
-    file(f => new BufferedReader(new InputStreamReader(new FileInputStream(f), charset)))
-
-  trait OpenFile[T] extends Using[File, T] {
-    protected def openImpl(file: File): T
-    protected final def open(file: File): T = {
-      val parent = file.getParentFile
-      if (parent != null) {
-        try Files.createDirectory(parent.toPath)
-        catch { case _: IOException => }
-      }
-      openImpl(file)
-    }
-  }
-
-  abstract class Using[Source, T] {
-    protected def open(src: Source): T
-    def apply[R](src: Source)(f: T => R): R = {
-      val resource = open(src)
-      try {
-        f(resource)
-      } finally {
-        close(resource)
-      }
-    }
-    protected def close(out: T): Unit
-  }
-}
+import scala.util.Try
 
 /**
   * Extracts the GraphQL definitions from @graphql annotations and graphqlGen macros within Scala sources.
@@ -81,7 +25,14 @@ object GraphQLExtractor {
     }
   }
 
-  type Results = Set[File]
+  type Results = Map[File, File]
+
+  private def sourceOutputs(sources: Seq[File], options: Options) =
+    sources.map(source => source -> sourceOutput(source, options)).toMap
+
+  private def sourceOutput(source: File, options: Options) =
+    // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
+    options.outputDir.getAbsoluteFile / s"${source.base}.graphql"
 
   /**
     * Extract GraphQL definitions from source files without caching.
@@ -91,77 +42,90 @@ object GraphQLExtractor {
     logger.debug("Running GraphqlExtractor...")
 
     val extracts = sources.flatMap { source =>
-      extractFile(source, options.outputDir, options.dialect, logger)
-    }
+      val out    = sourceOutput(source, options)
+      val pair   = source -> out
+      val result = extractFile(source, out, options.dialect, logger)
+
+      Seq(pair)
+    }.toMap
 
     extracts
   }
 
+  def extractFiles(files: Map[File, File], dialect: Dialect, logger: BuildLogger): Map[File, File] =
+    files.filter {
+      case (file, output) =>
+        Try(extractFile(file, output, dialect, logger)).fold({ t =>
+          logger.warn(
+            "Failed to check file. File will be ignored. Please ensure that relayExtractDialect has the correct value."
+          )
+          logger.warn(t.getMessage)
+          false
+        }, identity)
+    }
+
   /**
     * Extract GraphQL definitions from a single source file.
     */
-  private def extractFile(file: File, outputDir: File, dialect: Dialect, logger: BuildLogger): Option[File] = {
+  private def extractFile(file: File, output: File, dialect: Dialect, logger: BuildLogger): Boolean = {
     logger.debug(s"Checking file for graphql definitions: $file")
+    val input   = Input.File(file)
+    val source  = input.parse[Source](implicitly, implicitly, dialect).get
+    val builder = Iterable.newBuilder[String]
 
-    try {
-      val input   = Input.File(file)
-      val source  = input.parse[Source](implicitly, implicitly, dialect).get
-      val builder = collection.mutable.ListBuffer[String]()
+    def extractFromTree(tree: Tree): Unit = {
+      tree match {
+        // The annotation has to be exactly this. It cannot be an alias or qualified.
+        // We could support more but it would require SemanticDB which is slower.
+        case mod"@graphql(${t: Lit.String})" =>
+          builder += t.value
+        case annot @ mod"@graphql(...$exprss)" =>
+          def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
 
-      def extractFromTree(tree: Tree): Unit = {
-        tree match {
-          // The annotation has to be exactly this. It cannot be an alias or qualified.
-          // We could support more but it would require SemanticDB which is slower.
-          case mod"@graphql(${t: Lit.String})" =>
-            builder += t.value
-          case annot @ mod"@graphql(...$exprss)" =>
-            def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
+          logger.error(
+            s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
+          )
+          logger.error(s"    at ${positionText(pos)}")
+          logger.debug(annot.structure)
+          logger.debug(exprss.toString)
+        case q"graphqlGen(${t: Lit.String})" =>
+          builder += t.value
+        case q"${_}.graphqlGen(${t: Lit.String})" =>
+          builder += t.value
+        case app @ q"graphqlGen(...$exprss)" =>
+          // Term.Name("graphqlGen") also matches this. Ignore it.
+          if (!app.isInstanceOf[Term.Name]) {
+            def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
+
             logger.error(
-              s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
+              s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
             )
             logger.error(s"    at ${positionText(pos)}")
-          case q"graphqlGen(${t: Lit.String})" =>
-            builder += t.value
-          case q"${_}.graphqlGen(${t: Lit.String})" =>
-            builder += t.value
-          case app @ q"graphqlGen(...$exprss)" =>
-            // Term.Name("graphqlGen") also matches this. Ignore it.
-            if (!app.isInstanceOf[Term.Name]) {
-              def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
-              logger.error(
-                s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
-              )
-              logger.error(s"    at ${positionText(pos)}")
-            }
-          case _ =>
-            // Recursively traverse children
-            tree.children.foreach(extractFromTree)
-        }
+            logger.debug(app.structure)
+            logger.debug(exprss.toString)
+          }
+        case _ =>
+          // Recursively traverse children
+          tree.children.foreach(extractFromTree)
       }
+    }
 
-      extractFromTree(source)
+    extractFromTree(source)
 
-      if (builder.nonEmpty) {
-        val output = new File(outputDir, file.getName.stripSuffix(".scala") + ".graphql")
-        outputDir.mkdirs()
-
-        writeGraphql(file, output, builder.toList)
-
-        logger.debug(s"Extracted ${builder.size} GraphQL definitions from $file to $output")
-        Some(output)
-      } else {
-        None
-      }
-    } catch {
-      case e: Exception =>
-        logger.error(s"Failed to extract GraphQL from $file: ${e.getMessage}")
-        None
+    val definitions = builder.result()
+    if (definitions.nonEmpty) {
+      writeGraphql(file, output, definitions)
+      logger.debug(s"Extracted ${definitions.size} definitions to: $output")
+      true
+    } else {
+      logger.debug("No definitions found")
+      false
     }
   }
 
-  private def writeGraphql(source: File, output: File, definitions: List[String]): Unit = {
-    val writer = new FileWriter(output, StandardCharsets.UTF_8, false) // Don't append, overwrite
-    try {
+  private def writeGraphql(source: File, output: File, definitions: Iterable[String]): Unit = {
+    // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
+    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
       definitions.foreach { definition =>
         writer.write("# Extracted from ")
         writer.write(source.getAbsolutePath)
@@ -183,8 +147,6 @@ object GraphQLExtractor {
         }
         writer.write('\n')
       }
-    } finally {
-      writer.close()
     }
   }
 
@@ -195,12 +157,6 @@ object GraphQLExtractor {
       }
       .getOrElse(prefix.length)
     s.drop(n)
-  }
-
-  private def trimBlankLines(s: String): String = {
-    val lines   = s.linesIterator.toList
-    val trimmed = lines.dropWhile(_.trim.isEmpty).reverse.dropWhile(_.trim.isEmpty).reverse
-    trimmed.mkString("\n")
   }
 
   private def positionText(position: Position): String = {

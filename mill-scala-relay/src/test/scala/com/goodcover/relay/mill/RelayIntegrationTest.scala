@@ -68,8 +68,9 @@ object RelayIntegrationTest extends TestSuite {
         val graphqlFiles   = extractedFiles.map(_.toIO).toSet
         val schemaFile     = (workspace / "schema.graphql").toIO
         val convertOptions = GraphQLConverter.Options(convertDir.toIO, Map.empty[String, String])
+        val schema         = GraphQLSchema(schemaFile, Set.empty)
 
-        val convertResults = GraphQLConverter.convertSimple(graphqlFiles, schemaFile, Set.empty, convertOptions, logger)
+        val convertResults = GraphQLConverter.convertFiles(graphqlFiles, schema, convertOptions, logger)
 
         // Verify conversion worked (even if placeholder)
         assert(convertResults.nonEmpty)
@@ -276,8 +277,10 @@ object RelayIntegrationTest extends TestSuite {
         val graphqlFiles   = extractResults
         val schemaFile     = (workspace / "schema.graphql").toIO
         val convertOptions = GraphQLConverter.Options(convertDir.toIO, Map("DateTime" -> "js.Date"))
+        val schema         = GraphQLSchema(schemaFile, Set.empty)
 
-        val convertResults = GraphQLConverter.convertSimple(graphqlFiles, schemaFile, Set.empty, convertOptions, logger)
+        val convertResults =
+          GraphQLConverter.convertFiles(graphqlFiles.values.toSet, schema, convertOptions, logger).values.flatten
 
         // Verify conversion worked
         assert(convertResults.nonEmpty)
@@ -431,7 +434,7 @@ object RelayIntegrationTest extends TestSuite {
           os.makeDir.all(wrapDir)
 
           val wrapOptions = GraphQLWrapper.Options(wrapDir.toIO, typeScript = false)
-          val wrapResults = GraphQLWrapper.wrapSimple(extractResults, wrapOptions, logger)
+          val wrapResults = GraphQLWrapper.wrapSimple(extractResults.values.toSet, wrapOptions, logger)
 
           assert(wrapResults.nonEmpty)
 
@@ -442,9 +445,10 @@ object RelayIntegrationTest extends TestSuite {
           val graphqlFiles   = os.list(extractDir).filter(_.ext == "graphql").map(_.toIO).toSet
           val schemaFile     = (workspace / "schema.graphql").toIO
           val convertOptions = GraphQLConverter.Options(convertDir.toIO, Map.empty[String, String])
+          val schema         = GraphQLSchema(schemaFile, Set.empty)
 
           val convertResults =
-            GraphQLConverter.convertSimple(graphqlFiles, schemaFile, Set.empty, convertOptions, logger)
+            GraphQLConverter.convertFiles(graphqlFiles, schema, convertOptions, logger)
 
           assert(convertResults.nonEmpty)
 
