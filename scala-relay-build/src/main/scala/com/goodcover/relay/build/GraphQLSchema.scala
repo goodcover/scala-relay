@@ -9,6 +9,7 @@ import caliban.parsing.adt.{Directive, Document, Type}
 
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
 class GraphQLSchema(val file: File, val document: Document, additional: Seq[Document]) {
 
@@ -152,13 +153,7 @@ object GraphQLSchema {
   }
 
   private def readDocument(file: File): Document = {
-    val source = scala.io.Source.fromFile(file, StandardCharsets.UTF_8.name())
-    try {
-      val content = source.mkString
-      Parser.parseQuery(content).right.get
-    } finally {
-      source.close()
-    }
+    Parser.parseQuery(Files.readString(file.toPath, StandardCharsets.UTF_8)).toTry.get
   }
 
   final case class InvalidSchema(file: File, message: String)
