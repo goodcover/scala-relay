@@ -3,7 +3,6 @@ package com.goodcover.relay.build
 import com.goodcover.relay.build.codegen.DocumentConverter
 
 import java.io.File
-import java.nio.charset.StandardCharsets
 
 /**
   * Converts GraphQL files to Scala.js facades.
@@ -12,12 +11,7 @@ import java.nio.charset.StandardCharsets
 object GraphQLConverter {
   import FileOps._
 
-  // Increment when the code changes to bust the cache.
-  private val Version = 1
-
   final case class Options(outputDir: File, typeMappings: Map[String, String])
-
-  type Results = Set[File]
 
   type Conversions = Map[File, Set[File]]
 
@@ -38,18 +32,6 @@ object GraphQLConverter {
         (nextConversions, nextOutputs)
     }
     conversions
-  }
-
-  /**
-    * Read file content as string
-    */
-  private def readFile(file: File): String = {
-    val source = scala.io.Source.fromFile(file, StandardCharsets.UTF_8.name())
-    try {
-      source.mkString
-    } finally {
-      source.close()
-    }
   }
 
   /**

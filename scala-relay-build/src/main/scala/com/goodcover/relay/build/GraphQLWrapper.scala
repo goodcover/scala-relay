@@ -31,7 +31,7 @@ object GraphQLWrapper {
     }
 
     val results = sources.flatMap { source =>
-      wrapFile(source, options, logger)
+      wrapFileSimple(source, options, logger)
     }
 
     results
@@ -52,14 +52,14 @@ object GraphQLWrapper {
   /**
     * Wrap a single GraphQL file in a JavaScript/TypeScript file.
     */
-  private def wrapFile(file: File, options: Options, logger: BuildLogger): Option[File] = {
+  private def wrapFileSimple(file: File, options: Options, logger: BuildLogger): Option[File] = {
     logger.debug(s"Wrapping GraphQL definitions: $file")
 
     try {
       val extension  = if (options.typeScript) "ts" else "js"
       val outputFile = new File(options.outputDir, s"${file.getName.stripSuffix(".graphql")}.$extension")
 
-      val documentText = scala.io.Source.fromFile(file, StandardCharsets.UTF_8.name()).mkString
+      val documentText = Files.readString(file.toPath, StandardCharsets.UTF_8)
       val document = Parser.parseQuery(documentText) match {
         case Right(doc) => doc
         case Left(error) =>
