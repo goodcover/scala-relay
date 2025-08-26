@@ -153,7 +153,10 @@ object GraphQLSchema {
   }
 
   private def readDocument(file: File): Document = {
-    Parser.parseQuery(Files.readString(file.toPath, StandardCharsets.UTF_8)).toTry.get
+    Parser.parseQuery(Files.readString(file.toPath, StandardCharsets.UTF_8)) match {
+      case Left(value)  => throw new IllegalArgumentException(s"Failed to parse, $file", value)
+      case Right(value) => value
+    }
   }
 
   final case class InvalidSchema(file: File, message: String)
