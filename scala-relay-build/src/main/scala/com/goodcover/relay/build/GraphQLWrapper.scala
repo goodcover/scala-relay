@@ -103,7 +103,7 @@ object GraphQLWrapper {
   }
 
   private def wrapFile(file: File, output: File, logger: BuildLogger): Unit = {
-    logger.debug(s"Wrapping graphql definitions: $file")
+    logger.debug(s"Wrapping graphql definitions: $file -> $output")
     fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
       // TODO: We could use the caliban fastparse parsers directly but this seems fast enough for now.
       val documentText = Files.readString(file.toPath, StandardCharsets.UTF_8)
@@ -121,15 +121,12 @@ object GraphQLWrapper {
     writer: BufferedWriter,
     definition: Definition,
     document: Document,
-    @annotation.unused logger: BuildLogger
+    logger: BuildLogger
   ): Unit = {
-    val definitionName = getDefinitionName(definition)
-    if (definitionName.nonEmpty) {
-      writer.write(s"const $definitionName = graphql`\n")
-      val rendered = renderDefinition(definition, document)
-      writer.write(escape(trimBlankLines(rendered)))
-      writer.write("`;\n\n")
-    }
+    writer.write("graphql`\n")
+    val rendered = renderDefinition(definition, document)
+    writer.write(escape(trimBlankLines(rendered)))
+    writer.write("`\n\n")
   }
 
   /**

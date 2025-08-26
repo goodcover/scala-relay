@@ -22,4 +22,4 @@ Compile / relayDisplayOnlyOnFailure := true
 
 webpack / version := "5.75.0"
 
-//logLevel := Level.Debug
+logLevel := Level.Debug
