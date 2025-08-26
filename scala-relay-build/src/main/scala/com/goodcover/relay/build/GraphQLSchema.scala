@@ -54,13 +54,13 @@ class GraphQLSchema(val file: File, val document: Document, additional: Seq[Docu
   def unionType(name: String): TypeDefinition.UnionTypeDefinition =
     unionTypes.getOrElse(name, throw invalidSchema(s"Missing union $name."))
 
-  lazy val interfaceTypes: Map[String, TypeDefinition.InterfaceTypeDefinition] =
-    additional.foldLeft(document.interfaceTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
-      definitions ++ document.interfaceTypeDefinitions.map(d => d.name    -> d)
+  lazy val scalarTypes: Map[String, TypeDefinition.ScalarTypeDefinition] =
+    additional.foldLeft(document.scalarTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.scalarTypeDefinitions.map(d => d.name    -> d)
     }
 
-  def interfaceType(name: String): TypeDefinition.InterfaceTypeDefinition =
-    interfaceTypes.getOrElse(name, throw invalidSchema(s"Missing interface $name."))
+  def scalarType(name: String): TypeDefinition.ScalarTypeDefinition =
+    scalarTypes.getOrElse(name, throw invalidSchema(s"Missing scalar $name."))
 
   lazy val enumTypes: Map[String, TypeDefinition.EnumTypeDefinition] =
     additional.foldLeft(document.enumTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
@@ -70,13 +70,13 @@ class GraphQLSchema(val file: File, val document: Document, additional: Seq[Docu
   def enumType(name: String): TypeDefinition.EnumTypeDefinition =
     enumTypes.getOrElse(name, throw invalidSchema(s"Missing enum $name."))
 
-  lazy val scalarTypes: Map[String, TypeDefinition.ScalarTypeDefinition] =
-    additional.foldLeft(document.scalarTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
-      definitions ++ document.scalarTypeDefinitions.map(d => d.name    -> d)
+  lazy val interfaceTypes: Map[String, TypeDefinition.InterfaceTypeDefinition] =
+    additional.foldLeft(document.interfaceTypeDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
+      definitions ++ document.interfaceTypeDefinitions.map(d => d.name    -> d)
     }
 
-  def scalarType(name: String): TypeDefinition.ScalarTypeDefinition =
-    scalarTypes.getOrElse(name, throw invalidSchema(s"Missing scalar $name."))
+  def interfaceType(name: String): TypeDefinition.InterfaceTypeDefinition =
+    interfaceTypes.getOrElse(name, throw invalidSchema(s"Missing interface $name."))
 
   lazy val directiveDefinitions: Map[String, TypeSystemDefinition.DirectiveDefinition] =
     additional.foldLeft(document.directiveDefinitions.map(d => d.name -> d).toMap) { (definitions, document) =>
