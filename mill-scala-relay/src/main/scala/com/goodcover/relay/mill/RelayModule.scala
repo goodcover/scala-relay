@@ -118,9 +118,9 @@ trait RelayModule extends ScalaModule {
     * Wrap GraphQL definitions in JavaScript/TypeScript files for relay-compiler
     */
   def relayWrap: Task[PathRef] = Task {
-    val logger = MillBuildLogger(Task.log)
+    val logger     = MillBuildLogger(Task.log)
     val extractDir = relayExtract().path.toIO
-    val outputDir = relayWrapDir().path.toIO
+    val outputDir  = relayWrapDir().path.toIO
     val typeScript = relayTypeScript()
 
     // Find all .graphql files from the extract step
@@ -173,10 +173,10 @@ trait RelayModule extends ScalaModule {
     * Run relay-compiler to generate JavaScript/TypeScript files
     */
   def relayCompile: Task[PathRef] = Task {
-    val logger = MillBuildLogger(Task.log)
+    val logger        = MillBuildLogger(Task.log)
     val processRunner = MillProcessRunner()
 
-    val wrappedDir = relayWrap().path.toIO  // Use wrapped files instead of extracted
+    val wrappedDir = relayWrap().path.toIO // Use wrapped files instead of extracted
     val schemaFile = relaySchemaFile().path.toIO
     val outputDir  = relayCompileDir().path.toIO
 
@@ -191,7 +191,7 @@ trait RelayModule extends ScalaModule {
         workingDir = moduleDir.toIO,
         compilerCommand = relayCompilerCommand(),
         schemaPath = schemaFile,
-        sourceDirectory = wrappedDir,  // Point to wrapped files
+        sourceDirectory = wrappedDir, // Point to wrapped files
         outputPath = outputDir,
         verbose = relayVerbose(),
         includes = relayIncludes(),

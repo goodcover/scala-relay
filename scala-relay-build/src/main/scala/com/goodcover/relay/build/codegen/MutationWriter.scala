@@ -1,7 +1,7 @@
 package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
+import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
 import caliban.parsing.adt.Document
 import com.goodcover.relay.build.GraphQLSchema
 
@@ -26,6 +26,6 @@ class MutationWriter(
 
   override protected val operationObjectParent: String = "MutationTaggedNode"
 
-  override protected def getOperationField(name: String): FieldDefinition =
+  override protected def getOperationField(name: String): TypeDefinition.FieldDefinition =
     schema.mutationField(name)
 }

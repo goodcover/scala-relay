@@ -1,76 +1,65 @@
 package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
-import caliban.parsing.adt.Document
-import com.goodcover.relay.build.GraphQLSchema
+import caliban.parsing.adt.Type.innerType
+import caliban.parsing.adt.{Directive, Document, Type}
 import com.goodcover.relay.build.codegen.ScalaWriter.Parameter
 
 import java.io.Writer
-import scala.meta.{Term, Type}
-import caliban.parsing.adt.{Type => GQLType}
+import scala.meta.Term
 
-class InputWriter(
-  writer: Writer,
-  input: InputObjectTypeDefinition,
-  document: Document,
-  schema: GraphQLSchema,
-  typeConverter: TypeConverter
-) extends DefinitionWriter(writer) {
+class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Document, typeConverter: TypeConverter)
+    extends DefinitionWriter(writer) {
+
+  // TODO: Deduplicate.
+  private val parameters = input.fields.map { field =>
+    val tpe       = field.ofType
+    val typeName  = innerType(tpe)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
+    // TODO: Default value.
+    val initializer = if (tpe.nonNull) None else Some("null")
+    Parameter(Term.Name(field.name), scalaType, initializer)
+  }
+
+  override protected def definitionName: String = input.name
+
+  override protected def writeImports(): Unit = {
+    writer.write("import _root_.scala.scalajs.js\n")
+    writer.write("import _root_.scala.scalajs.js.|\n\n")
+  }
+
+  override protected def writeDefinitionText(): Unit = {
+    writer.write(renderDefinition(input, document))
+    writer.write('\n')
+  }
 
   override def write(): Unit = {
-    writeHeader()
-    writeInputType()
-    writeFooter()
+    writePreamble()
+    writeInputType(compact = true)
   }
 
-  private def writeInputType(): Unit = {
-    val typeName = Type.Name(input.name)
-    val parameters = input.fields.map { field =>
-      val fieldName = Term.Name(field.name)
-      val typeName = extractTypeName(field.ofType)
-      val scalaType = typeConverter.convertToScalaType(
-        field.ofType,
-        typeName,
-        field.directives,
-        fullyQualified = false
-      )
-      val initializer = if (field.ofType.nonNull) None else Some("js.undefined")
-      Parameter(fieldName, scalaType, initializer)
+  def writeInputType(compact: Boolean = false): Unit = {
+    scalaWriter.writeTrait(meta.Type.Name(definitionName), Seq.empty, input.fields, jsNative = false, "") { field =>
+      writeInputField(field.name, field.ofType, field.directives)
     }
+    writeInputCompanionObject(compact)
+  }
 
-    // Write the trait
-    scalaWriter.writeTrait(
-      tname = typeName,
-      parentTraits = Seq.empty,
-      fields = parameters,
-      jsNative = true,
-      indent = ""
-    ) { parameter =>
-      scalaWriter.writeField(
-        ename = parameter.ename,
-        scalaType = parameter.scalaType,
-        initializer = parameter.initializer,
-        indent = "  "
-      )
-    }
+  private def writeInputField(name: String, tpe: Type, fieldDefinitionDirectives: List[Directive]): Unit = {
+    val typeName  = innerType(tpe)
+    val scalaType = typeConverter.convertToScalaType(tpe, typeName, fieldDefinitionDirectives, fullyQualified = false)
+    scalaWriter.writeField(Term.Name(name), scalaType, None, "  ")
+  }
 
-    // Write the companion object with apply method
+  private def writeInputCompanionObject(compact: Boolean): Unit = {
     writer.write("object ")
-    writer.write(input.name)
+    writer.write(definitionName)
     writer.write(" {\n")
-
-    scalaWriter.writeJsLiteralApplyMethod(
-      parameters = parameters,
-      typeName = input.name,
-      compact = false,
-      indent = "  "
-    )
-
+    writeInputApplyMethod()
     writer.write("}\n")
+    if (!compact) writer.write('\n')
   }
 
-  private def extractTypeName(gqlType: GQLType): String = gqlType match {
-    case GQLType.NamedType(name, _) => name
-    case GQLType.ListType(ofType, _) => extractTypeName(ofType)
-  }
+  private def writeInputApplyMethod(): Unit =
+    scalaWriter.writeJsLiteralApplyMethod(parameters, definitionName, compact = true, "  ")
 }

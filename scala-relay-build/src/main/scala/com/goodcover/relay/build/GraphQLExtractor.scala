@@ -1,7 +1,18 @@
 package com.goodcover.relay.build
 
-import java.io.{File, FileWriter}
-import java.nio.charset.StandardCharsets
+import java.io.{
+  BufferedReader,
+  BufferedWriter,
+  File,
+  FileInputStream,
+  FileOutputStream,
+  FileWriter,
+  IOException,
+  InputStreamReader,
+  OutputStreamWriter
+}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Files
 import scala.meta._
 import scala.meta.inputs.Input
 
@@ -10,12 +21,53 @@ object FileOps {
   implicit class FileOps(file: File) {
     def /(child: String): File = new File(file, child)
   }
+
+  private def closeCloseable[T <: AutoCloseable]: T => Unit = _.close()
+
+  def file[T <: AutoCloseable](openF: File => T): OpenFile[T] = file(openF, closeCloseable)
+
+  def file[T](openF: File => T, closeF: T => Unit): OpenFile[T] =
+    new OpenFile[T] {
+      def openImpl(file: File) = openF(file)
+      def close(t: T)          = closeF(t)
+    }
+
+  def fileWriter(charset: Charset = StandardCharsets.UTF_8, append: Boolean = false) =
+    file(f => new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f, append), charset)))
+
+  def fileReader(charset: Charset) =
+    file(f => new BufferedReader(new InputStreamReader(new FileInputStream(f), charset)))
+
+  trait OpenFile[T] extends Using[File, T] {
+    protected def openImpl(file: File): T
+    protected final def open(file: File): T = {
+      val parent = file.getParentFile
+      if (parent != null) {
+        try Files.createDirectory(parent.toPath)
+        catch { case _: IOException => }
+      }
+      openImpl(file)
+    }
+  }
+
+  abstract class Using[Source, T] {
+    protected def open(src: Source): T
+    def apply[R](src: Source)(f: T => R): R = {
+      val resource = open(src)
+      try {
+        f(resource)
+      } finally {
+        close(resource)
+      }
+    }
+    protected def close(out: T): Unit
+  }
 }
 
 /**
- * Extracts the GraphQL definitions from @graphql annotations and graphqlGen macros within Scala sources.
- * This is a build-tool agnostic version that can be used by both SBT and Mill.
- */
+  * Extracts the GraphQL definitions from @graphql annotations and graphqlGen macros within Scala sources.
+  * This is a build-tool agnostic version that can be used by both SBT and Mill.
+  */
 object GraphQLExtractor {
 
   // Increment when the code changes to bust the cache.
@@ -32,9 +84,9 @@ object GraphQLExtractor {
   type Results = Set[File]
 
   /**
-   * Extract GraphQL definitions from source files without caching.
-   * This is a simplified version for build tools that handle their own caching.
-   */
+    * Extract GraphQL definitions from source files without caching.
+    * This is a simplified version for build tools that handle their own caching.
+    */
   def extractSimple(sources: Set[File], options: Options, logger: BuildLogger): Results = {
     logger.debug("Running GraphqlExtractor...")
 
@@ -46,14 +98,14 @@ object GraphQLExtractor {
   }
 
   /**
-   * Extract GraphQL definitions from a single source file.
-   */
+    * Extract GraphQL definitions from a single source file.
+    */
   private def extractFile(file: File, outputDir: File, dialect: Dialect, logger: BuildLogger): Option[File] = {
     logger.debug(s"Checking file for graphql definitions: $file")
 
     try {
-      val input = Input.File(file)
-      val source = input.parse[Source](implicitly, implicitly, dialect).get
+      val input   = Input.File(file)
+      val source  = input.parse[Source](implicitly, implicitly, dialect).get
       val builder = collection.mutable.ListBuffer[String]()
 
       def extractFromTree(tree: Tree): Unit = {
@@ -115,11 +167,11 @@ object GraphQLExtractor {
         writer.write(source.getAbsolutePath)
         writer.write('\n')
         val trimmed = trimBlankLines(definition)
-        val lines = trimmed.linesIterator
+        val lines   = trimmed.linesIterator
         val prefix = {
           if (lines.hasNext) {
             val firstLine = lines.next()
-            val indent = firstLine.takeWhile(_.isWhitespace)
+            val indent    = firstLine.takeWhile(_.isWhitespace)
             writer.write(firstLine.drop(indent.length))
             writer.write('\n')
             indent
@@ -146,22 +198,22 @@ object GraphQLExtractor {
   }
 
   private def trimBlankLines(s: String): String = {
-    val lines = s.linesIterator.toList
+    val lines   = s.linesIterator.toList
     val trimmed = lines.dropWhile(_.trim.isEmpty).reverse.dropWhile(_.trim.isEmpty).reverse
     trimmed.mkString("\n")
   }
 
   private def positionText(position: Position): String = {
     position.input match {
-      case Input.File(path, _) => s"${path.toString}:${position.startLine}:${position.startColumn}"
+      case Input.File(path, _)        => s"${path.toString}:${position.startLine}:${position.startColumn}"
       case Input.VirtualFile(path, _) => s"$path:${position.startLine}:${position.startColumn}"
-      case _ => position.toString
+      case _                          => position.toString
     }
   }
 
   /**
-   * Clean up extracted files
-   */
+    * Clean up extracted files
+    */
   def clean(outputDir: File): Unit = {
     if (outputDir.exists()) {
       outputDir.listFiles().foreach { file =>

@@ -1,10 +1,11 @@
 package com.goodcover.relay
 
-import sbt._
+import com.goodcover.relay.build.Commands
+import sbt.*
 import sbt.nio.file.FileTreeView
-import sbt.util.CacheImplicits._
+import sbt.util.CacheImplicits.*
 import sbt.util.{CacheStore, CacheStoreFactory}
-import sjsonnew._
+import sjsonnew.*
 
 import java.io.InputStream
 
@@ -141,9 +142,9 @@ object RelayCompiler {
           // anything changes but that is a bit too heavy handed.
           // For now we delete things ad hoc when we know they need to be deleted.
           // Running relay compiler in watch mode might do a better job.
-          val versionChanged   = Version != previousAnalysis.version
-          val optionsChanged   = options != previousAnalysis.options
-          val outputDirChanged = options.outputPath != previousAnalysis.options.outputPath
+          val versionChanged    = Version != previousAnalysis.version
+          val optionsChanged    = options != previousAnalysis.options
+          val outputDirChanged  = options.outputPath != previousAnalysis.options.outputPath
           val typeScriptChanged = options.typeScript != previousAnalysis.options.typeScript
           if (versionChanged || outputDirChanged || typeScriptChanged) {
             IO.delete(previousAnalysis.artifacts)
@@ -195,6 +196,8 @@ object RelayCompiler {
 
   private def run(options: Options, logger: Logger): Unit = {
     import options._
+
+    val sbtLogger = SbtBuildLogger(logger)
 
     // Version 11 Help:
     //
@@ -299,7 +302,7 @@ object RelayCompiler {
     Commands.run(
       cmd,
       workingDir,
-      logger,
+      sbtLogger,
       (is: InputStream) => output = scala.io.Source.fromInputStream(is).getLines.toVector
     ) match {
       case Left(value) =>

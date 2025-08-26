@@ -1,17 +1,14 @@
-package com.goodcover.relay
+package com.goodcover.relay.build
 
-import sbt.Logger
 import java.io.{File, InputStream}
-import scala.sys.process.Process
-import scala.sys.process.BasicIO
-import scala.sys.process.ProcessLogger
+import scala.sys.process.{BasicIO, Process, ProcessLogger}
 
 object Commands {
 
   def run[A](
     cmd: Seq[String],
     cwd: File,
-    logger: Logger,
+    logger: BuildLogger,
     outputProcess: InputStream => A
   ): Either[String, Option[A]] = {
     val toErrorLog = (is: InputStream) => {
@@ -38,15 +35,15 @@ object Commands {
     }
   }
 
-  def run(cmd: Seq[String], cwd: File, logger: Logger): Unit = {
+  def run(cmd: Seq[String], cwd: File, logger: BuildLogger): Unit = {
     val toInfoLog = (is: InputStream) => scala.io.Source.fromInputStream(is).getLines.foreach(msg => logger.info(msg))
     run(cmd, cwd, logger, toInfoLog).fold(sys.error, _ => ())
   }
 
-  def start(cmd: Seq[String], cwd: File, logger: Logger): Process =
+  def start(cmd: Seq[String], cwd: File, logger: BuildLogger): Process =
     Process(cmd, cwd).run(toProcessLogger(logger))
 
-  private def toProcessLogger(logger: Logger): ProcessLogger =
+  private def toProcessLogger(logger: BuildLogger): ProcessLogger =
     ProcessLogger(msg => logger.info(msg), msg => logger.error(msg))
 
 }

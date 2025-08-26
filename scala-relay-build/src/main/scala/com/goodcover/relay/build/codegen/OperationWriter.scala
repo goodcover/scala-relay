@@ -4,13 +4,14 @@ import caliban.parsing.adt.Definition.ExecutableDefinition.OperationDefinition
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
 import caliban.parsing.adt.Document
 import com.goodcover.relay.build.GraphQLSchema
+import com.goodcover.relay.build.GraphQLText.startOfOperation
 
 import java.io.Writer
-import scala.meta.Type
 
 abstract class OperationWriter(
   writer: Writer,
   operation: OperationDefinition,
+  // TODO: GC-3158 - Remove documentText.
   documentText: String,
   document: Document,
   schema: GraphQLSchema,
@@ -21,7 +22,8 @@ abstract class OperationWriter(
 
   protected val operationInputWriter = new OperationInputWriter(writer, operation, document, typeConverter)
 
-  protected def operationObjectParent: String
+  override protected def containsStartOfDefinition(line: String): Boolean =
+    startOfOperation(line, operation)
 
   // TODO: This is weird.
   protected def writeOperationTrait(): Unit =
@@ -57,5 +59,8 @@ abstract class OperationWriter(
     writeGeneratedMapping(writer, name)
   }
 
+  protected def operationObjectParent: String
+
   protected def getOperationField(name: String): FieldDefinition
+
 }

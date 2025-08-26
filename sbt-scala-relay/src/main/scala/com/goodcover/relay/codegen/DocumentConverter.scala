@@ -13,8 +13,6 @@ import com.goodcover.relay.codegen.DocumentConverter.{getOperationName, variable
 import sbt._
 import sbt.io.Using.fileWriter
 
-import scala.reflect.Selectable.reflectiveSelectable
-
 import java.io.Writer
 import java.nio.charset.StandardCharsets
 
@@ -138,7 +136,9 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
         val argsLookup = definition.args.map(arg => arg.name -> arg).toMap
         val typeName   = innerType(definition.ofType)
         val fieldArgs  = variableArguments(field.arguments, argsLookup.get, typeName)
-        val nextArgs   = args ++ fieldArgs
+
+        val nextArgs: Map[String, VariableDefinition] = args ++ fieldArgs
+
         if (field.selectionSet.nonEmpty) {
           val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
           nextArgs ++ selectionVariables(field.selectionSet, nextFieldLookup, typeName)

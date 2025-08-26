@@ -51,12 +51,12 @@ class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
 
 object TypeConverter {
 
-  val DefaultTypeMappings: Map[String, String] = Map(
-    "String" -> "String",
-    "Boolean" -> "Boolean",
-    "Int" -> "Int",
-    "Float" -> "Double",
-    "ID" -> "String"
-  )
-
+  private val DefaultTypeMappings: Map[String, String] =
+    Map( //
+      "Int"     -> "Int",
+      "Float"   -> "Double",
+      "String"  -> "String",
+      "Boolean" -> "Boolean",
+      "ID"      -> "String"
+    )
 }

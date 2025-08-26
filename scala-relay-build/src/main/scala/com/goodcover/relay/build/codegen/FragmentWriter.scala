@@ -2,9 +2,10 @@ package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.ExecutableDefinition.FragmentDefinition
 import com.goodcover.relay.build.GraphQLSchema
+import com.goodcover.relay.build.GraphQLText.startOfFragment
+import com.goodcover.relay.build.codegen.Directives.isPlural
 
 import java.io.Writer
-import scala.meta.Type
 
 class FragmentWriter(
   writer: Writer,
@@ -14,39 +15,58 @@ class FragmentWriter(
   typeConverter: TypeConverter
 ) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
 
+  private val typeName = fragment.typeCondition.name
+  private val fields   = schema.fieldType(typeName).fields.map(d => d.name -> d).toMap
+
   override protected def definitionName: String = fragment.name
 
   override def write(): Unit = {
-    writeHeader()
+    writePreamble()
     writeFragmentTrait()
     writeFragmentObject()
-    writeFooter()
   }
 
-  private def writeFragmentTrait(): Unit = {
-    val typeName = Type.Name(fragment.name)
+  override protected def containsStartOfDefinition(line: String): Boolean =
+    startOfFragment(line, fragment)
 
-    // For now, create a simple trait
-    scalaWriter.writeTrait(
-      tname = typeName,
-      parentTraits = Seq.empty,
-      fields = Seq.empty,
-      jsNative = true,
-      indent = ""
-    ) { _ => }
-  }
+  private def writeFragmentTrait(): Unit =
+    writeDefinitionTrait(fragment.selectionSet, getFieldDefinition(typeName, fields))
 
   private def writeFragmentObject(): Unit = {
+    val fieldTypeDefinition = getFieldDefinitionTypeDefinition(typeName, fields)
+
     writer.write("object ")
-    writer.write(fragment.name)
-    writer.write(" extends _root_.com.goodcover.relay.FragmentTaggedNode[")
-    writer.write(fragment.name)
-    writer.write("] {\n")
-    writer.write("  type Ctor[T] = T\n")
-    writer.write("  \n")
-    writer.write("  val node: String = \"\"\"\n")
-    writer.write(documentText)
-    writer.write("\n  \"\"\"\n")
-    writer.write("}\n")
+    val name = fragment.name
+    writer.write(name)
+    Directives
+      .getRefetchable(fragment.directives)
+      .fold {
+        writer.write(" extends _root_.com.goodcover.relay.FragmentTaggedNode[")
+        writer.write(name)
+        writer.write("] {\n")
+      } { refetchable =>
+        writer.write(" extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[")
+        writer.write(name)
+        writer.write(", ")
+        writer.write(refetchable.queryName)
+        // TODO: This shouldn't be hard coded to XInput.
+        writer.write("Input, ")
+        writer.write(refetchable.queryName)
+        writer.write("] {\n")
+      }
+    writer.write("  type Ctor[T] = ")
+    if (isPlural(fragment.directives)) writer.write("js.Array[T]")
+    else writer.write('T')
+    writer.write("\n\n")
+    writeNestedTypeNameObject(None, fragment.selectionSet, name, "  ", compact = false)
+    writeNestedTraits(fragment.typeCondition.name, fragment.selectionSet, fieldTypeDefinition, name)
+    writeFragmentImplicits(fragment.name, fragment.selectionSet, name)
+    // This type is type of the graphql`...` tagged template expression, i.e. GraphQLTaggedNode.
+    // In v11 it is either ReaderFragment or ConcreteRequest.
+    writer.write("  type Query = _root_.com.goodcover.relay.")
+    if (Directives.isInline(fragment.directives)) writer.write("ReaderInlineDataFragment")
+    else writer.write("ReaderFragment")
+    writer.write("[Ctor, Out]\n\n")
+    writeGeneratedMapping(writer, name)
   }
 }

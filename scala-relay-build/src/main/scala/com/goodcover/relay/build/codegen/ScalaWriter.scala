@@ -5,7 +5,7 @@ import com.goodcover.relay.build.codegen.ScalaWriter.{applyId, Parameter}
 import java.io.Writer
 import scala.annotation.tailrec
 import scala.meta.{Term, Type}
-import scala.meta.prettyprinters.XtensionSyntax
+import scala.meta.XtensionSyntax
 
 class ScalaWriter(writer: Writer) {
 
@@ -49,6 +49,16 @@ class ScalaWriter(writer: Writer) {
   def writeField(ename: Term.Name, scalaType: String, initializer: Option[String], indent: String): Unit = {
     writer.write(indent)
     writer.write("val ")
+    writeDeclaration(ename, scalaType, initializer)
+    writer.write('\n')
+  }
+
+  def writeParameter(ename: Term.Name, scalaType: String, initializer: Option[String], indent: String): Unit = {
+    writer.write(indent)
+    writeDeclaration(ename, scalaType, initializer)
+  }
+
+  private def writeDeclaration(ename: Term.Name, scalaType: String, initializer: Option[String]): Unit = {
     writer.write(ename.syntax)
     writer.write(": ")
     writer.write(scalaType)
@@ -56,73 +66,42 @@ class ScalaWriter(writer: Writer) {
       writer.write(" = ")
       writer.write(init)
     }
-    writer.write('\n')
   }
 
-  def writeJsLiteralApplyMethod(parameters: Seq[Parameter], typeName: String, compact: Boolean, indent: String): Unit = {
-    writer.write(indent)
-    writer.write("def ")
-    writer.write(applyId.syntax)
-    writer.write('(')
-    writeParameterList(parameters) { (parameter, isLast) =>
-      writer.write(parameter.ename.syntax)
-      writer.write(": ")
-      writer.write(parameter.scalaType)
-      parameter.initializer.foreach { init =>
-        writer.write(" = ")
-        writer.write(init)
-      }
-      if (!isLast) writer.write(", ")
-    }
-    writer.write("): ")
-    writer.write(typeName)
-    writer.write(" = {\n")
-    writer.write(indent)
-    writer.write("  val __obj = js.Dynamic.literal(")
-    writeParameterList(parameters) { (parameter, isLast) =>
-      writer.write('"')
-      writer.write(parameter.ename.value)
-      writer.write('"')
-      writer.write(" -> ")
-      writer.write(parameter.ename.syntax)
-      writer.write(".asInstanceOf[js.Any]")
-      if (!isLast) writer.write(", ")
-    }
-    writer.write(")\n")
-    writer.write(indent)
-    writer.write("  __obj.asInstanceOf[")
-    writer.write(typeName)
-    writer.write("]\n")
-    writer.write(indent)
-    writer.write("}\n")
-    if (!compact) writer.write('\n')
-  }
-
-  def writeMethod(
-    ename: Term.Name,
+  def writeJsLiteralApplyMethod(
     parameters: List[Parameter],
     returnType: String,
+    compact: Boolean,
     indent: String
-  )(writeBody: () => Unit): Unit = {
-    writer.write(indent)
-    writer.write("def ")
-    writer.write(ename.syntax)
-    writer.write('(')
-    foreachParameter(parameters) {
-      case (parameter, hasMore) =>
-        writer.write(parameter.ename.syntax)
-        writer.write(": ")
-        writer.write(parameter.scalaType)
-        parameter.initializer.foreach { init =>
-          writer.write(" = ")
-          writer.write(init)
+  ): Unit = {
+    writeMethod(applyId, parameters, returnType, indent) { () =>
+      if (parameters.nonEmpty) {
+        writer.write("\n  ")
+        writer.write(indent)
+      } else {
+        writer.write(' ')
+      }
+      writer.write("js.Dynamic.literal(")
+      if (parameters.nonEmpty) {
+        writer.write('\n')
+        foreachParameter(parameters) {
+          case (field, hasMore) =>
+            writer.write(indent)
+            writer.write("""    """)
+            writer.write(field.ename.syntax)
+            writer.write(""" = """)
+            writer.write(field.ename.syntax)
+            if (hasMore) writer.write(',')
+            writer.write('\n')
         }
-        if (hasMore) writer.write(", ")
+        writer.write(indent)
+        writer.write("  ")
+      }
+      writer.write(").asInstanceOf[")
+      writer.write(returnType)
+      writer.write("]\n")
+      if (!compact) writer.write('\n')
     }
-    writer.write("): ")
-    writer.write(returnType)
-    writer.write(" =")
-    writeBody()
   }
 
   def writeProxyMethod(
@@ -160,9 +139,32 @@ class ScalaWriter(writer: Writer) {
     }
   }
 
-  def foreachParameter[T](parameters: List[T])(f: (T, Boolean) => Unit): Unit = {
+  def writeMethod(ename: Term.Name, parameters: List[Parameter], returnType: String, indent: String)(
+    writeBody: () => Unit
+  ): Unit = {
+    writer.write(indent)
+    writer.write("def ")
+    writer.write(ename.syntax)
+    writer.write('(')
+    if (parameters.nonEmpty) {
+      writer.write('\n')
+      foreachParameter(parameters) {
+        case (parameter, hasMore) =>
+          writeParameter(parameter.ename, parameter.scalaType, parameter.initializer, indent + "  ")
+          if (hasMore) writer.write(',')
+          writer.write('\n')
+      }
+      writer.write(indent)
+    }
+    writer.write("): ")
+    writer.write(returnType)
+    writer.write(" =")
+    writeBody()
+  }
+
+  private def foreachParameter(parameters: List[Parameter])(f: (Parameter, Boolean) => Unit): Unit = {
     @tailrec
-    def loop(parameters: List[T]): Unit = parameters match {
+    def loop(fields: List[Parameter]): Unit = fields match {
       case Nil => ()
       case field :: Nil =>
         f(field, false)
@@ -172,20 +174,6 @@ class ScalaWriter(writer: Writer) {
     }
 
     loop(parameters)
-  }
-
-  private def writeParameterList[T](parameters: Seq[T])(f: (T, Boolean) => Unit): Unit = {
-    @tailrec
-    def loop(parameters: List[T]): Unit = parameters match {
-      case Nil => ()
-      case field :: Nil =>
-        f(field, true)
-      case field :: tail =>
-        f(field, false)
-        loop(tail)
-    }
-
-    loop(parameters.toList)
   }
 }
 
