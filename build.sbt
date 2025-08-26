@@ -96,7 +96,7 @@ lazy val `sbt-scala-relay` = project
       (`scala-relay-macros` / publishLocal).value
     },
     scalaVersion := Versions.Scala212,
-    crossScalaVersions := Nil
+    crossScalaVersions := Seq(Versions.Scala212)
   )
 
 lazy val `scala-relay-core` = project
@@ -112,6 +112,7 @@ lazy val `scala-relay-core` = project
       )
       Seq(rootFolder / "intellij-compat.json")
     },
+    crossScalaVersions := Seq(Versions.Scala213, Versions.Scala3),
   )
 
 lazy val `scala-relay-macros` = project
@@ -120,7 +121,8 @@ lazy val `scala-relay-macros` = project
   .settings(
     libraryDependencies += Dependencies.ScalaReflect.value,
 
-    macroAnnotationSettings
+    macroAnnotationSettings,
+    crossScalaVersions := Seq(Versions.Scala213),
   )
 
 lazy val `scala-relay-ijext` = project
