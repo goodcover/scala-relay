@@ -245,8 +245,10 @@ object SharedFunctionalityTest extends TestSuite {
         GraphQLConverter.clean(convertDir)
         RelayCompiler.clean(compileDir)
 
-        // Test passes if no exceptions are thrown
-        assert(true)
+        // Verify files are deleted
+        assert(!new File(extractDir, "test.graphql").exists())
+        assert(!convertDir.exists())
+        assert(!compileDir.exists())
       }
     }
   }

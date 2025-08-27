@@ -163,13 +163,7 @@ object GraphQLWrapper {
   }
 
   private def resourceOutputs(resources: Seq[File], options: Options) =
-    resources.map(source => source -> resourceOutput(source, options)).toMap
-
-  private def resourceOutput(resource: File, options: Options) = {
-    val extension = if (options.typeScript) "ts" else "js"
-    // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
-    options.outputDir.getAbsoluteFile / s"${resource.base}.$extension"
-  }
+    BuildGraphQLWrapper.resourceOutputs(resources, options)
 
   // TODO: Add parallelism.
   /**

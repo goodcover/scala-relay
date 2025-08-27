@@ -1,9 +1,6 @@
 package com.goodcover.relay.mill
 
 import com.goodcover.relay.build.*
-import mill.*
-import mill.api.PathRef
-import mill.scalalib.ScalaModule
 import utest.*
 
 import java.io.File
@@ -232,9 +229,11 @@ object RelayIntegrationTest extends TestSuite {
         GraphQLConverter.clean(convertDir.toIO)
         RelayCompiler.clean(compileDir.toIO)
 
-        // Note: Our current clean implementations may be no-ops
-        // This test verifies the clean methods can be called without errors
-        assert(true)
+        // Verify files are deleted
+        assert(!os.exists(extractDir / "test.graphql"))
+        assert(!os.exists(extractDir / "another.graphql"))
+        assert(!os.exists(convertDir))
+        assert(!os.exists(compileDir))
       }
     }
 
@@ -434,9 +433,13 @@ object RelayIntegrationTest extends TestSuite {
           os.makeDir.all(wrapDir)
 
           val wrapOptions = GraphQLWrapper.Options(wrapDir.toIO, typeScript = false)
-          val wrapResults = GraphQLWrapper.wrapSimple(extractResults.values.toSet, wrapOptions, logger)
 
-          assert(wrapResults.nonEmpty)
+          val wrapperDest = GraphQLWrapper.resourceOutputs(extractResults.values.toSeq, wrapOptions)
+          GraphQLWrapper.wrapFiles(wrapperDest, logger)
+
+          wrapperDest.values.foreach { file =>
+            assert(file.exists())
+          }
 
           // Convert GraphQL to Scala facades
           val convertDir = workspace / "converted"

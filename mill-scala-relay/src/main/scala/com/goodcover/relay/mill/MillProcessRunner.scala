@@ -1,10 +1,8 @@
 package com.goodcover.relay.mill
 
 import com.goodcover.relay.build.{BuildLogger, ProcessRunner}
-import mill.javalib.api.JvmWorkerApi.Ctx
 
 import java.io.{File, InputStream}
-import scala.util.Try
 
 /**
   * Mill implementation of ProcessRunner using Mill's process execution
@@ -20,7 +18,7 @@ class MillProcessRunner extends ProcessRunner {
       logger.info(s"Running command: ${command.mkString(" ")}")
       logger.debug(s"Working directory: $workingDir")
 
-      val processBuilder = new ProcessBuilder(command*)
+      val processBuilder = new ProcessBuilder(command *)
       processBuilder.directory(workingDir)
 
       val process = processBuilder.start()

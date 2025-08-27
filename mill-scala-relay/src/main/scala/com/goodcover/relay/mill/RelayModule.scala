@@ -131,7 +131,9 @@ trait RelayModule extends ScalaModule {
     }
 
     val options = GraphQLWrapper.Options(outputDir, typeScript)
-    val results = GraphQLWrapper.wrapSimple(graphqlFiles, options, logger)
+
+    val files   = GraphQLWrapper.resourceOutputs(graphqlFiles.toSeq, options)
+    val results = GraphQLWrapper.wrapFiles(files, logger)
 
     PathRef(os.Path(outputDir))
   }
