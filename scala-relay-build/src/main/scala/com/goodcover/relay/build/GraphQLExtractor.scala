@@ -27,7 +27,7 @@ object GraphQLExtractor {
 
   type Results = Map[File, File]
 
-  private def sourceOutputs(sources: Seq[File], options: Options) =
+  def sourceOutputs(sources: Seq[File], options: Options) =
     sources.map(source => source -> sourceOutput(source, options)).toMap
 
   private def sourceOutput(source: File, options: Options) =
@@ -38,19 +38,19 @@ object GraphQLExtractor {
     * Extract GraphQL definitions from source files without caching.
     * This is a simplified version for build tools that handle their own caching.
     */
-  def extractSimple(sources: Set[File], options: Options, logger: BuildLogger): Results = {
-    logger.debug("Running GraphqlExtractor...")
-
-    val extracts = sources.flatMap { source =>
-      val out    = sourceOutput(source, options)
-      val pair   = source -> out
-      val result = extractFile(source, out, options.dialect, logger)
-
-      Seq(pair)
-    }.toMap
-
-    extracts
-  }
+//  def extractSimple(sources: Set[File], options: Options, logger: BuildLogger): Results = {
+//    logger.debug("Running GraphqlExtractor...")
+//
+//    val extracts = sources.flatMap { source =>
+//      val out    = sourceOutput(source, options)
+//      val pair   = source -> out
+//      val result = extractFile(source, out, options.dialect, logger)
+//
+//      Seq(pair)
+//    }.toMap
+//
+//    extracts
+//  }
 
   // TODO: Add parallelism.
 

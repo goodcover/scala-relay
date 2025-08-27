@@ -44,7 +44,8 @@ object RelayIntegrationTest extends TestSuite {
         os.makeDir.all(extractDir)
 
         val extractOptions = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala3)
-        val extractResults = GraphQLExtractor.extractSimple(sourceFiles, extractOptions, logger)
+        val sourcePairs    = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, extractOptions)
+        val extractResults = GraphQLExtractor.extractFiles(sourcePairs, extractOptions.dialect, logger)
 
         // Verify extraction worked
         assert(extractResults.nonEmpty)
@@ -132,10 +133,11 @@ object RelayIntegrationTest extends TestSuite {
         os.write(sourceDir / "VariousFormats.scala", testContent)
 
         val sourceFiles = Set((sourceDir / "VariousFormats.scala").toIO)
-        val options     = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala3)
         val logger      = TestBuildLogger()
 
-        val results = GraphQLExtractor.extractSimple(sourceFiles, options, logger)
+        val extractOptions = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala213)
+        val sourcePairs    = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, extractOptions)
+        val results        = GraphQLExtractor.extractFiles(sourcePairs, extractOptions.dialect, logger)
 
         // Should extract all GraphQL definitions
         assert(results.nonEmpty)
@@ -186,7 +188,8 @@ object RelayIntegrationTest extends TestSuite {
         val options     = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala3)
         val logger      = TestBuildLogger()
 
-        val results = GraphQLExtractor.extractSimple(sourceFiles, options, logger)
+        val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
+        val results     = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
         // Should still extract valid GraphQL despite errors
         val extractedFiles = os.list(extractDir).filter(_.ext == "graphql")
@@ -265,7 +268,8 @@ object RelayIntegrationTest extends TestSuite {
         os.makeDir.all(extractDir)
 
         val extractOptions = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala3)
-        val extractResults = GraphQLExtractor.extractSimple(sourceFiles, extractOptions, logger)
+        val sourcePairs    = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, extractOptions)
+        val extractResults = GraphQLExtractor.extractFiles(sourcePairs, extractOptions.dialect, logger)
 
         assert(extractResults.nonEmpty)
 
@@ -424,7 +428,8 @@ object RelayIntegrationTest extends TestSuite {
           os.makeDir.all(extractDir)
 
           val extractOptions = GraphQLExtractor.Options(extractDir.toIO, dialects.Scala3)
-          val extractResults = GraphQLExtractor.extractSimple(sourceFiles, extractOptions, logger)
+          val sourcePairs    = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, extractOptions)
+          val extractResults = GraphQLExtractor.extractFiles(sourcePairs, extractOptions.dialect, logger)
 
           assert(extractResults.nonEmpty)
 

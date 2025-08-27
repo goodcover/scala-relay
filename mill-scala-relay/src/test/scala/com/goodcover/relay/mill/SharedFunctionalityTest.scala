@@ -90,7 +90,8 @@ object SharedFunctionalityTest extends TestSuite {
         val options     = GraphQLExtractor.Options(outputDir, dialects.Scala3)
         val logger      = TestBuildLogger()
 
-        val results = GraphQLExtractor.extractSimple(sourceFiles, options, logger)
+        val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
+        val results     = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
         // Should extract GraphQL files
         assert(results.nonEmpty)

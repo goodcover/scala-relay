@@ -92,6 +92,22 @@ trait RelayModule extends ScalaModule {
     false
   }
 
+  private def dialect = Task.Anon {
+    scalaVersion() match {
+      case v if v.startsWith("2.12") => dialects.Scala210
+      case v if v.startsWith("2.13") => dialects.Scala213
+      case v if v.startsWith("3.0")  => dialects.Scala30
+      case v if v.startsWith("3.1")  => dialects.Scala31
+      case v if v.startsWith("3.2")  => dialects.Scala32
+      case v if v.startsWith("3.3")  => dialects.Scala33
+      case v if v.startsWith("3.4")  => dialects.Scala34
+      case v if v.startsWith("3.5")  => dialects.Scala35
+      case v if v.startsWith("3.6")  => dialects.Scala36
+      case v if v.startsWith("3.7")  => dialects.Scala37
+      case _                         => dialects.Scala3Future
+    }
+  }
+
   /**
     * Extract GraphQL definitions from Scala source files
     */
@@ -101,8 +117,13 @@ trait RelayModule extends ScalaModule {
     val sourceFiles = allSources().flatMap(_.path.toIO.listFiles()).filter(_.getName.endsWith(".scala")).toSet
     val outputDir   = relayExtractDir().path.toIO
 
-    val options = GraphQLExtractor.Options(outputDir, dialects.Scala213)
-    val results = GraphQLExtractor.extractSimple(sourceFiles, options, logger)
+    val d = dialect()
+
+    val options = GraphQLExtractor.Options(outputDir, d)
+
+    val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
+
+    val results = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
     PathRef(os.Path(outputDir))
   }
