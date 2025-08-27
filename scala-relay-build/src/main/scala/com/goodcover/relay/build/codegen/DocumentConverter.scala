@@ -8,7 +8,7 @@ import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputO
 import caliban.parsing.adt.Type.{innerType, NamedType}
 import caliban.parsing.adt._
 import com.goodcover.relay.build.FileOps._
-import com.goodcover.relay.build.{BuildLogger, GraphQLConverter, GraphQLSchema}
+import com.goodcover.relay.build.GraphQLSchema
 import com.goodcover.relay.build.codegen.Directives.{getRefetchable, Refetchable}
 import com.goodcover.relay.build.codegen.DocumentConverter._
 
