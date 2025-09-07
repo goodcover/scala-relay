@@ -4,13 +4,12 @@ import sbtrelease.ReleaseStateTransformations._
 
 // Run scala-relay-ijext/updateIntellij
 ThisBuild / updateIntellij := {}
-ThisBuild / scalaVersion := Versions.Scala213
-ThisBuild / organization := "com.goodcover.relay"
+ThisBuild / organization   := "com.goodcover.relay"
 
 ThisBuild / intellijPluginName := "scala-relay-ijext"
 // See https://www.jetbrains.com/intellij-repository/releases
 // search for com.jetbrains.intellij.idea
-ThisBuild / intellijBuild := "252"
+ThisBuild / intellijBuild      := "252"
 
 ThisBuild / publishTo := {
   val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
@@ -23,12 +22,12 @@ lazy val root = project
   .settings(commonSettings)
   .settings(
     // crossScalaVersions must be set to Nil on the aggregating project
-    crossScalaVersions := Nil,
-    publish / skip := true,
+    crossScalaVersions    := Nil,
+    publish / skip        := true,
     PgpKeys.publishSigned := {},
-    publishLocal := {},
-    publishArtifact := false,
-    publish := {}
+    publishLocal          := {},
+    publishArtifact       := false,
+    publish               := {}
   )
   .aggregate( //
     `sbt-scala-relay`,
@@ -42,29 +41,30 @@ lazy val `scala-relay-build` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
-    scalaVersion := Versions.Scala3,
+    scalaVersion       := Versions.Scala212,
     crossScalaVersions := Seq(Versions.Scala212, Versions.Scala3)
   )
 
 lazy val `mill-scala-relay` = project
   .settings(commonSettings)
   .dependsOn(`scala-relay-build`)
+  .aggregate(`scala-relay-build`)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "mill-libs-scalalib" % Versions.Mill,
+      "com.lihaoyi"           %% "mill-libs-scalalib" % Versions.Mill,
       Dependencies.millTestkit % Test,
-      Dependencies.munit % Test,
+      Dependencies.munit       % Test,
     ),
-    // Force all dependencies to use Scala 3 versions
-    dependencyOverrides ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0",
-      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "2.37.6",
-      "com.lihaoyi" %% "sourcecode" % "0.4.2",
-      "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
-      "org.scalameta" %% "scalameta" % Versions.ScalaMeta,
-      "org.scalameta" %% "parsers" % Versions.ScalaMeta
-    ),
-    // Exclude all Scala 2.13 versions from all dependencies
+//    // Force all dependencies to use Scala 3 versions
+//    dependencyOverrides ++= Seq(
+//      "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0",
+//      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "2.37.6",
+//      "com.lihaoyi" %% "sourcecode" % "0.4.2",
+//      "org.scala-lang.modules" %% "scala-xml" % "2.4.0",
+//      "org.scalameta" %% "scalameta" % Versions.ScalaMeta,
+//      "org.scalameta" %% "parsers" % Versions.ScalaMeta
+//    ),
+//    // Exclude all Scala 2.13 versions from all dependencies
     excludeDependencies ++= Seq(
       ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
       ExclusionRule("com.github.plokhotnyuk.jsoniter-scala", "jsoniter-scala-core_2.13"),
@@ -73,7 +73,7 @@ lazy val `mill-scala-relay` = project
       ExclusionRule("org.scalameta", "scalameta_2.13"),
       ExclusionRule("org.scalameta", "parsers_2.13")
     ),
-    scalaVersion := Versions.Scala37,
+    scalaVersion       := Versions.Scala37,
     crossScalaVersions := Seq(Versions.Scala37),
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
@@ -83,29 +83,30 @@ lazy val `sbt-scala-relay` = project
   .dependsOn(`scala-relay-build`)
   .settings(commonSettings)
   .settings(
-    sbtPlugin := true,
+    sbtPlugin            := true,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
-    buildInfoKeys := Seq[BuildInfoKey](version),
-    buildInfoPackage := "com.goodcover.relay",
+    buildInfoKeys        := Seq[BuildInfoKey](version),
+    buildInfoPackage     := "com.goodcover.relay",
     scriptedLaunchOpts += "-Dplugin.version=" + version.value,
-    scriptedBufferLog := false,
+    scriptedBufferLog    := false,
     scriptedDependencies := {
       scriptedDependencies.value
       (`scala-relay-build` / publishLocal).value
       (`scala-relay-core` / publishLocal).value
       (`scala-relay-macros` / publishLocal).value
     },
-    scalaVersion := Versions.Scala212,
-    crossScalaVersions := Seq(Versions.Scala212)
+    scalaVersion         := Versions.Scala212,
+    crossScalaVersions   := Seq(Versions.Scala212)
   )
 
 lazy val `scala-relay-core` = project
   .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings,
+  .settings(
+    commonSettings,
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
-      val id = (`scala-relay-ijext` / projectID).value
+      val id         = (`scala-relay-ijext` / projectID).value
       IO.write(
         rootFolder / "intellij-compat.json",
         s"""{"artifact": "${id.organization} % ${id.name}_2.13 % ${id.revision}" }""".stripMargin
@@ -120,7 +121,6 @@ lazy val `scala-relay-macros` = project
   .settings(commonSettings)
   .settings(
     libraryDependencies += Dependencies.ScalaReflect.value,
-
     macroAnnotationSettings,
     crossScalaVersions := Seq(Versions.Scala213),
   )
@@ -130,39 +130,42 @@ lazy val `scala-relay-ijext` = project
   .settings(org.jetbrains.sbtidea.Keys.buildSettings)
   .settings(commonSettings)
   .settings(
-    crossScalaVersions := Seq(Versions.Scala213),
-    intellijPluginName := name.value,
+    crossScalaVersions    := Seq(Versions.Scala213),
+    intellijPluginName    := name.value,
     intellijPlugins ++= Seq("org.intellij.scala".toPlugin),
-    intellijBuild := (ThisBuild / intellijBuild).value,
+    intellijBuild         := (ThisBuild / intellijBuild).value,
     intellijBaseDirectory := (ThisBuild / intellijBaseDirectory).value,
-    packageMethod := PackagingMethod.Standalone(), // This only works for proper plugins
-    patchPluginXml := pluginXmlOptions { xml =>
+    packageMethod         := PackagingMethod.Standalone(), // This only works for proper plugins
+    patchPluginXml        := pluginXmlOptions { xml =>
       xml.version = version.value
       xml.sinceBuild = (ThisBuild / intellijBuild).value
     },
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
-      val fileOut = rootFolder / "intellij-compat.xml"
+      val fileOut    = rootFolder / "intellij-compat.xml"
 
-      IO.write(fileOut, s"""
-          |<!DOCTYPE intellij-compat PUBLIC "Plugin/DTD"
-          |        "https://raw.githubusercontent.com/JetBrains/intellij-scala/idea183.x/scala/scala-impl/src/org/jetbrains/plugins/scala/components/libextensions/intellij-compat.dtd">
-          |<intellij-compat>
-          |    <id>com.goodcover.relay</id>
-          |    <name>Scala Relay Intellij Support</name>
-          |    <description>Expands scala-relay macros</description>
-          |    <version>${version.value}</version>
-          |    <vendor>Goodcover</vendor>
-          |    <ideaVersion since-build="2020.3.0">
-          |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
-          |             implementation="com.goodcover.relay.GraphQLGenInjector">
-          |            <name>graphqlGen whitebox mac library Support</name>
-          |            <description>Support for graphqlGen macro</description>
-          |        </extension>
-          |    </ideaVersion>
-          |</intellij-compat>
-          """.stripMargin)
+      IO.write(
+        fileOut,
+        s"""
+           |<!DOCTYPE intellij-compat PUBLIC "Plugin/DTD"
+           |        "https://raw.githubusercontent.com/JetBrains/intellij-scala/idea183.x/scala/scala-impl/src/org/jetbrains/plugins/scala/components/libextensions/intellij-compat.dtd">
+           |<intellij-compat>
+           |    <id>com.goodcover.relay</id>
+           |    <name>Scala Relay Intellij Support</name>
+           |    <description>Expands scala-relay macros</description>
+           |    <version>${version.value}</version>
+           |    <vendor>Goodcover</vendor>
+           |    <ideaVersion since-build="2020.3.0">
+           |        <extension interface="org.jetbrains.plugins.scala.lang.macros.evaluator.ScalaMacroTypeable"
+           |             implementation="com.goodcover.relay.GraphQLGenInjector">
+           |            <name>graphqlGen whitebox mac library Support</name>
+           |            <description>Support for graphqlGen macro</description>
+           |        </extension>
+           |    </ideaVersion>
+           |</intellij-compat>
+          """.stripMargin
+      )
 
       Seq(fileOut)
     }
@@ -180,7 +183,7 @@ lazy val macroAnnotationSettings = Seq(
 )
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion := Versions.Scala213,
+  scalaVersion       := Versions.Scala213,
   crossScalaVersions := Seq(Versions.Scala213),
   scalacOptions ++= {
     val commonOptions = Seq(
@@ -216,7 +219,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
       commonOptions ++ scala2Options
     }
   },
-  pomExtra :=
+  pomExtra           :=
     <developers>
       <developer>
         <id>dispalt</id>
@@ -234,12 +237,12 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
         <url>https://github.com/steinybot</url>
       </developer>
     </developers>,
-  homepage := Some(url(s"https://github.com/goodcover/scala-relay")),
-  licenses := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
-  scmInfo := Some(
+  homepage           := Some(url(s"https://github.com/goodcover/scala-relay")),
+  licenses           := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
+  scmInfo            := Some(
     ScmInfo(url("https://github.com/goodcover/scala-relay"), "scm:git:git@github.com:goodcover/scala-relay.git")
   ),
-  publishMavenStyle := true
+  publishMavenStyle  := true
 )
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
