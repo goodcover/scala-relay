@@ -113,7 +113,6 @@ lazy val `scala-relay-core` = project
       )
       Seq(rootFolder / "intellij-compat.json")
     },
-    scalaVersion                          := Versions.Scala3,
     crossScalaVersions                    := Seq(Versions.Scala213, Versions.Scala3),
   )
 
