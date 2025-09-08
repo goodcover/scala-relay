@@ -130,6 +130,7 @@ lazy val `scala-relay-ijext` = project
   .settings(commonSettings)
   .settings(
     crossScalaVersions    := Seq(Versions.Scala213),
+    scalaVersion          := Versions.Scala213,
     intellijPluginName    := name.value,
     intellijPlugins ++= Seq("org.intellij.scala".toPlugin),
     intellijBuild         := (ThisBuild / intellijBuild).value,
@@ -172,12 +173,18 @@ lazy val `scala-relay-ijext` = project
 
 lazy val macroAnnotationSettings = Seq(
   scalacOptions ++= {
-    if (scalaVersion.value == Versions.Scala213) Seq("-Ymacro-annotations")
-    else Seq("-Xfuture")
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq("-Ymacro-annotations")
+      case Some((2, _))  => Seq("-Xfuture")
+      case _             => Seq.empty
+    }
   },
   libraryDependencies ++= {
-    if (scalaVersion.value == Versions.Scala213) Seq.empty
-    else Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq.empty
+      case Some((2, _))  => Seq(compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1").cross(CrossVersion.full)))
+      case _             => Seq.empty
+    }
   }
 )
 
@@ -255,7 +262,7 @@ releaseProcess :=
     ReleaseCustom.checkAuthedGh,
     runClean,
     releaseStepCommandAndRemaining("+ test"),
-    releaseStepCommandAndRemaining(";+ scala-relay-ijext/updateIntellij ;+ scala-relay-ijext/test"),
+    releaseStepCommandAndRemaining("scala-relay-ijext/updateIntellij ;scala-relay-ijext/compile"),
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
