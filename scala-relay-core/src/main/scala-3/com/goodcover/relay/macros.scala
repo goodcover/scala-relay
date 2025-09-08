@@ -28,7 +28,7 @@ object macros {
    * all lowercase must show up in the file.
    *
    * @param s
-   *   plan old graphql string.
+   *   plain old graphql string.
    * @return
    *   Type of the Object generated from the relay-compiler
    */
