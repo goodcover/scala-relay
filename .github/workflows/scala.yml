@@ -19,6 +19,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        scala-version: ["2.12.20", "2.13.16", "3.7.2"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 11
@@ -40,4 +43,7 @@ jobs:
     - name: Cache scala dependencies
       uses: coursier/cache-action@v6
     - name: Run tests
-      run: sbt "all test scriptedAll"
+      run: sbt "++${{ matrix.scala-version }} test"
+    - name: Run scripted tests (Scala 2.12.x only)
+      if: startsWith(matrix.scala-version, '2.12')
+      run: sbt "++${{ matrix.scala-version }} scriptedAll"

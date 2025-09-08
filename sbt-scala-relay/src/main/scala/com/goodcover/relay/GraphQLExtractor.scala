@@ -4,6 +4,7 @@ import sbt._
 import sbt.io.Using.fileWriter
 import sbt.util.CacheImplicits._
 import sbt.util.{CacheStore, CacheStoreFactory}
+import com.goodcover.relay.build.{GraphQLExtractor as SharedQLExtractor}
 import sjsonnew._
 
 import java.nio.charset.StandardCharsets
@@ -76,6 +77,7 @@ object GraphQLExtractor {
 
   def extract(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
     logger.debug("Running GraphqlExtractor...")
+    val sbtLogger = SbtBuildLogger(logger)
     val stores = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
@@ -109,7 +111,7 @@ object GraphQLExtractor {
             }
             // Don't forget to delete the old ones since extract appends.
             IO.delete(needsExtraction.values)
-            val unexpectedExtracts = extractFiles(needsExtraction, options.dialect, logger)
+            val unexpectedExtracts = SharedQLExtractor.extractFiles(needsExtraction, options.dialect, sbtLogger)
             logger.warn(s"Extracted an additional ${unexpectedExtracts.size} GraphQL documents.")
             unexpectedExtracts
           }
@@ -136,6 +138,8 @@ object GraphQLExtractor {
   ): (Extracts, Extracts) = {
     def versionUnchanged = Version == previousAnalysis.version
     def optionsUnchanged = options == previousAnalysis.options
+    val sbtBuildLogger = SbtBuildLogger(logger)
+
     if (versionUnchanged && optionsUnchanged) {
       logger.debug("Version and options have not changed")
       // We have to be careful here because we can have multiple sources extracting to the same output.
@@ -154,7 +158,7 @@ object GraphQLExtractor {
           logger.warn(s"BUG: Output ${output.getPath} of source ${source.getPath} should not exist.")
         case _ => ()
       }
-      val changedExtracts = extractFiles(needsExtracting, options.dialect, logger)
+      val changedExtracts = SharedQLExtractor.extractFiles(needsExtracting, options.dialect, sbtBuildLogger)
       if (needsExtracting.nonEmpty) logger.info(s"Extracted ${changedExtracts.size} GraphQL documents.")
       val previouslyExtracted = sourceReport.checked -- needsExtracting.keySet
       val unchangedExtracts = previousAnalysis.extracts.filterKeys(previouslyExtracted.contains)
@@ -166,7 +170,7 @@ object GraphQLExtractor {
       IO.delete(previousOutputs)
       val needsExtraction = sourceOutputs(sourceReport.checked.toSeq, options)
       IO.delete(needsExtraction.values)
-      val changedExtracts = extractFiles(needsExtraction, options.dialect, logger)
+      val changedExtracts = SharedQLExtractor.extractFiles(needsExtraction, options.dialect, sbtBuildLogger)
       (changedExtracts, Map.empty)
     }
   }
@@ -178,111 +182,6 @@ object GraphQLExtractor {
     // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
     options.outputDir.getAbsoluteFile / s"${source.base}.graphql"
 
-  // TODO: Add parallelism.
-  /**
-    * Extracts the graphql definitions from the files.
-    *
-    * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
-    * existing extracts are deleted beforehand if required.
-    */
-  private def extractFiles(files: Map[File, File], dialect: Dialect, logger: Logger): Extracts =
-    files.filter {
-      case (file, output) =>
-        Try(extractFile(file, output, dialect, logger)).fold({ t =>
-          logger.warn("Failed to check file. File will be ignored. Please ensure that relayExtractDialect has the correct value.")
-          logger.warn(t.getMessage)
-          false
-        }, identity)
-    }
-
-  private def extractFile(file: File, output: File, dialect: Dialect, logger: Logger): Boolean = {
-    logger.debug(s"Checking file for graphql definitions: $file")
-    val input   = Input.File(file)
-    val source  = input.parse[Source](implicitly, implicitly, dialect).get
-    val builder = Iterable.newBuilder[String]
-    source.traverse {
-      // The annotation has to be exactly this. It cannot be an alias or qualified.
-      // We could support more but it would require SemanticDB which is slower.
-      case mod"@graphql(${t: Lit.String})" =>
-        builder += t.value
-      case annot @ mod"@graphql(...$exprss)" =>
-        def pos = exprss.flatMap(_.headOption).headOption.getOrElse(annot).pos
-        logger.error(
-          s"Found a @graphql annotation with the wrong number or type of arguments. It must have exactly one string literal."
-        )
-        logger.error(s"    at ${positionText(pos)}")
-        logger.debug(annot.structure)
-        logger.debug(exprss.toString)
-      case q"graphqlGen(${t: Lit.String})" =>
-        builder += t.value
-      case q"${_}.graphqlGen(${t: Lit.String})" =>
-        builder += t.value
-      case app @ q"graphqlGen(...$exprss)" =>
-        // Term.Name("graphqlGen") also matches this. Ignore it.
-        if (!app.isInstanceOf[Term.Name]) {
-          def pos = exprss.flatMap(_.headOption).headOption.getOrElse(app).pos
-          logger.error(
-            s"Found a graphqlGen application with the wrong number or type of arguments. It must have exactly one string literal."
-          )
-          logger.error(s"    at ${positionText(pos)}")
-          logger.debug(app.structure)
-          logger.debug(exprss.toString)
-        }
-    }
-    val definitions = builder.result()
-    if (definitions.nonEmpty) {
-      writeGraphql(file, output, definitions)
-      logger.debug(s"Extracted ${definitions.size} definitions to: $output")
-      true
-    } else {
-      logger.debug("No definitions found")
-      false
-    }
-  }
-
-  private def writeGraphql(source: File, output: File, definitions: Iterable[String]): Unit = {
-    // Ensure these are absolute otherwise it might mess up the change detection since it uses hash codes.
-    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
-      definitions.foreach { definition =>
-        writer.write("# Extracted from ")
-        writer.write(source.absolutePath)
-        writer.write('\n')
-        val trimmed = trimBlankLines(definition)
-        val lines   = trimmed.linesIterator
-        val prefix = {
-          if (lines.hasNext) {
-            val firstLine = lines.next()
-            val indent    = firstLine.takeWhile(_.isWhitespace)
-            writer.write(firstLine.drop(indent.length))
-            writer.write('\n')
-            indent
-          } else ""
-        }
-        lines.foreach { line =>
-          writer.write(removeLongestPrefix(line, prefix))
-          writer.write('\n')
-        }
-        writer.write('\n')
-      }
-    }
-  }
-
-  private def removeLongestPrefix(s: String, prefix: String): String = {
-    val n = prefix.indices
-      .find { i =>
-        i < s.length && s.charAt(i) != prefix.charAt(i)
-      }
-      .getOrElse(prefix.length)
-    s.drop(n)
-  }
-
-  private def positionText(position: Position): String = {
-    position.input match {
-      case Input.File(path, _)        => s"${path.syntax}:${position.startLine}:${position.startColumn}"
-      case Input.VirtualFile(path, _) => s"$path:${position.startLine}:${position.startColumn}"
-      case _                          => position.toString
-    }
-  }
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {
     val Stores(last, sources, outputs) = Stores(cacheStoreFactory)

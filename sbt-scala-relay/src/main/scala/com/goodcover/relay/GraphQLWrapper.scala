@@ -1,17 +1,15 @@
 package com.goodcover.relay
 
-import caliban.parsing.Parser
-import caliban.parsing.adt.{Definition, Document}
-import sbt._
-import sbt.io.Using.fileWriter
-import sbt.util.CacheImplicits._
-import sbt.util.{CacheStore, CacheStoreFactory}
-import sjsonnew._
-
-import java.io.BufferedWriter
-import java.nio.charset.StandardCharsets
+import com.goodcover.relay.build.GraphQLWrapper as BuildGraphQLWrapper
+import sbt.*
+import sbt.util.CacheImplicits.*
+import sbt.util.{ CacheStore, CacheStoreFactory }
+import sjsonnew.*
 
 object GraphQLWrapper {
+
+  type Options = BuildGraphQLWrapper.Options
+  val Options: BuildGraphQLWrapper.Options.type = BuildGraphQLWrapper.Options
 
   // This should be temporary. It exists only to workaround a stupid limitation of relay-compiler where it doesn't load
   // definitions from GraphQL files.
@@ -24,19 +22,16 @@ object GraphQLWrapper {
   // Increment when the code changes to bust the cache.
   private val Version = 1
 
-  final case class Options(outputDir: File, typeScript: Boolean)
-
-  object Options {
-    //noinspection TypeAnnotation
-    implicit val iso = LList.iso[Options, File :*: Boolean :*: LNil]( //
-      { o: Options => //
-        ("outputDir" -> o.outputDir) :*: ("typeScript" -> o.typeScript) :*: LNil
-      }, {
-        case (_, outputDir) :*: (_, typeScript) :*: LNil => //
-          Options(outputDir, typeScript)
-      }
-    )
-  }
+  // noinspection TypeAnnotation
+  implicit val isoOptions = LList.iso[Options, File :*: Boolean :*: LNil]( //
+    { o: Options => //
+      ("outputDir" -> o.outputDir) :*: ("typeScript" -> o.typeScript) :*: LNil
+    },
+    {
+      case (_, outputDir) :*: (_, typeScript) :*: LNil => //
+        Options.apply(outputDir, typeScript)
+    }
+  )
 
   type Results = Set[File]
 
@@ -48,11 +43,12 @@ object GraphQLWrapper {
   private object Analysis {
     def apply(options: Options): Analysis = Analysis(Version, options, Map.empty)
 
-    //noinspection TypeAnnotation
+    // noinspection TypeAnnotation
     implicit val iso = LList.iso[Analysis, Int :*: Options :*: Wrappers :*: LNil]( //
       { a: Analysis => //
         ("version" -> a.version) :*: ("options" -> a.options) :*: ("wrappers" -> a.wrappers) :*: LNil
-      }, {
+      },
+      {
         case (_, version) :*: (_, options) :*: (_, wrappers) :*: LNil => //
           Analysis(version, options, wrappers)
       }
@@ -71,7 +67,7 @@ object GraphQLWrapper {
 
   def wrap(cacheStoreFactory: CacheStoreFactory, sources: Set[File], options: Options, logger: Logger): Results = {
     logger.debug("Running GraphqlWrapper...")
-    val stores = Stores(cacheStoreFactory)
+    val stores      = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
       logger.debug(s"Previous analysis:\n$maybePreviousAnalysis")
@@ -99,8 +95,8 @@ object GraphQLWrapper {
             }
             logger.warn("Ensure that nothing is modifying these files so as to get the most benefit from the cache.")
             val outputSources = invertOneToOne(previousAnalysis.wrappers)
-            val needsWrapping = unexpectedChanges.foldLeft(Map.empty[File, File]) {
-              case (acc, output) => acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
+            val needsWrapping = unexpectedChanges.foldLeft(Map.empty[File, File]) { case (acc, output) =>
+              acc ++ outputSources.getOrElse(output, Vector.empty).map(_ -> output)
             }
             // Don't forget to delete the old ones since wrap appends.
             IO.delete(needsWrapping.values)
@@ -109,7 +105,7 @@ object GraphQLWrapper {
             needsWrapping
           }
         }
-        val wrappers = modifiedWrappers ++ unmodifiedWrappers
+        val wrappers                               = modifiedWrappers ++ unmodifiedWrappers
         Analysis(Version, options, wrappers)
       }
     }
@@ -117,12 +113,14 @@ object GraphQLWrapper {
   }
 
   /**
-    * If the version has changed this will delete all previous wrappers and re-wrap everything. Otherwise it will
-    * remove old wrapper for removed resources and wrap anything that is new or was modified.
-    *
-    * @return a tuple where the first element are the new wrappers and the second are the wrappers from the previous
-    *         analysis that have not been modified
-    */
+   * If the version has changed this will delete all previous wrappers and
+   * re-wrap everything. Otherwise it will remove old wrapper for removed
+   * resources and wrap anything that is new or was modified.
+   *
+   * @return
+   *   a tuple where the first element are the new wrappers and the second are
+   *   the wrappers from the previous analysis that have not been modified
+   */
   private def wrapModified(
     resourceReport: ChangeReport[File],
     previousAnalysis: Analysis,
@@ -136,24 +134,24 @@ object GraphQLWrapper {
       // We have to be careful here because we can have multiple resources wrapping to the same output.
       // When something is modified we need to re-wrap not just those modifications but also the other resources that
       // wrap to the same output.
-      val modifiedOutputs = resourceOutputs(resourceReport.modified.toSeq, options)
+      val modifiedOutputs              = resourceOutputs(resourceReport.modified.toSeq, options)
       IO.delete(modifiedOutputs.values)
-      val unmodifiedResources = invertOneToOne(resourceOutputs(resourceReport.unmodified.toSeq, options))
-      val modifiedAndTransitiveOutputs = modifiedOutputs.flatMap {
-        case entry @ (_, output) => entry +: unmodifiedResources.getOrElse(output, Vector.empty).map(_ -> output)
+      val unmodifiedResources          = invertOneToOne(resourceOutputs(resourceReport.unmodified.toSeq, options))
+      val modifiedAndTransitiveOutputs = modifiedOutputs.flatMap { case entry @ (_, output) =>
+        entry +: unmodifiedResources.getOrElse(output, Vector.empty).map(_ -> output)
       }
-      val needsWrapping = modifiedAndTransitiveOutputs.filterKeys(!resourceReport.removed.contains(_))
+      val needsWrapping                = modifiedAndTransitiveOutputs.filterKeys(!resourceReport.removed.contains(_))
       needsWrapping.foreach {
         case (resource, output) if output.exists() =>
           logger.warn(s"BUG: Output ${output.getPath} of resource ${resource.getPath} should not exist.")
-        case _ => ()
+        case _                                     => ()
       }
       if (needsWrapping.nonEmpty)
         logger.info(s"Wrapping GraphQL in ${if (options.typeScript) "TypeScript" else "JavaScript"}...")
       wrapFiles(needsWrapping, logger)
       if (needsWrapping.nonEmpty) logger.info(s"Wrapped ${needsWrapping.size} GraphQL documents.")
-      val previouslyWrapped = resourceReport.checked -- needsWrapping.keySet
-      val unchangedWrappers = previousAnalysis.wrappers.filterKeys(previouslyWrapped.contains)
+      val previouslyWrapped            = resourceReport.checked -- needsWrapping.keySet
+      val unchangedWrappers            = previousAnalysis.wrappers.filterKeys(previouslyWrapped.contains)
       (needsWrapping, unchangedWrappers)
     } else {
       if (!versionUnchanged) logger.debug(s"Version changed:\n$Version")
@@ -168,47 +166,19 @@ object GraphQLWrapper {
   }
 
   private def resourceOutputs(resources: Seq[File], options: Options) =
-    resources.map(source => source -> resourceOutput(source, options)).toMap
-
-  private def resourceOutput(resource: File, options: Options) = {
-    val extension = if (options.typeScript) "ts" else "js"
-    // Ensure these are absolute otherwise it might mess up the change detection as the files will not equal.
-    options.outputDir.getAbsoluteFile / s"${resource.base}.$extension"
-  }
+    BuildGraphQLWrapper.resourceOutputs(resources, options)
 
   // TODO: Add parallelism.
   /**
-    * Wraps the graphql definitions with the graphql interpolator and writes it to a JavaScript/TypeScript file.
-    *
-    * If there are any collisions then the contents will be appended. It is the callers responsibility to ensure that
-    * existing wrappers are deleted beforehand if required.
-    */
+   * Wraps the graphql definitions with the graphql interpolator and writes it
+   * to a JavaScript/TypeScript file.
+   *
+   * If there are any collisions then the contents will be appended. It is the
+   * callers responsibility to ensure that existing wrappers are deleted
+   * beforehand if required.
+   */
   private def wrapFiles(files: Map[File, File], logger: Logger): Unit =
-    files.foreach {
-      case (file, output) => wrapFile(file, output, logger)
-    }
-
-  private def wrapFile(file: File, output: File, logger: Logger): Unit = {
-    logger.debug(s"Wrapping graphql definitions: $file")
-    fileWriter(StandardCharsets.UTF_8, append = true)(output) { writer =>
-      // TODO: We could use the caliban fastparse parsers directly but this seems fast enough for now.
-      val documentText = IO.read(file, StandardCharsets.UTF_8)
-      val document     = Parser.parseQuery(documentText).right.get
-      document.definitions.foreach { definition =>
-        writeWrapper(writer, definition, document, logger)
-      }
-    }
-  }
-
-  private def writeWrapper(writer: BufferedWriter, definition: Definition, document: Document, logger: Logger): Unit = {
-    writer.write("graphql`\n")
-    val rendered = renderDefinition(definition, document)
-    writer.write(escape(trimBlankLines(rendered)))
-    writer.write("`\n\n")
-  }
-
-  private def escape(s: String): String =
-    s.replace("""\""", """\\""").replace("`", """\`""").replaceAll("""\$(?=\{.*?})""", """\$""")
+    BuildGraphQLWrapper.wrapFiles(files, SbtBuildLogger(logger))
 
   def clean(cacheStoreFactory: CacheStoreFactory): Unit = {
     val Stores(last, resources, outputs) = Stores(cacheStoreFactory)
