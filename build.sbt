@@ -52,7 +52,6 @@ lazy val `mill-scala-relay` = project
     libraryDependencies ++= Seq(
       "com.lihaoyi"           %% "mill-libs-scalalib" % Versions.Mill,
       Dependencies.millTestkit % Test,
-      Dependencies.munit       % Test,
     ),
 //    // Force all dependencies to use Scala 3 versions
 //    dependencyOverrides ++= Seq(
@@ -102,6 +101,8 @@ lazy val `scala-relay-core` = project
   .enablePlugins(ScalaJSPlugin)
   .settings(
     commonSettings,
+    libraryDependencies += "com.lihaoyi" %%% "utest" % Versions.UTest % Test,
+    testFrameworks += new TestFramework("utest.runner.Framework"),
     Compile / resourceGenerators += Def.task {
       val rootFolder = (Compile / resourceManaged).value / "META-INF"
       rootFolder.mkdirs()
@@ -112,7 +113,7 @@ lazy val `scala-relay-core` = project
       )
       Seq(rootFolder / "intellij-compat.json")
     },
-    crossScalaVersions := Seq(Versions.Scala213, Versions.Scala3),
+    crossScalaVersions                    := Seq(Versions.Scala213, Versions.Scala3),
   )
 
 lazy val `scala-relay-macros` = project
@@ -189,8 +190,8 @@ lazy val macroAnnotationSettings = Seq(
 )
 
 lazy val commonSettings: Seq[Setting[_]] = Seq(
-  scalaVersion       := Versions.Scala213,
-  crossScalaVersions := Seq(Versions.Scala213),
+  scalaVersion         := Versions.Scala213,
+  crossScalaVersions   := Seq(Versions.Scala213),
   scalacOptions ++= {
     val commonOptions = Seq(
       "-feature",
@@ -225,7 +226,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
       commonOptions ++ scala2Options
     }
   },
-  pomExtra           :=
+  pomExtra             :=
     <developers>
       <developer>
         <id>dispalt</id>
@@ -243,12 +244,13 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
         <url>https://github.com/steinybot</url>
       </developer>
     </developers>,
-  homepage           := Some(url(s"https://github.com/goodcover/scala-relay")),
-  licenses           := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
-  scmInfo            := Some(
+  homepage             := Some(url(s"https://github.com/goodcover/scala-relay")),
+  licenses             := Seq("MIT License" -> url("http://opensource.org/licenses/mit-license.php")),
+  scmInfo              := Some(
     ScmInfo(url("https://github.com/goodcover/scala-relay"), "scm:git:git@github.com:goodcover/scala-relay.git")
   ),
-  publishMavenStyle  := true
+  publishMavenStyle    := true,
+  pomIncludeRepository := { _ => false }
 )
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
