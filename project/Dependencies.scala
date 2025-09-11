@@ -5,7 +5,7 @@ object Versions {
   final val Scala212 = "2.12.20"
   final val Scala213 = "2.13.16"
   final val Scala3   = "3.3.6"
-  final val Scala37  = "3.7.2"
+  final val Scala37  = "3.7.3"
 
   final val Mill = "1.0.4"
 
