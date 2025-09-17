@@ -130,7 +130,7 @@ object SharedFunctionalityTest extends TestSuite {
             |  }
             |}
             |""".stripMargin
-        val graphqlFile = new File(graphqlDir, "GetUser.graphql")
+        val graphqlFile    = new File(graphqlDir, "GetUser.graphql")
         java.nio.file.Files.write(graphqlFile.toPath, graphqlContent.getBytes)
 
         val graphqlFiles = Set(graphqlFile)

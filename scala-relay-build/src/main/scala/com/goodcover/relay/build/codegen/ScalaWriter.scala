@@ -1,10 +1,10 @@
 package com.goodcover.relay.build.codegen
 
-import com.goodcover.relay.build.codegen.ScalaWriter.{applyId, Parameter}
+import com.goodcover.relay.build.codegen.ScalaWriter.{ Parameter, applyId }
 
 import java.io.Writer
 import scala.annotation.tailrec
-import scala.meta.{Term, Type}
+import scala.meta.{ Term, Type }
 import scala.meta.XtensionSyntax
 
 class ScalaWriter(writer: Writer) {
@@ -34,7 +34,7 @@ class ScalaWriter(writer: Writer) {
             writer.write(parent)
             writer.write(' ')
           }
-        case Seq() => ()
+        case Seq()        => ()
       }
     }
     if (fields.nonEmpty) {
@@ -73,7 +73,7 @@ class ScalaWriter(writer: Writer) {
     returnType: String,
     compact: Boolean,
     indent: String
-  ): Unit = {
+  ): Unit =
     writeMethod(applyId, parameters, returnType, indent) { () =>
       if (parameters.nonEmpty) {
         writer.write("\n  ")
@@ -84,15 +84,14 @@ class ScalaWriter(writer: Writer) {
       writer.write("js.Dynamic.literal(")
       if (parameters.nonEmpty) {
         writer.write('\n')
-        foreachParameter(parameters) {
-          case (field, hasMore) =>
-            writer.write(indent)
-            writer.write("""    """)
-            writer.write(field.ename.syntax)
-            writer.write(""" = """)
-            writer.write(field.ename.syntax)
-            if (hasMore) writer.write(',')
-            writer.write('\n')
+        foreachParameter(parameters) { case (field, hasMore) =>
+          writer.write(indent)
+          writer.write("""    """)
+          writer.write(field.ename.syntax)
+          writer.write(""" = """)
+          writer.write(field.ename.syntax)
+          if (hasMore) writer.write(',')
+          writer.write('\n')
         }
         writer.write(indent)
         writer.write("  ")
@@ -102,7 +101,6 @@ class ScalaWriter(writer: Writer) {
       writer.write("]\n")
       if (!compact) writer.write('\n')
     }
-  }
 
   def writeProxyMethod(
     ename: Term.Name,
@@ -111,7 +109,7 @@ class ScalaWriter(writer: Writer) {
     proxy: String,
     compact: Boolean,
     indent: String
-  ): Unit = {
+  ): Unit =
     writeMethod(ename, parameters, returnType, indent) { () =>
       if (parameters.nonEmpty) {
         writer.write("\n  ")
@@ -123,13 +121,12 @@ class ScalaWriter(writer: Writer) {
       writer.write('(')
       if (parameters.nonEmpty) {
         writer.write('\n')
-        foreachParameter(parameters) {
-          case (field, hasMore) =>
-            writer.write(indent)
-            writer.write("    ")
-            writer.write(field.ename.syntax)
-            if (hasMore) writer.write(',')
-            writer.write('\n')
+        foreachParameter(parameters) { case (field, hasMore) =>
+          writer.write(indent)
+          writer.write("    ")
+          writer.write(field.ename.syntax)
+          if (hasMore) writer.write(',')
+          writer.write('\n')
         }
         writer.write(indent)
         writer.write("  ")
@@ -137,7 +134,6 @@ class ScalaWriter(writer: Writer) {
       writer.write(")\n")
       if (!compact) writer.write('\n')
     }
-  }
 
   def writeMethod(ename: Term.Name, parameters: List[Parameter], returnType: String, indent: String)(
     writeBody: () => Unit
@@ -148,11 +144,10 @@ class ScalaWriter(writer: Writer) {
     writer.write('(')
     if (parameters.nonEmpty) {
       writer.write('\n')
-      foreachParameter(parameters) {
-        case (parameter, hasMore) =>
-          writeParameter(parameter.ename, parameter.scalaType, parameter.initializer, indent + "  ")
-          if (hasMore) writer.write(',')
-          writer.write('\n')
+      foreachParameter(parameters) { case (parameter, hasMore) =>
+        writeParameter(parameter.ename, parameter.scalaType, parameter.initializer, indent + "  ")
+        if (hasMore) writer.write(',')
+        writer.write('\n')
       }
       writer.write(indent)
     }
@@ -165,8 +160,8 @@ class ScalaWriter(writer: Writer) {
   private def foreachParameter(parameters: List[Parameter])(f: (Parameter, Boolean) => Unit): Unit = {
     @tailrec
     def loop(fields: List[Parameter]): Unit = fields match {
-      case Nil => ()
-      case field :: Nil =>
+      case Nil           => ()
+      case field :: Nil  =>
         f(field, false)
       case field :: tail =>
         f(field, true)

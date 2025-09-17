@@ -8,6 +8,4 @@ package example2
       }
     }
   """)
-object Test2 {
-
-}
+object Test2 {}

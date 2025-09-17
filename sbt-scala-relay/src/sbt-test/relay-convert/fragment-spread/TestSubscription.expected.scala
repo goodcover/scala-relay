@@ -14,7 +14,7 @@ subscription TestSubscription($input: FeedbackLikeInput!) {
         }
     }
 }
-*/
+ */
 
 trait TestSubscriptionInput extends js.Object {
   val input: FeedbackLikeInput
@@ -24,9 +24,11 @@ object TestSubscriptionInput {
   def apply(
     input: FeedbackLikeInput
   ): TestSubscriptionInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestSubscriptionInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestSubscriptionInput]
 }
 
 @js.native
@@ -46,11 +48,13 @@ object TestSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNod
     val feedback: FeedbackLikeSubscribeFeedback | Null
   }
 
-  implicit class FeedbackLikeSubscribe2Test_payload2Ref(f: FeedbackLikeSubscribe) extends _root_.com.goodcover.relay.CastToFragmentRef[FeedbackLikeSubscribe, Test_payload2](f) {
+  implicit class FeedbackLikeSubscribe2Test_payload2Ref(f: FeedbackLikeSubscribe)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[FeedbackLikeSubscribe, Test_payload2](f) {
     def toTest_payload2: _root_.com.goodcover.relay.FragmentRef[Test_payload2] = castToRef
   }
 
-  implicit class FeedbackLikeSubscribeFeedback2Test_feedbackRef(f: FeedbackLikeSubscribeFeedback) extends _root_.com.goodcover.relay.CastToFragmentRef[FeedbackLikeSubscribeFeedback, Test_feedback](f) {
+  implicit class FeedbackLikeSubscribeFeedback2Test_feedbackRef(f: FeedbackLikeSubscribeFeedback)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[FeedbackLikeSubscribeFeedback, Test_feedback](f) {
     def toTest_feedback: _root_.com.goodcover.relay.FragmentRef[Test_feedback] = castToRef
   }
 

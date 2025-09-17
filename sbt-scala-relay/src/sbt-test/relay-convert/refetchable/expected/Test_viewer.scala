@@ -8,7 +8,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 fragment Test_viewer on Viewer @refetchable(queryName: "ViewerQuery") {
     name
 }
-*/
+ */
 
 @js.native
 trait Test_viewer extends js.Object {

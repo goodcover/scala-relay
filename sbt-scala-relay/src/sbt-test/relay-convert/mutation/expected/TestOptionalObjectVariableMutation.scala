@@ -10,7 +10,7 @@ mutation TestOptionalObjectVariableMutation($input: Input) {
         id
     }
 }
-*/
+ */
 
 trait TestOptionalObjectVariableMutationInput extends js.Object {
   val input: Input | Null
@@ -20,9 +20,11 @@ object TestOptionalObjectVariableMutationInput {
   def apply(
     input: Input | Null = null
   ): TestOptionalObjectVariableMutationInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestOptionalObjectVariableMutationInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestOptionalObjectVariableMutationInput]
 }
 
 @js.native
@@ -30,7 +32,11 @@ trait TestOptionalObjectVariableMutation extends js.Object {
   val objectVariable: TestOptionalObjectVariableMutation.ObjectVariable
 }
 
-object TestOptionalObjectVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestOptionalObjectVariableMutationInput, TestOptionalObjectVariableMutation] {
+object TestOptionalObjectVariableMutation
+    extends _root_.com.goodcover.relay.MutationTaggedNode[
+      TestOptionalObjectVariableMutationInput,
+      TestOptionalObjectVariableMutation
+    ] {
   type Ctor[T] = T
 
   @js.native

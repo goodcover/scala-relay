@@ -14,14 +14,15 @@ fragment Test_fragment3 on Query @refetchable(queryName: "NestedArgs") {
         }
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment3 extends js.Object {
   val foo: Test_fragment3.Foo
 }
 
-object Test_fragment3 extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment3, NestedArgsInput, NestedArgs] {
+object Test_fragment3
+    extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment3, NestedArgsInput, NestedArgs] {
   type Ctor[T] = T
 
   @js.native
