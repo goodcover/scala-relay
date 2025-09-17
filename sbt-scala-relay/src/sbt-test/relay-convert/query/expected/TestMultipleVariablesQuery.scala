@@ -10,7 +10,7 @@ query TestMultipleVariablesQuery($a: String!, $b: String!) {
         id
     }
 }
-*/
+ */
 
 trait TestMultipleVariablesQueryInput extends js.Object {
   val a: String
@@ -22,10 +22,12 @@ object TestMultipleVariablesQueryInput {
     a: String,
     b: String
   ): TestMultipleVariablesQueryInput =
-    js.Dynamic.literal(
-      a = a,
-      b = b
-    ).asInstanceOf[TestMultipleVariablesQueryInput]
+    js.Dynamic
+      .literal(
+        a = a,
+        b = b
+      )
+      .asInstanceOf[TestMultipleVariablesQueryInput]
 }
 
 @js.native
@@ -33,7 +35,8 @@ trait TestMultipleVariablesQuery extends js.Object {
   val multipleVariables: TestMultipleVariablesQuery.MultipleVariables
 }
 
-object TestMultipleVariablesQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestMultipleVariablesQueryInput, TestMultipleVariablesQuery] {
+object TestMultipleVariablesQuery
+    extends _root_.com.goodcover.relay.QueryTaggedNode[TestMultipleVariablesQueryInput, TestMultipleVariablesQuery] {
   type Ctor[T] = T
 
   @js.native

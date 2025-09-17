@@ -2,7 +2,7 @@ package com.goodcover.relay
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSImport, JSName}
+import scala.scalajs.js.annotation.{ JSImport, JSName }
 import scala.scalajs.js.|
 
 object hooks {
@@ -10,10 +10,11 @@ object hooks {
   type Id[+A]     = A
   type OrNull[+A] = (A @uncheckedVariance) | Null
 
-  /** `useFragment` and `readInlineData` method definitions.
-    *
-    * An enumeration of all input combinations these methods accept.
-    */
+  /**
+   * `useFragment` and `readInlineData` method definitions.
+   *
+   * An enumeration of all input combinations these methods accept.
+   */
   @js.native
   @JSImport("react-relay/hooks", JSImport.Namespace)
   object raw extends js.Object {

@@ -13,7 +13,7 @@ input ClientTypeInput {
   optionalListOptionalElements: [String] @scalajs(clientType: "OptionalListOptionalElements")
   nested: ClientTypeNestedInput!
 }
-*/
+ */
 
 trait ClientTypeInput extends js.Object {
   val required: String[Required]
@@ -35,13 +35,15 @@ object ClientTypeInput {
     optionalListOptionalElements: js.Array[String[OptionalListOptionalElements] | Null] | Null = null,
     nested: ClientTypeNestedInput
   ): ClientTypeInput =
-    js.Dynamic.literal(
-      required = required,
-      optional = optional,
-      requiredListRequiredElements = requiredListRequiredElements,
-      requiredListOptionalElements = requiredListOptionalElements,
-      optionalListRequiredElements = optionalListRequiredElements,
-      optionalListOptionalElements = optionalListOptionalElements,
-      nested = nested
-    ).asInstanceOf[ClientTypeInput]
+    js.Dynamic
+      .literal(
+        required = required,
+        optional = optional,
+        requiredListRequiredElements = requiredListRequiredElements,
+        requiredListOptionalElements = requiredListOptionalElements,
+        optionalListRequiredElements = optionalListRequiredElements,
+        optionalListOptionalElements = optionalListOptionalElements,
+        nested = nested
+      )
+      .asInstanceOf[ClientTypeInput]
 }

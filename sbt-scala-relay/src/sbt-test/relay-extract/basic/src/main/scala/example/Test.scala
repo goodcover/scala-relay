@@ -24,7 +24,7 @@ object Test {
 
   """)
 
- macros.graphqlGen("""
+  macros.graphqlGen("""
    fragment Test_foo2 on Foo {
      id
    }

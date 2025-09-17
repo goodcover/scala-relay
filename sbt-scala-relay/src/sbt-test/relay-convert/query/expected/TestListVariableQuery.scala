@@ -10,7 +10,7 @@ query TestListVariableQuery($as: [String!]!) {
         id
     }
 }
-*/
+ */
 
 trait TestListVariableQueryInput extends js.Object {
   val as: js.Array[String]
@@ -20,9 +20,11 @@ object TestListVariableQueryInput {
   def apply(
     as: js.Array[String]
   ): TestListVariableQueryInput =
-    js.Dynamic.literal(
-      as = as
-    ).asInstanceOf[TestListVariableQueryInput]
+    js.Dynamic
+      .literal(
+        as = as
+      )
+      .asInstanceOf[TestListVariableQueryInput]
 }
 
 @js.native
@@ -30,7 +32,8 @@ trait TestListVariableQuery extends js.Object {
   val listVariable: TestListVariableQuery.ListVariable
 }
 
-object TestListVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestListVariableQueryInput, TestListVariableQuery] {
+object TestListVariableQuery
+    extends _root_.com.goodcover.relay.QueryTaggedNode[TestListVariableQueryInput, TestListVariableQuery] {
   type Ctor[T] = T
 
   @js.native

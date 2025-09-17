@@ -12,14 +12,15 @@ fragment Test_fragment6 on Query @refetchable(queryName: "ArgsOfSpread") {
         }
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment6 extends js.Object {
   val foo: Test_fragment6.Foo
 }
 
-object Test_fragment6 extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment6, ArgsOfSpreadInput, ArgsOfSpread] {
+object Test_fragment6
+    extends _root_.com.goodcover.relay.FragmentRefetchableTaggedNode[Test_fragment6, ArgsOfSpreadInput, ArgsOfSpread] {
   type Ctor[T] = T
 
   @js.native

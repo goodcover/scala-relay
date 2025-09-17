@@ -13,7 +13,7 @@ fragment Test_viewer on Viewer {
         }
     }
 }
-*/
+ */
 
 @js.native
 trait Test_viewer extends js.Object {
@@ -31,11 +31,13 @@ object Test_viewer extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_vi
     val address: ActorAddress | Null
   }
 
-  implicit class Test_viewer2Test_viewer2Ref(f: Test_viewer) extends _root_.com.goodcover.relay.CastToFragmentRef[Test_viewer, Test_viewer2](f) {
+  implicit class Test_viewer2Test_viewer2Ref(f: Test_viewer)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[Test_viewer, Test_viewer2](f) {
     def toTest_viewer2: _root_.com.goodcover.relay.FragmentRef[Test_viewer2] = castToRef
   }
 
-  implicit class ActorAddress2Test_addressRef(f: ActorAddress) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorAddress, Test_address](f) {
+  implicit class ActorAddress2Test_addressRef(f: ActorAddress)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[ActorAddress, Test_address](f) {
     def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 

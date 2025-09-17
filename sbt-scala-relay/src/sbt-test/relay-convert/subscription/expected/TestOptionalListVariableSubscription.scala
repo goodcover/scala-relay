@@ -10,7 +10,7 @@ subscription TestOptionalListVariableSubscription($as: [String!]) {
         id
     }
 }
-*/
+ */
 
 trait TestOptionalListVariableSubscriptionInput extends js.Object {
   val as: js.Array[String] | Null
@@ -20,9 +20,11 @@ object TestOptionalListVariableSubscriptionInput {
   def apply(
     as: js.Array[String] | Null = null
   ): TestOptionalListVariableSubscriptionInput =
-    js.Dynamic.literal(
-      as = as
-    ).asInstanceOf[TestOptionalListVariableSubscriptionInput]
+    js.Dynamic
+      .literal(
+        as = as
+      )
+      .asInstanceOf[TestOptionalListVariableSubscriptionInput]
 }
 
 @js.native
@@ -30,7 +32,11 @@ trait TestOptionalListVariableSubscription extends js.Object {
   val listVariable: TestOptionalListVariableSubscription.ListVariable
 }
 
-object TestOptionalListVariableSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestOptionalListVariableSubscriptionInput, TestOptionalListVariableSubscription] {
+object TestOptionalListVariableSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[
+      TestOptionalListVariableSubscriptionInput,
+      TestOptionalListVariableSubscription
+    ] {
   type Ctor[T] = T
 
   @js.native

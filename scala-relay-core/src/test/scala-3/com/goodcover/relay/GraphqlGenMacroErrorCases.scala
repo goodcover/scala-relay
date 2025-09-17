@@ -3,11 +3,11 @@ package com.goodcover.relay
 import com.goodcover.relay.macros.graphqlGen
 
 /**
- * This file demonstrates error cases for the graphqlGen macro.
- * These examples would cause compilation errors if uncommented.
- * 
- * The purpose is to document the expected behavior and provide
- * examples for manual testing of error cases.
+ * This file demonstrates error cases for the graphqlGen macro. These examples
+ * would cause compilation errors if uncommented.
+ *
+ * The purpose is to document the expected behavior and provide examples for
+ * manual testing of error cases.
  */
 object GraphqlGenMacroErrorCases {
 

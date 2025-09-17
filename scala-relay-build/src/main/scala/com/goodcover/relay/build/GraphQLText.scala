@@ -1,6 +1,6 @@
 package com.goodcover.relay.build
 
-import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
+import caliban.parsing.adt.Definition.ExecutableDefinition.{ FragmentDefinition, OperationDefinition }
 import caliban.parsing.adt.OperationType
 
 import scala.annotation.tailrec
@@ -41,7 +41,7 @@ object GraphQLText {
     val lines = documentText.linesWithSeparators
 
     @tailrec
-    def loop(foundStart: Boolean, opens: Int): Unit = {
+    def loop(foundStart: Boolean, opens: Int): Unit =
       if (lines.hasNext) {
         val line = lines.next()
         if (foundStart) {
@@ -69,7 +69,6 @@ object GraphQLText {
           }
         }
       }
-    }
 
     loop(foundStart = false, 0)
   }
@@ -83,7 +82,7 @@ object GraphQLText {
     operation.name match {
       case Some(name) => startOfNamed(s, operationType, name)
       // TODO: This ought to use matcher.find().
-      case None => s.matches(s"""(?s).*\\{.*""")
+      case None       => s.matches(s"""(?s).*\\{.*""")
     }
   }
 

@@ -8,7 +8,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 fragment Test_fragmentInterface on Node {
     name
 }
-*/
+ */
 
 @js.native
 trait Test_fragmentInterface extends js.Object {

@@ -1,7 +1,7 @@
 package com.goodcover.relay.build
 
-import java.io.{File, InputStream}
-import scala.sys.process.{BasicIO, Process, ProcessLogger}
+import java.io.{ File, InputStream }
+import scala.sys.process.{ BasicIO, Process, ProcessLogger }
 
 object Commands {
 
@@ -17,7 +17,7 @@ object Commands {
     }
 
     // Unfortunately a var is the only way to capture the result
-    var result: Option[A] = None
+    var result: Option[A]                   = None
     def outputCapture(o: InputStream): Unit = {
       result = Some(outputProcess(o))
       o.close()

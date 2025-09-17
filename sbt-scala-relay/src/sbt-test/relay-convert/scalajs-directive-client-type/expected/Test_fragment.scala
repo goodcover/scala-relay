@@ -19,7 +19,7 @@ fragment Test_fragment on ClientTypeOutput {
         required
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment extends js.Object {

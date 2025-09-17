@@ -1,6 +1,6 @@
 package com.goodcover.relay.build
 
-import java.io.{File, InputStream}
+import java.io.{ File, InputStream }
 
 /**
  * Abstract process runner interface for executing external commands
@@ -23,7 +23,7 @@ class DefaultProcessRunner extends ProcessRunner {
     workingDir: File,
     logger: BuildLogger,
     outputHandler: InputStream => Unit
-  ): Either[String, Unit] = {
+  ): Either[String, Unit] =
     try {
       logger.debug(s"Executing command: ${command.mkString(" ")}")
       logger.debug(s"Working directory: ${workingDir.getAbsolutePath}")
@@ -48,7 +48,7 @@ class DefaultProcessRunner extends ProcessRunner {
 
       // Run the process and wait for completion
       val processBuilder = Process(command, workingDir)
-      val exitCode = processBuilder.run(processLogger).exitValue()
+      val exitCode       = processBuilder.run(processLogger).exitValue()
 
       // Call the original output handler with stdout
       if (stdoutBuffer.nonEmpty) {
@@ -71,5 +71,4 @@ class DefaultProcessRunner extends ProcessRunner {
         logger.debug(s"Exception running command: ${e.getMessage}")
         Left(e.getMessage)
     }
-  }
 }

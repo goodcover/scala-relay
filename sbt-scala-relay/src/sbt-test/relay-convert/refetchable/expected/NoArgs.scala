@@ -5,7 +5,7 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-*/
+ */
 
 trait NoArgsInput extends js.Object
 
@@ -19,7 +19,8 @@ trait NoArgs extends js.Object
 object NoArgs extends _root_.com.goodcover.relay.QueryTaggedNode[NoArgsInput, NoArgs] {
   type Ctor[T] = T
 
-  implicit class NoArgs2Test_fragmentRef(f: NoArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[NoArgs, Test_fragment](f) {
+  implicit class NoArgs2Test_fragmentRef(f: NoArgs)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[NoArgs, Test_fragment](f) {
     def toTest_fragment: _root_.com.goodcover.relay.FragmentRef[Test_fragment] = castToRef
   }
 
