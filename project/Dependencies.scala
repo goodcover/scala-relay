@@ -7,7 +7,7 @@ object Versions {
   final val Scala3   = "3.3.6"
   final val Scala37  = "3.7.2"
 
-  final val Mill = "1.0.5"
+  final val Mill = "1.0.6"
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
