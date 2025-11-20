@@ -10,84 +10,84 @@ import java.io.File
 import scala.meta.dialects
 
 /**
-  * Mill module trait that provides Relay GraphQL compilation tasks.
-  * Mix this trait into your ScalaModule to add Relay support.
-  */
+ * Mill module trait that provides Relay GraphQL compilation tasks. Mix this
+ * trait into your ScalaModule to add Relay support.
+ */
 trait RelayModule extends ScalaModule {
 
   /**
-    * The GraphQL schema file
-    */
+   * The GraphQL schema file
+   */
   def relaySchemaFile: Task[PathRef] = Task {
     PathRef(moduleDir / "schema.graphql")
   }
 
   /**
-    * Directory where extracted GraphQL files will be placed
-    */
+   * Directory where extracted GraphQL files will be placed
+   */
   def relayExtractDir: Task[PathRef] = Task {
     PathRef(Task.dest / "extracted")
   }
 
   /**
-    * Directory where converted Scala.js facades will be placed
-    */
+   * Directory where converted Scala.js facades will be placed
+   */
   def relayConvertDir: Task[PathRef] = Task {
     PathRef(Task.dest / "converted")
   }
 
   /**
-    * Directory where relay-compiler output will be placed
-    */
+   * Directory where relay-compiler output will be placed
+   */
   def relayCompileDir: Task[PathRef] = Task {
     PathRef(Task.dest / "compiled")
   }
 
   /**
-    * Command to run the relay compiler
-    */
+   * Command to run the relay compiler
+   */
   def relayCompilerCommand: Task[String] = Task {
     "relay-compiler"
   }
 
   /**
-    * Type mappings for GraphQL to Scala conversion
-    */
+   * Type mappings for GraphQL to Scala conversion
+   */
   def relayTypeMappings: Task[Map[String, String]] = Task {
     Map.empty[String, String]
   }
 
   /**
-    * Whether to enable verbose output from relay-compiler
-    */
+   * Whether to enable verbose output from relay-compiler
+   */
   def relayVerbose: Task[Boolean] = Task {
     false
   }
 
   /**
-    * Include patterns for relay-compiler
-    */
+   * Include patterns for relay-compiler
+   */
   def relayIncludes: Task[Seq[String]] = Task {
     Seq("**/*.graphql")
   }
 
   /**
-    * Exclude patterns for relay-compiler
-    */
+   * Exclude patterns for relay-compiler
+   */
   def relayExcludes: Task[Seq[String]] = Task {
     Seq.empty[String]
   }
 
   /**
-    * File extensions for relay-compiler
-    */
+   * File extensions for relay-compiler
+   */
   def relayExtensions: Task[Seq[String]] = Task {
     Seq("js", "ts")
   }
 
   /**
-    * Whether to generate TypeScript instead of JavaScript
-    */
+   * Whether to generate TypeScript instead of JavaScript
+   */
   def relayTypeScript: Task[Boolean] = Task {
     false
   }
@@ -109,8 +109,8 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Extract GraphQL definitions from Scala source files
-    */
+   * Extract GraphQL definitions from Scala source files
+   */
   def relayExtract: Task[PathRef] = Task {
     val logger = MillBuildLogger(Task.log)
 
@@ -129,15 +129,15 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Directory for wrapped JavaScript/TypeScript files
-    */
+   * Directory for wrapped JavaScript/TypeScript files
+   */
   def relayWrapDir: Task[PathRef] = Task {
     PathRef(Task.dest / "wrap")
   }
 
   /**
-    * Wrap GraphQL definitions in JavaScript/TypeScript files for relay-compiler
-    */
+   * Wrap GraphQL definitions in JavaScript/TypeScript files for relay-compiler
+   */
   def relayWrap: Task[PathRef] = Task {
     val logger     = MillBuildLogger(Task.log)
     val extractDir = relayExtract().path.toIO
@@ -160,8 +160,8 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Convert GraphQL files to Scala.js facades
-    */
+   * Convert GraphQL files to Scala.js facades
+   */
   def relayConvert: Task[PathRef] = Task {
     val logger = MillBuildLogger(Task.log)
 
@@ -193,8 +193,8 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Run relay-compiler to generate JavaScript/TypeScript files
-    */
+   * Run relay-compiler to generate JavaScript/TypeScript files
+   */
   def relayCompile: Task[PathRef] = Task {
     val logger        = MillBuildLogger(Task.log)
     val processRunner = MillProcessRunner()
@@ -233,8 +233,8 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Run all Relay tasks in sequence
-    */
+   * Run all Relay tasks in sequence
+   */
   def relayAll: Task[PathRef] = Task {
     relayExtract()
     relayWrap()
@@ -243,8 +243,8 @@ trait RelayModule extends ScalaModule {
   }
 
   /**
-    * Clean all Relay generated files
-    */
+   * Clean all Relay generated files
+   */
   def relayClean: Task[Unit] = Task {
     val extractDir = relayExtractDir().path.toIO
     val convertDir = relayConvertDir().path.toIO
@@ -259,8 +259,8 @@ trait RelayModule extends ScalaModule {
 object RelayModule {
 
   /**
-    * Helper to create a ScalaModule with Relay support
-    */
+   * Helper to create a ScalaModule with Relay support
+   */
   trait Default extends RelayModule {
     // Provides sensible defaults for most use cases
   }

@@ -10,7 +10,7 @@ subscription TestPrimitiveVariableSubscription($a: String!) {
         id
     }
 }
-*/
+ */
 
 trait TestPrimitiveVariableSubscriptionInput extends js.Object {
   val a: String
@@ -20,9 +20,11 @@ object TestPrimitiveVariableSubscriptionInput {
   def apply(
     a: String
   ): TestPrimitiveVariableSubscriptionInput =
-    js.Dynamic.literal(
-      a = a
-    ).asInstanceOf[TestPrimitiveVariableSubscriptionInput]
+    js.Dynamic
+      .literal(
+        a = a
+      )
+      .asInstanceOf[TestPrimitiveVariableSubscriptionInput]
 }
 
 @js.native
@@ -30,7 +32,11 @@ trait TestPrimitiveVariableSubscription extends js.Object {
   val primitiveVariable: TestPrimitiveVariableSubscription.PrimitiveVariable
 }
 
-object TestPrimitiveVariableSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestPrimitiveVariableSubscriptionInput, TestPrimitiveVariableSubscription] {
+object TestPrimitiveVariableSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[
+      TestPrimitiveVariableSubscriptionInput,
+      TestPrimitiveVariableSubscription
+    ] {
   type Ctor[T] = T
 
   @js.native

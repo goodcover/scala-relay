@@ -10,7 +10,7 @@ fragment Test_fragment on Foo {
         baz
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment extends js.Object {

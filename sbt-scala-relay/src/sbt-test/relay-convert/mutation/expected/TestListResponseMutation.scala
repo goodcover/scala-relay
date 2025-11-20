@@ -8,7 +8,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 mutation TestListResponseMutation($a: String!) {
     listResponse(a: $a)
 }
-*/
+ */
 
 trait TestListResponseMutationInput extends js.Object {
   val a: String
@@ -18,9 +18,11 @@ object TestListResponseMutationInput {
   def apply(
     a: String
   ): TestListResponseMutationInput =
-    js.Dynamic.literal(
-      a = a
-    ).asInstanceOf[TestListResponseMutationInput]
+    js.Dynamic
+      .literal(
+        a = a
+      )
+      .asInstanceOf[TestListResponseMutationInput]
 }
 
 @js.native
@@ -28,7 +30,8 @@ trait TestListResponseMutation extends js.Object {
   val listResponse: js.Array[String]
 }
 
-object TestListResponseMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestListResponseMutationInput, TestListResponseMutation] {
+object TestListResponseMutation
+    extends _root_.com.goodcover.relay.MutationTaggedNode[TestListResponseMutationInput, TestListResponseMutation] {
   type Ctor[T] = T
 
   def newInput(

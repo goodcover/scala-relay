@@ -15,7 +15,7 @@ fragment Test_fragment on Viewer {
         }
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment extends js.Object {

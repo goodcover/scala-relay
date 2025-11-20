@@ -10,7 +10,7 @@ subscription TestMultipleVariablesSubscription($a: String!, $b: String!) {
         id
     }
 }
-*/
+ */
 
 trait TestMultipleVariablesSubscriptionInput extends js.Object {
   val a: String
@@ -22,10 +22,12 @@ object TestMultipleVariablesSubscriptionInput {
     a: String,
     b: String
   ): TestMultipleVariablesSubscriptionInput =
-    js.Dynamic.literal(
-      a = a,
-      b = b
-    ).asInstanceOf[TestMultipleVariablesSubscriptionInput]
+    js.Dynamic
+      .literal(
+        a = a,
+        b = b
+      )
+      .asInstanceOf[TestMultipleVariablesSubscriptionInput]
 }
 
 @js.native
@@ -33,7 +35,11 @@ trait TestMultipleVariablesSubscription extends js.Object {
   val multipleVariables: TestMultipleVariablesSubscription.MultipleVariables
 }
 
-object TestMultipleVariablesSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestMultipleVariablesSubscriptionInput, TestMultipleVariablesSubscription] {
+object TestMultipleVariablesSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[
+      TestMultipleVariablesSubscriptionInput,
+      TestMultipleVariablesSubscription
+    ] {
   type Ctor[T] = T
 
   @js.native
