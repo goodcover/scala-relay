@@ -3,7 +3,7 @@ import sbt._
 
 object Versions {
   final val Scala212 = "2.12.20"
-  final val Scala213 = "2.13.16"
+  final val Scala213 = "2.13.17"
   final val Scala3   = "3.3.7"
   final val Scala37  = "3.7.2"
 
@@ -13,7 +13,7 @@ object Versions {
 
   final val Caliban   = "2.11.1"
   final val ScalaMeta = "4.13.10"
-  final val UTest     = "0.9.1"
+  final val UTest     = "0.9.2"
 }
 
 object Dependencies {
