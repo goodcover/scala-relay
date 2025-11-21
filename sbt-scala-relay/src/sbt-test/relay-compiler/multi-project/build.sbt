@@ -1,16 +1,16 @@
 name := "multi-project"
 
-Global / scalaVersion := "2.13.16"
+Global / scalaVersion := "2.13.17"
 
 def commonSettings = Seq(
   scalacOptions += "-Ymacro-annotations",
-  useYarn := true,
-  relayCompilerCommand := s"node ${(Compile / npmInstallDependencies).value}/node_modules/.bin/relay-compiler",
-  relaySchema := (LocalRootProject / baseDirectory).value / "testschema.graphql",
-  relayDebug := true,
+  useYarn                                       := true,
+  relayCompilerCommand                          := s"node ${(Compile / npmInstallDependencies).value}/node_modules/.bin/relay-compiler",
+  relaySchema                                   := (LocalRootProject / baseDirectory).value / "testschema.graphql",
+  relayDebug                                    := true,
   Compile / npmDevDependencies ++= (Compile / relayDependencies).value,
-  Compile / relayDisplayOnlyOnFailure := true,
-  webpack / version := "5.75.0",
+  Compile / relayDisplayOnlyOnFailure           := true,
+  webpack / version                             := "5.75.0",
   libraryDependencies += "org.scala-js"        %%% "scalajs-dom"        % "2.8.0",
   libraryDependencies += "com.goodcover.relay" %%% "scala-relay-macros" % com.goodcover.relay.BuildInfo.version
 )
@@ -49,12 +49,15 @@ lazy val b = project
       )
     )
   )
-  .settings(scalaJSUseMainModuleInitializer := true, webpackConfigFile := {
-    val template = file("b") / "scalajs.webpack.config.js.template"
-    val config   = IO.read(template).replaceAllLiterally("${PWD}", baseDirectory.value.getAbsolutePath)
-    val output   = crossTarget.value / "scalajs.webpack.config.js"
-    IO.write(output, config)
-    Some(output)
-  })
+  .settings(
+    scalaJSUseMainModuleInitializer := true,
+    webpackConfigFile               := {
+      val template = file("b") / "scalajs.webpack.config.js.template"
+      val config   = IO.read(template).replaceAllLiterally("${PWD}", baseDirectory.value.getAbsolutePath)
+      val output   = crossTarget.value / "scalajs.webpack.config.js"
+      IO.write(output, config)
+      Some(output)
+    }
+  )
 
 //logLevel := Level.Debug
