@@ -6,7 +6,7 @@ enablePlugins(ScalaRelayPlugin, ScalaJSBundlerPlugin)
 
 scalacOptions += "-Ymacro-annotations"
 
-scalaVersion := "2.13.17"
+scalaVersion := "2.13.18"
 
 useYarn := true
 
