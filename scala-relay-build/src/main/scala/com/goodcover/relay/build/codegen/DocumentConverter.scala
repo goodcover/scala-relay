@@ -1,18 +1,18 @@
 package com.goodcover.relay.build.codegen
 
 import caliban.InputValue
-import caliban.InputValue.{ListValue, ObjectValue, VariableValue}
+import caliban.InputValue.{ ListValue, ObjectValue, VariableValue }
 import caliban.parsing.Parser
-import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
+import caliban.parsing.adt.Definition.ExecutableDefinition.{ FragmentDefinition, OperationDefinition }
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
-import caliban.parsing.adt.Type.{innerType, NamedType}
+import caliban.parsing.adt.Type.{ NamedType, innerType }
 import caliban.parsing.adt._
 import com.goodcover.relay.build.FileOps._
 import com.goodcover.relay.build.GraphQLSchema
-import com.goodcover.relay.build.codegen.Directives.{getRefetchable, Refetchable}
+import com.goodcover.relay.build.codegen.Directives.{ Refetchable, getRefetchable }
 import com.goodcover.relay.build.codegen.DocumentConverter._
 
-import java.io.{File, Writer}
+import java.io.{ File, Writer }
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
@@ -25,15 +25,14 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
     inputs
   }
 
-  def convert(file: File): Set[File] = {
+  def convert(file: File): Set[File] =
     convert(Files.readString(file.toPath, StandardCharsets.UTF_8))
-  }
 
   def convert(documentText: String): Set[File] = {
-    val document = Parser.parseQuery(documentText).right.get
+    val document     = Parser.parseQuery(documentText).right.get
     // TODO: GC-3158 - Remove documentText from these.
-    val operations = document.operationDefinitions.map(writeOperation(_, documentText, document)).toSet
-    val fragments  = document.fragmentDefinitions.map(writeFragment(_, documentText)).toSet
+    val operations   = document.operationDefinitions.map(writeOperation(_, documentText, document)).toSet
+    val fragments    = document.fragmentDefinitions.map(writeFragment(_, documentText)).toSet
     val refetchables = {
       for {
         fragment    <- document.fragmentDefinitions
@@ -49,9 +48,9 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
   private def writeOperation(operation: OperationDefinition, documentText: String, document: Document): File =
     writeDefinition(operationFile(operation)) { writer =>
       operation.operationType match {
-        case OperationType.Query =>
+        case OperationType.Query        =>
           new QueryWriter(writer, operation, documentText, document, schema, typeConverter)
-        case OperationType.Mutation =>
+        case OperationType.Mutation     =>
           new MutationWriter(writer, operation, documentText, document, schema, typeConverter)
         case OperationType.Subscription =>
           new SubscriptionWriter(writer, operation, documentText, document, schema, typeConverter)
@@ -67,11 +66,11 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
     documentText: String,
     document: Document
   ): File = {
-    val variables = refetchableFragmentVariables(fragment)
+    val variables  = refetchableFragmentVariables(fragment)
     // TODO: Add directives.
     val directives = Nil
     val selection  = Selection.FragmentSpread(fragment.name, Nil)
-    val query =
+    val query      =
       OperationDefinition(OperationType.Query, Some(refetchable.queryName), variables, directives, List(selection))
     // FIXME: This doesn't adequately check for duplicate outputs.
     // FIXME: The definition text is missing because it is looking for the wrong thing.
@@ -107,11 +106,11 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
 
   // TODO: This should also take into account any @argumentDefinitions on the fragment.
   private def refetchableFragmentVariables(fragment: FragmentDefinition): List[VariableDefinition] = {
-    val typeName = innerType(fragment.typeCondition)
-    val tpe      = schema.fragmentType(typeName)
+    val typeName    = innerType(fragment.typeCondition)
+    val tpe         = schema.fragmentType(typeName)
     // The @refetchable directive can only be on fragments with a type condition of Query, Viewer, or Node.
     // The later is quite relaxed and will work on any interface and it will assume that it is queryable via node.
-    val implied = if (schema.queryObjectType.name == tpe.name || typeName == "Viewer") {
+    val implied     = if (schema.queryObjectType.name == tpe.name || typeName == "Viewer") {
       Map.empty[String, VariableDefinition]
     } else {
       Map("id" -> VariableDefinition("id", NamedType("ID", nonNull = true), None, Nil))
@@ -127,10 +126,10 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
     fieldLookup: FieldLookup,
     // TODO: Rename.
     parentTypeName: String
-  ): Map[String, VariableDefinition] = {
+  ): Map[String, VariableDefinition] =
     selections.foldLeft(Map.empty[String, VariableDefinition]) {
       case (args, field: Selection.Field) if Fields.isMetaField(field.name) => args
-      case (args, field: Selection.Field) =>
+      case (args, field: Selection.Field)                                   =>
         val definition = fieldLookup(field.name)
           .getOrElse(throw new NoSuchElementException(s"$parentTypeName does not have a field ${field.name}."))
         val argsLookup = definition.args.map(arg => arg.name -> arg).toMap
@@ -141,18 +140,17 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
           val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
           nextArgs ++ selectionVariables(field.selectionSet, nextFieldLookup, typeName)
         } else nextArgs
-      case (args, inline: Selection.InlineFragment) =>
+      case (args, inline: Selection.InlineFragment)                         =>
         val tpe                          = inline.typeCondition.getOrElse(NamedType(parentTypeName, nonNull = true))
         val typeName                     = innerType(tpe)
         val nextFieldLookup: FieldLookup = schema.fieldType(typeName).fields.map(f => f.name -> f).toMap.get
         args ++ selectionVariables(inline.selectionSet, nextFieldLookup, typeName)
-      case (args, spread: Selection.FragmentSpread) =>
+      case (args, spread: Selection.FragmentSpread)                         =>
         val definition                   = schema.fragment(spread.name)
         val typeName                     = innerType(definition.typeCondition)
         val nextFieldLookup: FieldLookup = schema.fragmentType(typeName).fields.map(f => f.name -> f).toMap.get
         args ++ selectionVariables(definition.selectionSet, nextFieldLookup, typeName)
     }
-  }
 }
 
 object DocumentConverter {
@@ -165,19 +163,17 @@ object DocumentConverter {
     arguments: Map[String, InputValue],
     argLookup: ArgLookup,
     typeName: String
-  ): Map[String, VariableDefinition] = {
+  ): Map[String, VariableDefinition] =
     arguments.collect {
       case (argName, VariableValue(variableName)) =>
-        argLookup(argName).fold(throw new NoSuchElementException(s"$typeName does not have an argument $argName.")) {
-          arg =>
-            variableName -> VariableDefinition(variableName, arg.ofType, None, Nil)
+        argLookup(argName).fold(throw new NoSuchElementException(s"$typeName does not have an argument $argName.")) { arg =>
+          variableName -> VariableDefinition(variableName, arg.ofType, None, Nil)
         }
       // TODO: Look inside lists and objects too.
-      case (_, ListValue(_)) =>
+      case (_, ListValue(_))                      =>
         throw new NotImplementedError("Variables within lists for refetchable fragments have not been implemented.")
-      case (_, ObjectValue(_)) =>
+      case (_, ObjectValue(_))                    =>
         throw new NotImplementedError("Variables within objects for refetchable fragments have not been implemented.")
     }
-  }
 
 }

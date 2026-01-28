@@ -1,24 +1,24 @@
 package com.goodcover.relay.mill
 
-import com.goodcover.relay.build.{BuildLogger, ProcessRunner}
+import com.goodcover.relay.build.{ BuildLogger, ProcessRunner }
 
-import java.io.{File, InputStream}
+import java.io.{ File, InputStream }
 
 /**
-  * Mill implementation of ProcessRunner using Mill's process execution
-  */
+ * Mill implementation of ProcessRunner using Mill's process execution
+ */
 class MillProcessRunner extends ProcessRunner {
   override def run(
     command: Seq[String],
     workingDir: File,
     logger: BuildLogger,
     outputHandler: InputStream => Unit
-  ): Either[String, Unit] = {
+  ): Either[String, Unit] =
     try {
       logger.info(s"Running command: ${command.mkString(" ")}")
       logger.debug(s"Working directory: $workingDir")
 
-      val processBuilder = new ProcessBuilder(command *)
+      val processBuilder = new ProcessBuilder(command*)
       processBuilder.directory(workingDir)
 
       val process = processBuilder.start()
@@ -37,7 +37,6 @@ class MillProcessRunner extends ProcessRunner {
         logger.error(s"Failed to run command: ${e.getMessage}")
         Left(e.getMessage)
     }
-  }
 }
 
 object MillProcessRunner {

@@ -4,8 +4,8 @@ import com.goodcover.relay.build.BuildLogger
 import sbt.Logger
 
 /**
-  * SBT implementation of BuildLogger
-  */
+ * SBT implementation of BuildLogger
+ */
 class SbtBuildLogger(val sbtLogger: Logger) extends BuildLogger {
   override def debug(message: String): Unit = sbtLogger.debug(message)
   override def info(message: String): Unit  = sbtLogger.info(message)
