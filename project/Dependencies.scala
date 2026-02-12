@@ -13,7 +13,7 @@ object Versions {
 
   final val Caliban   = "2.11.1"
   final val ScalaMeta = "4.15.0"
-  final val UTest     = "0.9.2"
+  final val UTest     = "0.9.5"
 }
 
 object Dependencies {
