@@ -21,13 +21,13 @@ jobs:
 
     strategy:
       matrix:
-        scala-version: ["2.12.21", "2.13.17", "3.7.4"]
+        scala-version: ["2.12.21", "2.13.18", "3.8.1"]
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 11
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
-        java-version: '11'
+        java-version: '17'
         distribution: 'temurin'
         cache: 'sbt'
     # - name: import gpg
@@ -46,4 +46,4 @@ jobs:
       run: sbt "++${{ matrix.scala-version }} test"
     - name: Run scripted tests (Scala 2.12.x only)
       if: startsWith(matrix.scala-version, '2.12')
-      run: sbt "++${{ matrix.scala-version }} scriptedAll"
+      run: sbt "+ publishLocal; ++${{ matrix.scala-version }} scriptedAll"

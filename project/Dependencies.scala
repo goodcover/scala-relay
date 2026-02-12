@@ -2,18 +2,21 @@ import sbt.Keys._
 import sbt._
 
 object Versions {
+  // Update the .github/workflows/scala.yml with matching Scala versions
   final val Scala212 = "2.12.21"
-  final val Scala213 = "2.13.17"
+  // Update the .github/workflows/scala.yml with matching Scala versions
+  final val Scala213 = "2.13.18"
   final val Scala3   = "3.3.7"
-  final val Scala37  = "3.7.4"
+  // Update the .github/workflows/scala.yml with matching Scala versions
+  final val Scala38  = "3.8.1"
 
-  final val Mill = "1.0.6"
+  final val Mill = "1.1.2"
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
   final val Caliban   = "2.11.2"
-  final val ScalaMeta = "4.14.7"
-  final val UTest     = "0.9.2"
+  final val ScalaMeta = "4.15.0"
+  final val UTest     = "0.9.5"
 }
 
 object Dependencies {

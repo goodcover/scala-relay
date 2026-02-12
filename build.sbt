@@ -71,8 +71,8 @@ lazy val `mill-scala-relay` = project
       ExclusionRule("org.scalameta", "scalameta_2.13"),
       ExclusionRule("org.scalameta", "parsers_2.13")
     ),
-    scalaVersion       := Versions.Scala37,
-    crossScalaVersions := Seq(Versions.Scala37),
+    scalaVersion       := Versions.Scala38,
+    crossScalaVersions := Seq(Versions.Scala38),
     testFrameworks += new TestFramework("utest.runner.Framework")
   )
 
@@ -113,7 +113,7 @@ lazy val `scala-relay-core` = project
       )
       Seq(rootFolder / "intellij-compat.json")
     },
-    crossScalaVersions                    := Seq(Versions.Scala213, Versions.Scala3),
+    crossScalaVersions                    := Seq(Versions.Scala212, Versions.Scala213, Versions.Scala3),
   )
 
 lazy val `scala-relay-macros` = project
@@ -200,7 +200,7 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
       "UTF-8",
       "-unchecked",
       "-release",
-      "11",
+      "17",
       "-language:existentials",        // Existential types (besides wildcard types) can be written and inferred
       "-language:experimental.macros", // Allow macro definition (besides implementation and application)
       "-language:higherKinds",         // Allow higher-kinded types
