@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        scala-version: ["2.12.21", "2.13.18", "3.7.4"]
+        scala-version: ["2.12.21", "2.13.18", "3.8.1"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 11
