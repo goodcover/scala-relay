@@ -31,7 +31,7 @@ $ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala  
 $ copy-file target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala  generated/TestQuery2.scala
 
 # Changing the output directory should re-convert everything.
-> set relayConvertDirectory in Compile := file("target/scala-2.13/src_managed/main/relay/generated2")
+> set Compile/relayConvertDirectory := file("target/scala-2.13/src_managed/main/relay/generated2")
 > relayConvert
 $ absent target/scala-2.13/src_managed/main/relay/generated/TestQuery.scala
 $ absent target/scala-2.13/src_managed/main/relay/generated/TestQuery2.scala

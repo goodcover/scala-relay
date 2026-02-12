@@ -27,7 +27,7 @@ $ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql g
 $ copy-file target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql graphql/Test2.graphql
 
 # Changing the output directory should re-extract everything.
-> set relayExtractDirectory in Compile := file("target/scala-2.13/resource_managed/main/relay/graphql2")
+> set Compile/relayExtractDirectory := file("target/scala-2.13/resource_managed/main/relay/graphql2")
 > relayExtract
 $ absent target/scala-2.13/resource_managed/main/relay/graphql/Test.graphql
 $ absent target/scala-2.13/resource_managed/main/relay/graphql/Test2.graphql
