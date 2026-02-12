@@ -15,7 +15,7 @@ query TestQuery {
         }
     }
 }
-*/
+ */
 
 trait TestQueryInput extends js.Object
 
@@ -46,9 +46,11 @@ object TestQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestQueryInp
 
   object MaybeNode {
     object __typename {
-      @js.native sealed trait Story extends _root_.com.goodcover.relay.Introspectable.TypeName[TestQuery.MaybeNodeStory]
+      @js.native
+      sealed trait Story extends _root_.com.goodcover.relay.Introspectable.TypeName[TestQuery.MaybeNodeStory]
       @inline def Story: Story = "Story".asInstanceOf[Story]
-      @js.native sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[TestQuery.MaybeNode]
+      @js.native
+      sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[TestQuery.MaybeNode]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
   }

@@ -54,13 +54,13 @@ object Main extends App {
 
   def main(args: List[String]): Unit = {
     locally {
-      val node: Main_node = null
-      val user: Option[FragmentRef[Main_feedback]] = node.asFeedback.map(_.toMain_feedback)
+      val node: Main_node                            = null
+      val user: Option[FragmentRef[Main_feedback]]   = node.asFeedback.map(_.toMain_feedback)
       val author: Option[FragmentRef[Main_feedback]] = node.asComment.map(_.foo.get.toMain_feedback)
     }
     locally {
-      val node: Main_node2 = null
-      val user: Option[FragmentRef[Main_feedback]] = node.asFeedback.map(_.toMain_feedback)
+      val node: Main_node2                           = null
+      val user: Option[FragmentRef[Main_feedback]]   = node.asFeedback.map(_.toMain_feedback)
       val author: Option[FragmentRef[Main_feedback]] = node.asComment.map(_.feedback.get.toMain_feedback)
     }
   }

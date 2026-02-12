@@ -19,7 +19,7 @@ query TestQuery {
         }
     }
 }
-*/
+ */
 
 trait TestQueryInput extends js.Object
 

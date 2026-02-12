@@ -5,7 +5,7 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-*/
+ */
 
 trait ArgsInput extends js.Object {
   val b: String | Null
@@ -15,9 +15,11 @@ object ArgsInput {
   def apply(
     b: String | Null = null
   ): ArgsInput =
-    js.Dynamic.literal(
-      b = b
-    ).asInstanceOf[ArgsInput]
+    js.Dynamic
+      .literal(
+        b = b
+      )
+      .asInstanceOf[ArgsInput]
 }
 
 @js.native

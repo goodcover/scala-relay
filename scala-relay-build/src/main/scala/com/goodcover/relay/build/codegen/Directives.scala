@@ -2,7 +2,7 @@ package com.goodcover.relay.build.codegen
 
 import caliban.InputValue
 import caliban.InputValue.ListValue
-import caliban.Value.{BooleanValue, StringValue}
+import caliban.Value.{ BooleanValue, StringValue }
 import caliban.parsing.adt.Directive
 
 private[relay] object Directives {
@@ -10,7 +10,7 @@ private[relay] object Directives {
   // TODO: Parse directives.
   final case class Refetchable(queryName: String, directives: List[String])
 
-  //private final case class ScalaJSDirective(useNulls: Boolean, `extends`: String, typeCls: String, clientType: String)
+  // private final case class ScalaJSDirective(useNulls: Boolean, `extends`: String, typeCls: String, clientType: String)
 
   def isInline(fragmentDirectives: List[Directive]): Boolean =
     fragmentDirectives.exists(_.name == "inline")
@@ -30,7 +30,7 @@ private[relay] object Directives {
 
   def getRefetchable(fragmentDirectives: List[Directive]): Option[Refetchable] =
     fragmentDirectives.find(_.name == "refetchable").map { directive =>
-      val queryName = stringValue(
+      val queryName  = stringValue(
         directive.arguments.getOrElse(
           "queryName",
           throw new IllegalArgumentException("Invalid refetchable directive. queryName is required.")
@@ -80,9 +80,9 @@ private[relay] object Directives {
       case ListValue(values) =>
         values.map {
           case StringValue(s) => s
-          case _ =>
+          case _              =>
             throw new IllegalArgumentException(s"Invalid $directiveName directive. $argName must be a [String].")
         }
-      case _ => throw new IllegalArgumentException(s"Invalid $directiveName directive. $argName must be a [String].")
+      case _                 => throw new IllegalArgumentException(s"Invalid $directiveName directive. $argName must be a [String].")
     }
 }
