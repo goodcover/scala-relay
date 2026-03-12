@@ -10,7 +10,7 @@ query TestNoVariablesQuery {
         id
     }
 }
-*/
+ */
 
 trait TestNoVariablesQueryInput extends js.Object
 

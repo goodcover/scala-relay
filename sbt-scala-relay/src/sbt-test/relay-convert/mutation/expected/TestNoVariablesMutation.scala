@@ -10,7 +10,7 @@ mutation TestNoVariablesMutation {
         id
     }
 }
-*/
+ */
 
 trait TestNoVariablesMutationInput extends js.Object
 
@@ -23,7 +23,8 @@ trait TestNoVariablesMutation extends js.Object {
   val noVariables: TestNoVariablesMutation.NoVariables
 }
 
-object TestNoVariablesMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestNoVariablesMutationInput, TestNoVariablesMutation] {
+object TestNoVariablesMutation
+    extends _root_.com.goodcover.relay.MutationTaggedNode[TestNoVariablesMutationInput, TestNoVariablesMutation] {
   type Ctor[T] = T
 
   @js.native

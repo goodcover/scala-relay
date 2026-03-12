@@ -1,10 +1,10 @@
 package com.goodcover.relay.build
 
-import java.io.{File, InputStream}
+import java.io.{ File, InputStream }
 
 /**
- * Runs the relay-compiler to generate JavaScript/TypeScript files.
- * This is a build-tool agnostic version that can be used by both SBT and Mill.
+ * Runs the relay-compiler to generate JavaScript/TypeScript files. This is a
+ * build-tool agnostic version that can be used by both SBT and Mill.
  */
 object RelayCompiler {
   import FileOps._
@@ -40,8 +40,8 @@ object RelayCompiler {
   type Results = Set[File]
 
   /**
-   * Compile GraphQL files using relay-compiler without caching.
-   * This is a simplified version for build tools that handle their own caching.
+   * Compile GraphQL files using relay-compiler without caching. This is a
+   * simplified version for build tools that handle their own caching.
    */
   def compileSimple(
     options: Options,
@@ -68,7 +68,7 @@ object RelayCompiler {
   /**
    * Find all output files in the output directory
    */
-  private def findOutputFiles(outputDir: File): Set[File] = {
+  private def findOutputFiles(outputDir: File): Set[File] =
     if (!outputDir.exists()) {
       Set.empty
     } else {
@@ -87,7 +87,6 @@ object RelayCompiler {
       }
       findFiles(outputDir)
     }
-  }
 
   /**
    * Run the relay compiler command
@@ -157,21 +156,23 @@ object RelayCompiler {
 
     // Note: Modern relay-compiler uses config files for includes, excludes, extensions, etc.
     // These command-line options are no longer supported in v17.0.0+
-    val includesList = Seq.empty[String] // No longer supported via CLI
-    val excludesList = Seq.empty[String] // No longer supported via CLI
-    val extensionsList = Seq.empty[String] // No longer supported via CLI
-    val persistedList = if (useConfigFileOnly) {
+    val includesList      = Seq.empty[String] // No longer supported via CLI
+    val excludesList      = Seq.empty[String] // No longer supported via CLI
+    val extensionsList    = Seq.empty[String] // No longer supported via CLI
+    val persistedList     = if (useConfigFileOnly) {
       Seq.empty // Configured in config file
     } else {
       persisted match {
         case Some(_) => Seq("--repersist") // Modern equivalent
-        case None => Seq.empty
+        case None    => Seq.empty
       }
     }
     // Custom scalars are now configured via relay.config.js, not CLI
     val customScalarsArgs = Seq.empty[String]
 
-    val cmd = shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ extensionsList ++ persistedList ++ customScalarsArgs).mkString(" ")
+    val cmd =
+      shell :+ (argsList ++ verboseList ++ includesList ++ excludesList ++ extensionsList ++ persistedList ++ customScalarsArgs)
+        .mkString(" ")
 
     var output = Vector.empty[String]
 
@@ -191,7 +192,7 @@ object RelayCompiler {
       case Left(error) =>
         output.foreach(logger.error(_))
         throw new RuntimeException(s"Relay compiler failed: $error")
-      case Right(_) =>
+      case Right(_)    =>
         if (!displayOnFailure) {
           output.foreach(logger.info(_))
         }
@@ -201,7 +202,7 @@ object RelayCompiler {
   /**
    * Clean up compiled files
    */
-  def clean(outputDir: File): Unit = {
+  def clean(outputDir: File): Unit =
     if (outputDir.exists()) {
       def deleteRecursively(file: File): Unit = {
         if (file.isDirectory) {
@@ -211,5 +212,4 @@ object RelayCompiler {
       }
       deleteRecursively(outputDir)
     }
-  }
 }

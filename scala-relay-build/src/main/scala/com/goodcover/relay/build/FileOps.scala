@@ -1,7 +1,7 @@
 package com.goodcover.relay.build
 
 import java.io._
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.{ Charset, StandardCharsets }
 import java.nio.file.Files
 
 // File operations helper
@@ -19,15 +19,15 @@ object FileOps {
     }
 
     /**
-      * The extension part of the name of this path.
-      * This is the part of the name after the last period, or the empty string if there is no period.
-      */
+     * The extension part of the name of this path. This is the part of the name
+     * after the last period, or the empty string if there is no period.
+     */
     def ext: String = baseAndExt._2
 
     /**
-      * The base of the name of this path.
-      * This is the part of the name before the last period, or the full name if there is no period.
-      */
+     * The base of the name of this path. This is the part of the name before
+     * the last period, or the full name if there is no period.
+     */
     def base: String = baseAndExt._1
   }
 
@@ -63,11 +63,10 @@ object FileOps {
     protected def open(src: Source): T
     def apply[R](src: Source)(f: T => R): R = {
       val resource = open(src)
-      try {
+      try
         f(resource)
-      } finally {
+      finally
         close(resource)
-      }
     }
     protected def close(out: T): Unit
   }
