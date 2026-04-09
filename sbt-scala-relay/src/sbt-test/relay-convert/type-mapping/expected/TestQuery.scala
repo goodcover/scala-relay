@@ -23,7 +23,7 @@ query TestQuery($input: ClientTypeInput!) {
         }
     }
 }
-*/
+ */
 
 trait TestQueryInput extends js.Object {
   val input: ClientTypeInput
@@ -33,9 +33,11 @@ object TestQueryInput {
   def apply(
     input: ClientTypeInput
   ): TestQueryInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestQueryInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestQueryInput]
 }
 
 @js.native

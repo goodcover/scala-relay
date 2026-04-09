@@ -10,7 +10,7 @@ fragment Test_fragment on Query @refetchable(queryName: "NoArgs") {
         bar
     }
 }
-*/
+ */
 
 @js.native
 trait Test_fragment extends js.Object {

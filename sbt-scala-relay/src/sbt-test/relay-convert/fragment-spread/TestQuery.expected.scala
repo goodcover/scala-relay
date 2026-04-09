@@ -15,7 +15,7 @@ query TestQuery {
         }
     }
 }
-*/
+ */
 
 trait TestQueryInput extends js.Object
 
@@ -48,7 +48,8 @@ object TestQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestQueryInp
     def toTest_viewer: _root_.com.goodcover.relay.FragmentRef[Test_viewer] = castToRef
   }
 
-  implicit class ViewerActorAddress2Test_addressRef(f: ViewerActorAddress) extends _root_.com.goodcover.relay.CastToFragmentRef[ViewerActorAddress, Test_address](f) {
+  implicit class ViewerActorAddress2Test_addressRef(f: ViewerActorAddress)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[ViewerActorAddress, Test_address](f) {
     def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 

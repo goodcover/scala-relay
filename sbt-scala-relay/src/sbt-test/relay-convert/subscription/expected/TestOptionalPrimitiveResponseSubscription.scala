@@ -8,7 +8,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 subscription TestOptionalPrimitiveResponseSubscription($a: String!) {
     optionalPrimitiveResponse(a: $a)
 }
-*/
+ */
 
 trait TestOptionalPrimitiveResponseSubscriptionInput extends js.Object {
   val a: String
@@ -18,9 +18,11 @@ object TestOptionalPrimitiveResponseSubscriptionInput {
   def apply(
     a: String
   ): TestOptionalPrimitiveResponseSubscriptionInput =
-    js.Dynamic.literal(
-      a = a
-    ).asInstanceOf[TestOptionalPrimitiveResponseSubscriptionInput]
+    js.Dynamic
+      .literal(
+        a = a
+      )
+      .asInstanceOf[TestOptionalPrimitiveResponseSubscriptionInput]
 }
 
 @js.native
@@ -28,7 +30,11 @@ trait TestOptionalPrimitiveResponseSubscription extends js.Object {
   val optionalPrimitiveResponse: String | Null
 }
 
-object TestOptionalPrimitiveResponseSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestOptionalPrimitiveResponseSubscriptionInput, TestOptionalPrimitiveResponseSubscription] {
+object TestOptionalPrimitiveResponseSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[
+      TestOptionalPrimitiveResponseSubscriptionInput,
+      TestOptionalPrimitiveResponseSubscription
+    ] {
   type Ctor[T] = T
 
   def newInput(

@@ -17,7 +17,7 @@ mutation TestMutation($input: ActorSubscribeInput!) {
         }
     }
 }
-*/
+ */
 
 trait TestMutationInput extends js.Object {
   val input: ActorSubscribeInput
@@ -27,9 +27,11 @@ object TestMutationInput {
   def apply(
     input: ActorSubscribeInput
   ): TestMutationInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestMutationInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestMutationInput]
 }
 
 @js.native

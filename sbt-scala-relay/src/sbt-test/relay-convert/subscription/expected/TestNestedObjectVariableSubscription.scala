@@ -10,7 +10,7 @@ subscription TestNestedObjectVariableSubscription($nested: Nested) {
         id
     }
 }
-*/
+ */
 
 trait TestNestedObjectVariableSubscriptionInput extends js.Object {
   val nested: Nested | Null
@@ -20,9 +20,11 @@ object TestNestedObjectVariableSubscriptionInput {
   def apply(
     nested: Nested | Null = null
   ): TestNestedObjectVariableSubscriptionInput =
-    js.Dynamic.literal(
-      nested = nested
-    ).asInstanceOf[TestNestedObjectVariableSubscriptionInput]
+    js.Dynamic
+      .literal(
+        nested = nested
+      )
+      .asInstanceOf[TestNestedObjectVariableSubscriptionInput]
 }
 
 @js.native
@@ -30,7 +32,11 @@ trait TestNestedObjectVariableSubscription extends js.Object {
   val nestedObjectVariable: TestNestedObjectVariableSubscription.NestedObjectVariable
 }
 
-object TestNestedObjectVariableSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestNestedObjectVariableSubscriptionInput, TestNestedObjectVariableSubscription] {
+object TestNestedObjectVariableSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[
+      TestNestedObjectVariableSubscriptionInput,
+      TestNestedObjectVariableSubscription
+    ] {
   type Ctor[T] = T
 
   @js.native

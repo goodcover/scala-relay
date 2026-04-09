@@ -10,7 +10,7 @@ mutation TestMultipleVariablesMutation($a: String!, $b: String!) {
         id
     }
 }
-*/
+ */
 
 trait TestMultipleVariablesMutationInput extends js.Object {
   val a: String
@@ -22,10 +22,12 @@ object TestMultipleVariablesMutationInput {
     a: String,
     b: String
   ): TestMultipleVariablesMutationInput =
-    js.Dynamic.literal(
-      a = a,
-      b = b
-    ).asInstanceOf[TestMultipleVariablesMutationInput]
+    js.Dynamic
+      .literal(
+        a = a,
+        b = b
+      )
+      .asInstanceOf[TestMultipleVariablesMutationInput]
 }
 
 @js.native
@@ -33,7 +35,8 @@ trait TestMultipleVariablesMutation extends js.Object {
   val multipleVariables: TestMultipleVariablesMutation.MultipleVariables
 }
 
-object TestMultipleVariablesMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestMultipleVariablesMutationInput, TestMultipleVariablesMutation] {
+object TestMultipleVariablesMutation
+    extends _root_.com.goodcover.relay.MutationTaggedNode[TestMultipleVariablesMutationInput, TestMultipleVariablesMutation] {
   type Ctor[T] = T
 
   @js.native

@@ -10,7 +10,7 @@ query TestNestedObjectVariableQuery($nested: Nested) {
         id
     }
 }
-*/
+ */
 
 trait TestNestedObjectVariableQueryInput extends js.Object {
   val nested: Nested | Null
@@ -20,9 +20,11 @@ object TestNestedObjectVariableQueryInput {
   def apply(
     nested: Nested | Null = null
   ): TestNestedObjectVariableQueryInput =
-    js.Dynamic.literal(
-      nested = nested
-    ).asInstanceOf[TestNestedObjectVariableQueryInput]
+    js.Dynamic
+      .literal(
+        nested = nested
+      )
+      .asInstanceOf[TestNestedObjectVariableQueryInput]
 }
 
 @js.native
@@ -30,7 +32,8 @@ trait TestNestedObjectVariableQuery extends js.Object {
   val nestedObjectVariable: TestNestedObjectVariableQuery.NestedObjectVariable
 }
 
-object TestNestedObjectVariableQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestNestedObjectVariableQueryInput, TestNestedObjectVariableQuery] {
+object TestNestedObjectVariableQuery
+    extends _root_.com.goodcover.relay.QueryTaggedNode[TestNestedObjectVariableQueryInput, TestNestedObjectVariableQuery] {
   type Ctor[T] = T
 
   @js.native

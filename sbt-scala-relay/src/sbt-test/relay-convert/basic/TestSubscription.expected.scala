@@ -10,7 +10,7 @@ subscription TestSubscription($input: FeedbackLikeInput!) {
         clientSubscriptionId
     }
 }
-*/
+ */
 
 trait TestSubscriptionInput extends js.Object {
   val input: FeedbackLikeInput
@@ -20,9 +20,11 @@ object TestSubscriptionInput {
   def apply(
     input: FeedbackLikeInput
   ): TestSubscriptionInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestSubscriptionInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestSubscriptionInput]
 }
 
 @js.native

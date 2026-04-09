@@ -16,7 +16,7 @@ mutation TestMutation($input: ActorSubscribeInput!) {
         }
     }
 }
-*/
+ */
 
 trait TestMutationInput extends js.Object {
   val input: ActorSubscribeInput
@@ -26,9 +26,11 @@ object TestMutationInput {
   def apply(
     input: ActorSubscribeInput
   ): TestMutationInput =
-    js.Dynamic.literal(
-      input = input
-    ).asInstanceOf[TestMutationInput]
+    js.Dynamic
+      .literal(
+        input = input
+      )
+      .asInstanceOf[TestMutationInput]
 }
 
 @js.native
@@ -53,11 +55,13 @@ object TestMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestMu
     val subscribee: ActorSubscribeSubscribee | Null
   }
 
-  implicit class ActorSubscribe2Test_payloadRef(f: ActorSubscribe) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribe, Test_payload](f) {
+  implicit class ActorSubscribe2Test_payloadRef(f: ActorSubscribe)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribe, Test_payload](f) {
     def toTest_payload: _root_.com.goodcover.relay.FragmentRef[Test_payload] = castToRef
   }
 
-  implicit class ActorSubscribeSubscribeeAddress2Test_addressRef(f: ActorSubscribeSubscribeeAddress) extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribeSubscribeeAddress, Test_address](f) {
+  implicit class ActorSubscribeSubscribeeAddress2Test_addressRef(f: ActorSubscribeSubscribeeAddress)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[ActorSubscribeSubscribeeAddress, Test_address](f) {
     def toTest_address: _root_.com.goodcover.relay.FragmentRef[Test_address] = castToRef
   }
 

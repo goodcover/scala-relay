@@ -10,7 +10,7 @@ subscription TestNoVariablesSubscription {
         id
     }
 }
-*/
+ */
 
 trait TestNoVariablesSubscriptionInput extends js.Object
 
@@ -23,7 +23,8 @@ trait TestNoVariablesSubscription extends js.Object {
   val noVariables: TestNoVariablesSubscription.NoVariables
 }
 
-object TestNoVariablesSubscription extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestNoVariablesSubscriptionInput, TestNoVariablesSubscription] {
+object TestNoVariablesSubscription
+    extends _root_.com.goodcover.relay.SubscriptionTaggedNode[TestNoVariablesSubscriptionInput, TestNoVariablesSubscription] {
   type Ctor[T] = T
 
   @js.native
@@ -31,7 +32,8 @@ object TestNoVariablesSubscription extends _root_.com.goodcover.relay.Subscripti
     val id: String
   }
 
-  def newInput(): _root_.relay.generated.TestNoVariablesSubscriptionInput = _root_.relay.generated.TestNoVariablesSubscriptionInput()
+  def newInput(): _root_.relay.generated.TestNoVariablesSubscriptionInput =
+    _root_.relay.generated.TestNoVariablesSubscriptionInput()
 
   type Query = _root_.com.goodcover.relay.ConcreteRequest
 

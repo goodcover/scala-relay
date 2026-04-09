@@ -10,7 +10,7 @@ mutation TestNestedObjectVariableMutation($nested: Nested) {
         id
     }
 }
-*/
+ */
 
 trait TestNestedObjectVariableMutationInput extends js.Object {
   val nested: Nested | Null
@@ -20,9 +20,11 @@ object TestNestedObjectVariableMutationInput {
   def apply(
     nested: Nested | Null = null
   ): TestNestedObjectVariableMutationInput =
-    js.Dynamic.literal(
-      nested = nested
-    ).asInstanceOf[TestNestedObjectVariableMutationInput]
+    js.Dynamic
+      .literal(
+        nested = nested
+      )
+      .asInstanceOf[TestNestedObjectVariableMutationInput]
 }
 
 @js.native
@@ -30,7 +32,11 @@ trait TestNestedObjectVariableMutation extends js.Object {
   val nestedObjectVariable: TestNestedObjectVariableMutation.NestedObjectVariable
 }
 
-object TestNestedObjectVariableMutation extends _root_.com.goodcover.relay.MutationTaggedNode[TestNestedObjectVariableMutationInput, TestNestedObjectVariableMutation] {
+object TestNestedObjectVariableMutation
+    extends _root_.com.goodcover.relay.MutationTaggedNode[
+      TestNestedObjectVariableMutationInput,
+      TestNestedObjectVariableMutation
+    ] {
   type Ctor[T] = T
 
   @js.native

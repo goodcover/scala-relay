@@ -4,7 +4,7 @@ import com.goodcover.relay.build.Commands
 import sbt.*
 import sbt.nio.file.FileTreeView
 import sbt.util.CacheImplicits.*
-import sbt.util.{CacheStore, CacheStoreFactory}
+import sbt.util.{ CacheStore, CacheStoreFactory }
 import sjsonnew.*
 
 import java.io.InputStream
@@ -41,12 +41,15 @@ object RelayCompiler {
 
   object Options {
 
-    //noinspection TypeAnnotation
+    // noinspection TypeAnnotation
     implicit val iso = LList
-      .iso[Options, File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Seq[String] :*: Seq[
-        String
-      ] :*: Option[File] :*: Map[String, String] :*: Boolean :*: Boolean :*: LNil]( //
-        { o: Options =>                                                             //
+      .iso[
+        Options,
+        File :*: String :*: File :*: File :*: File :*: Boolean :*: Seq[String] :*: Seq[String] :*: Seq[
+          String
+        ] :*: Option[File] :*: Map[String, String] :*: Boolean :*: Boolean :*: LNil
+      ]( //
+        { o: Options => //
           ("workingDir"         -> o.workingDir) :*:
             ("compilerCommand"  -> o.compilerCommand) :*:
             ("schemaPath"       -> o.schemaPath) :*:
@@ -61,21 +64,22 @@ object RelayCompiler {
             ("displayOnFailure" -> o.displayOnFailure) :*:
             ("typeScript"       -> o.typeScript) :*:
             LNil
-        }, {
+        },
+        {
           case (_, workingDir) :*:
-                (_, compilerCommand) :*:
-                (_, schemaPath) :*:
-                (_, sourceDirectory) :*:
-                (_, outputPath) :*:
-                (_, verbose) :*:
-                (_, includes) :*:
-                (_, excludes) :*:
-                (_, extensions) :*:
-                (_, persisted) :*:
-                (_, customScalars) :*:
-                (_, displayOnFailure) :*:
-                (_, typeScript) :*:
-                LNil => //
+              (_, compilerCommand) :*:
+              (_, schemaPath) :*:
+              (_, sourceDirectory) :*:
+              (_, outputPath) :*:
+              (_, verbose) :*:
+              (_, includes) :*:
+              (_, excludes) :*:
+              (_, extensions) :*:
+              (_, persisted) :*:
+              (_, customScalars) :*:
+              (_, displayOnFailure) :*:
+              (_, typeScript) :*:
+              LNil => //
             Options(
               workingDir,
               compilerCommand,
@@ -104,11 +108,12 @@ object RelayCompiler {
   private object Analysis {
     def apply(options: Options): Analysis = Analysis(Version, options, Set.empty)
 
-    //noinspection TypeAnnotation
+    // noinspection TypeAnnotation
     implicit val iso = LList.iso[Analysis, Int :*: Options :*: Artifacts :*: LNil]( //
       { a: Analysis => //
         ("version" -> a.version) :*: ("options" -> a.options) :*: ("artifacts" -> a.artifacts) :*: LNil
-      }, {
+      },
+      {
         case (_, version) :*: (_, options) :*: (_, artifacts) :*: LNil => //
           Analysis(version, options, artifacts)
       }
@@ -127,11 +132,11 @@ object RelayCompiler {
 
   def compile(cacheStoreFactory: CacheStoreFactory, options: Options, logger: Logger): Results = {
     logger.debug("Running RelayCompiler...")
-    val stores = Stores(cacheStoreFactory)
+    val stores      = Stores(cacheStoreFactory)
     val prevTracker = Tracked.lastOutput[Unit, Analysis](stores.last) { (_, maybePreviousAnalysis) =>
       val previousAnalysis = maybePreviousAnalysis.getOrElse(Analysis(options))
       logger.debug(s"Previous analysis:\n$maybePreviousAnalysis")
-      val sources = findSources(options)
+      val sources          = findSources(options)
       // NOTE: Update clean if you change this.
       Tracked.diffInputs(stores.sources, FileInfo.lastModified)(sources) { sourcesReport =>
         logger.debug(s"Sources:\n$sourcesReport")
@@ -149,10 +154,12 @@ object RelayCompiler {
           if (versionChanged || outputDirChanged || typeScriptChanged) {
             IO.delete(previousAnalysis.artifacts)
           }
-          if (versionChanged ||
-              optionsChanged ||
-              sourcesReport.modified.nonEmpty ||
-              outputsReport.modified.nonEmpty) {
+          if (
+            versionChanged ||
+            optionsChanged ||
+            sourcesReport.modified.nonEmpty ||
+            outputsReport.modified.nonEmpty
+          ) {
             if (versionChanged) logger.debug(s"Version changed:\n$Version")
             else if (optionsChanged) logger.debug(s"Options changed:\n$options")
             if (outputsReport.modified.nonEmpty) {
@@ -281,8 +288,8 @@ object RelayCompiler {
       case None        => Seq.empty
     }
 
-    val customScalarsArgs = customScalars.map {
-      case (scalarType, scalaType) => s"--customScalars.$scalarType=$scalaType"
+    val customScalarsArgs = customScalars.map { case (scalarType, scalaType) =>
+      s"--customScalars.$scalarType=$scalaType"
     }.toSeq
 
     val cmd =

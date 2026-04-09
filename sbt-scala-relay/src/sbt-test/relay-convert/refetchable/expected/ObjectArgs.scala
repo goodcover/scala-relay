@@ -5,7 +5,7 @@ import _root_.scala.scalajs.js.|
 import _root_.scala.scalajs.js.annotation.JSImport
 
 /*
-*/
+ */
 
 trait ObjectArgsInput extends js.Object {
   val thing: Thing | Null
@@ -15,9 +15,11 @@ object ObjectArgsInput {
   def apply(
     thing: Thing | Null = null
   ): ObjectArgsInput =
-    js.Dynamic.literal(
-      thing = thing
-    ).asInstanceOf[ObjectArgsInput]
+    js.Dynamic
+      .literal(
+        thing = thing
+      )
+      .asInstanceOf[ObjectArgsInput]
 }
 
 @js.native
@@ -26,7 +28,8 @@ trait ObjectArgs extends js.Object
 object ObjectArgs extends _root_.com.goodcover.relay.QueryTaggedNode[ObjectArgsInput, ObjectArgs] {
   type Ctor[T] = T
 
-  implicit class ObjectArgs2Test_fragment4Ref(f: ObjectArgs) extends _root_.com.goodcover.relay.CastToFragmentRef[ObjectArgs, Test_fragment4](f) {
+  implicit class ObjectArgs2Test_fragment4Ref(f: ObjectArgs)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[ObjectArgs, Test_fragment4](f) {
     def toTest_fragment4: _root_.com.goodcover.relay.FragmentRef[Test_fragment4] = castToRef
   }
 

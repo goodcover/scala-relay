@@ -22,7 +22,7 @@ fragment Test_node on Node {
         }
     }
 }
-*/
+ */
 
 @js.native
 trait Test_node extends _root_.com.goodcover.relay.Introspectable[Test_node]
@@ -31,11 +31,14 @@ object Test_node extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_node
   type Ctor[T] = T
 
   object __typename {
-    @js.native sealed trait User extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.User]
+    @js.native
+    sealed trait User extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.User]
     @inline def User: User = "User".asInstanceOf[User]
-    @js.native sealed trait Page extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.Page]
+    @js.native
+    sealed trait Page extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.Page]
     @inline def Page: Page = "Page".asInstanceOf[Page]
-    @js.native sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node]
+    @js.native
+    sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node]
     @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
   }
 
@@ -56,9 +59,11 @@ object Test_node extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_node
 
   object PageActor {
     object __typename {
-      @js.native sealed trait User extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.PageActorUser]
+      @js.native
+      sealed trait User extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.PageActorUser]
       @inline def User: User = "User".asInstanceOf[User]
-      @js.native sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.PageActor]
+      @js.native
+      sealed trait `%other` extends _root_.com.goodcover.relay.Introspectable.TypeName[Test_node.PageActor]
       @inline def `%other`: `%other` = "%other".asInstanceOf[`%other`]
     }
   }
@@ -69,7 +74,8 @@ object Test_node extends _root_.com.goodcover.relay.FragmentTaggedNode[Test_node
     val actor: PageActor | Null
   }
 
-  implicit class PageActorUser2Test_userRef(f: PageActorUser) extends _root_.com.goodcover.relay.CastToFragmentRef[PageActorUser, Test_user](f) {
+  implicit class PageActorUser2Test_userRef(f: PageActorUser)
+      extends _root_.com.goodcover.relay.CastToFragmentRef[PageActorUser, Test_user](f) {
     def toTest_user: _root_.com.goodcover.relay.FragmentRef[Test_user] = castToRef
   }
 

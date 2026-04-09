@@ -8,7 +8,7 @@ import _root_.scala.scalajs.js.annotation.JSImport
 query TestPrimitiveResponseQuery($a: String!) {
     primitiveResponse(a: $a)
 }
-*/
+ */
 
 trait TestPrimitiveResponseQueryInput extends js.Object {
   val a: String
@@ -18,9 +18,11 @@ object TestPrimitiveResponseQueryInput {
   def apply(
     a: String
   ): TestPrimitiveResponseQueryInput =
-    js.Dynamic.literal(
-      a = a
-    ).asInstanceOf[TestPrimitiveResponseQueryInput]
+    js.Dynamic
+      .literal(
+        a = a
+      )
+      .asInstanceOf[TestPrimitiveResponseQueryInput]
 }
 
 @js.native
@@ -28,7 +30,8 @@ trait TestPrimitiveResponseQuery extends js.Object {
   val primitiveResponse: String
 }
 
-object TestPrimitiveResponseQuery extends _root_.com.goodcover.relay.QueryTaggedNode[TestPrimitiveResponseQueryInput, TestPrimitiveResponseQuery] {
+object TestPrimitiveResponseQuery
+    extends _root_.com.goodcover.relay.QueryTaggedNode[TestPrimitiveResponseQueryInput, TestPrimitiveResponseQuery] {
   type Ctor[T] = T
 
   def newInput(

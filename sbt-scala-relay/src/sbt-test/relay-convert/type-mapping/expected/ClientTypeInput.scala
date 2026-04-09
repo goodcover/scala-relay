@@ -15,7 +15,7 @@ input ClientTypeInput {
   optionalListOptionalElements: [Foo]
   nested: ClientTypeNestedInput!
 }
-*/
+ */
 
 trait ClientTypeInput extends js.Object {
   val id: String | Null
@@ -41,15 +41,17 @@ object ClientTypeInput {
     optionalListOptionalElements: js.Array[Bar | Null] | Null = null,
     nested: ClientTypeNestedInput
   ): ClientTypeInput =
-    js.Dynamic.literal(
-      id = id,
-      number = number,
-      required = required,
-      optional = optional,
-      requiredListRequiredElements = requiredListRequiredElements,
-      requiredListOptionalElements = requiredListOptionalElements,
-      optionalListRequiredElements = optionalListRequiredElements,
-      optionalListOptionalElements = optionalListOptionalElements,
-      nested = nested
-    ).asInstanceOf[ClientTypeInput]
+    js.Dynamic
+      .literal(
+        id = id,
+        number = number,
+        required = required,
+        optional = optional,
+        requiredListRequiredElements = requiredListRequiredElements,
+        requiredListOptionalElements = requiredListOptionalElements,
+        optionalListRequiredElements = optionalListRequiredElements,
+        optionalListOptionalElements = optionalListOptionalElements,
+        nested = nested
+      )
+      .asInstanceOf[ClientTypeInput]
 }
