@@ -1,14 +1,14 @@
 package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.FieldDefinition
-import caliban.parsing.adt.Type.{innerType, NamedType}
-import caliban.parsing.adt.{Directive, Selection, Type}
+import caliban.parsing.adt.Type.{ NamedType, innerType }
+import caliban.parsing.adt.{ Directive, Selection, Type }
 import com.goodcover.relay.build.GraphQLSchema
 import com.goodcover.relay.build.GraphQLSchema.FieldTypeDefinition
 import com.goodcover.relay.build.GraphQLText.appendSelectionText
 import com.goodcover.relay.build.codegen.ExecutableDefinitionWriter.idFieldDefinition
-import com.goodcover.relay.build.codegen.Fields.{isID, isMetaField}
-import com.goodcover.relay.build.codegen.Selections.{hasTypeName, inlineFragmentSelections, selectableFieldSelections}
+import com.goodcover.relay.build.codegen.Fields.{ isID, isMetaField }
+import com.goodcover.relay.build.codegen.Selections.{ hasTypeName, inlineFragmentSelections, selectableFieldSelections }
 
 import java.io.Writer
 import scala.meta.Term
@@ -25,9 +25,8 @@ abstract class ExecutableDefinitionWriter(
 
   def write(): Unit
 
-  override protected def writeImports(): Unit = {
+  override protected def writeImports(): Unit =
     writeScalaJsImports(importJSImport = true)
-  }
 
   // TODO: GC-3158 - Use DocumentRenderer instead.
   protected def writeDefinitionText(): Unit =
@@ -44,7 +43,7 @@ abstract class ExecutableDefinitionWriter(
   }
 
   // TODO: Can we cleanup this field lookup stuff?
-  protected def writeDefinitionTrait(selections: List[Selection], selectionField: FieldLookup): Unit = {
+  protected def writeDefinitionTrait(selections: List[Selection], selectionField: FieldLookup): Unit =
     writeSelectionTrait(definitionName, selections, "", Seq.empty) { field =>
       selectionField(field.name).foreach { definition =>
         writeDefinitionField(
@@ -55,7 +54,6 @@ abstract class ExecutableDefinitionWriter(
         )
       }
     }
-  }
 
   private def writeDefinitionField(
     name: String,
@@ -74,9 +72,9 @@ abstract class ExecutableDefinitionWriter(
     selections: List[Selection],
     fieldTypeDefinition: FieldTypeLookup,
     outerObjectName: String
-  ): Unit = {
+  ): Unit =
     selections.foreach {
-      case field: Selection.Field =>
+      case field: Selection.Field           =>
         if (field.selectionSet.nonEmpty) {
           fieldTypeDefinition(field.name).foreach { definition =>
             writeNestedSelection(field, definition, "", outerObjectName, outerObjectName)
@@ -89,9 +87,8 @@ abstract class ExecutableDefinitionWriter(
         val typeName   = inline.typeCondition.fold(enclosingType)(_.name)
         val definition = schema.fieldType(typeName)
         writeNestedSelection(inline, definition, "", outerObjectName, outerObjectName)
-      case _: Selection.FragmentSpread => () // Fragment spreads are handled as implicit conversions.
+      case _: Selection.FragmentSpread      => () // Fragment spreads are handled as implicit conversions.
     }
-  }
 
   private def writeNestedTrait(
     fullName: String,
@@ -117,8 +114,8 @@ abstract class ExecutableDefinitionWriter(
   private def writeSelectionTrait(name: String, selections: List[Selection], indent: String, parentTraits: Seq[String])(
     writeField: Selection.Field => Unit
   ): Unit = {
-    val tname = meta.Type.Name(name)
-    val parents =
+    val tname           = meta.Type.Name(name)
+    val parents         =
       if (hasTypeName(selections)) parentTraits :+ s"_root_.com.goodcover.relay.Introspectable[${tname.syntax}]"
       else parentTraits
     val fieldSelections = selectableFieldSelections(selections)
@@ -134,20 +131,20 @@ abstract class ExecutableDefinitionWriter(
   ): Unit = {
     // TODO: Cache these better? It is only worth doing this if there are at least 2 selections.
     val subFieldLookup = typeDefinition.fields.map(d => d.name -> d).toMap
-    val subSelections = selection match {
+    val subSelections  = selection match {
       case field: Selection.Field           => field.selectionSet
       case inline: Selection.InlineFragment => inline.selectionSet
       case _: Selection.FragmentSpread      => Nil
     }
-    val fullName = selection match {
-      case field: Selection.Field => enclosingFullName + field.alias.getOrElse(field.name).capitalize
+    val fullName       = selection match {
+      case field: Selection.Field      => enclosingFullName + field.alias.getOrElse(field.name).capitalize
       // FIXME: This isn't guaranteed to be unique.
       //  For example, you would get a collision if you have a selection on field user and an inline fragment on User.
       case _: Selection.InlineFragment => enclosingFullName + typeDefinition.name.capitalize
       case _: Selection.FragmentSpread => enclosingFullName // Unused.
     }
     subSelections.foreach {
-      case subField: Selection.Field =>
+      case subField: Selection.Field        =>
         if (subField.selectionSet.nonEmpty) {
           getFieldDefinitionTypeDefinition(typeDefinition.name, subFieldLookup)(subField.name).foreach { definition =>
             writeNestedSelection(subField, definition, fullName, outerObjectName, fullName)
@@ -159,11 +156,11 @@ abstract class ExecutableDefinitionWriter(
             inline.typeCondition.map(tpe => schema.fieldType(tpe.name)).getOrElse(typeDefinition)
           writeNestedSelection(inline, definition, fullName, outerObjectName, fullName)
         }
-      case _: Selection.FragmentSpread =>
+      case _: Selection.FragmentSpread      =>
         () // Fragment spreads are handled as implicit conversions.
     }
     selection match {
-      case field: Selection.Field =>
+      case field: Selection.Field           =>
         val parentTraits = Directives.getExtends(field.directives).toList
         writeNestedTrait(fullName, field.selectionSet, subFieldLookup, typeDefinition.name, parentTraits)
         writeNestedInlineCompanionObject(fullName, field.selectionSet, outerObjectName)
@@ -172,7 +169,7 @@ abstract class ExecutableDefinitionWriter(
         val selectionObject = inline.typeCondition.fold(typeDefinition.name)(_.name)
         writeNestedTrait(fullName, inline.selectionSet, subFieldLookup, selectionObject, Seq(inlineParent))
         writeNestedInlineCompanionObject(fullName, inline.selectionSet, outerObjectName)
-      case _: Selection.FragmentSpread =>
+      case _: Selection.FragmentSpread      =>
         () // Fragment spreads are handled as implicit conversions.
     }
   }
@@ -257,7 +254,7 @@ abstract class ExecutableDefinitionWriter(
   ): Unit = {
     val typePrefix = if (outer) "" else name
     selections.foreach {
-      case field: Selection.Field =>
+      case field: Selection.Field           =>
         val nextName = typePrefix + field.alias.getOrElse(field.name).capitalize
         writeFragmentImplicits(nextName, field.selectionSet, outerObjectName, outer = false)
       case spread: Selection.FragmentSpread =>
@@ -266,7 +263,7 @@ abstract class ExecutableDefinitionWriter(
         val nextName = typePrefix + inline.typeCondition.fold(name)(_.name)
         writeFragmentImplicits(nextName, inline.selectionSet, outerObjectName, outer = false)
     }
-    val inlines = inlineFragmentSelections(selections)
+    val inlines    = inlineFragmentSelections(selections)
     writeInlineFragmentOps(name, inlines, typePrefix)
   }
 
@@ -294,7 +291,7 @@ abstract class ExecutableDefinitionWriter(
     name: String,
     inlines: List[Selection.InlineFragment],
     typePrefix: String
-  ): Unit = {
+  ): Unit =
     if (inlines.nonEmpty) {
       writer.write("  implicit class ")
       writer.write(name)
@@ -318,7 +315,6 @@ abstract class ExecutableDefinitionWriter(
       }
       writer.write("  }\n\n")
     }
-  }
 
   protected def writeGeneratedMapping(writer: Writer, name: String): Unit = {
     writer.write("""  @js.native

@@ -130,7 +130,7 @@ object SharedFunctionalityTest extends TestSuite {
             |  }
             |}
             |""".stripMargin
-        val graphqlFile = new File(graphqlDir, "GetUser.graphql")
+        val graphqlFile    = new File(graphqlDir, "GetUser.graphql")
         java.nio.file.Files.write(graphqlFile.toPath, graphqlContent.getBytes)
 
         val graphqlFiles = Set(graphqlFile)
@@ -156,7 +156,7 @@ object SharedFunctionalityTest extends TestSuite {
         graphqlDir.mkdirs()
         outputDir.mkdirs()
 
-        val schemaFile = createTestSchema(schemaDir)
+        val schemaFile     = createTestSchema(schemaDir)
         val graphqlContent =
           """query GetUser($id: ID!) {
             |  user(id: $id) {
@@ -164,7 +164,7 @@ object SharedFunctionalityTest extends TestSuite {
             |  }
             |}
             |""".stripMargin
-        val graphqlFile = new File(graphqlDir, "GetUser.graphql")
+        val graphqlFile    = new File(graphqlDir, "GetUser.graphql")
         java.nio.file.Files.write(graphqlFile.toPath, graphqlContent.getBytes)
 
         val options = GraphQLConverter.Options(outputDir, Map.empty[String, String], nativeUnionTypes = true)

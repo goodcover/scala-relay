@@ -2,7 +2,7 @@ package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, Document, Type}
+import caliban.parsing.adt.{ Directive, Document, Type }
 import com.goodcover.relay.build.codegen.ScalaWriter.Parameter
 
 import java.io.Writer
@@ -18,9 +18,9 @@ class InputWriter(
 
   // TODO: Deduplicate.
   private val parameters = input.fields.map { field =>
-    val tpe       = field.ofType
-    val typeName  = innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
+    val tpe         = field.ofType
+    val typeName    = innerType(tpe)
+    val scalaType   = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
     // TODO: Default value.
     val initializer = if (tpe.nonNull) None else Some("null")
     Parameter(Term.Name(field.name), scalaType, initializer)
@@ -28,9 +28,8 @@ class InputWriter(
 
   override protected def definitionName: String = input.name
 
-  override protected def writeImports(): Unit = {
+  override protected def writeImports(): Unit =
     writeScalaJsImports(importJSImport = false)
-  }
 
   override protected def writeDefinitionText(): Unit = {
     writer.write(renderDefinition(input, document))

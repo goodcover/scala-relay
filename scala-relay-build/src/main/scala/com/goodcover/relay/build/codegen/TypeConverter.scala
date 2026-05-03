@@ -1,6 +1,6 @@
 package com.goodcover.relay.build.codegen
 
-import caliban.parsing.adt.{Directive, Type}
+import caliban.parsing.adt.{ Directive, Type }
 import com.goodcover.relay.build.GraphQLSchema
 import com.goodcover.relay.build.codegen.TypeConverter.DefaultTypeMappings
 
@@ -24,10 +24,10 @@ class TypeConverter(schema: GraphQLSchema, typeMappings: Map[String, String]) {
     fieldDefinitionDirectives: List[Directive],
     fullyQualified: Boolean
   ): String = {
-    val builder = new StringBuilder()
+    val builder               = new StringBuilder()
     def loop(tpe: Type): Unit = {
       tpe match {
-        case Type.NamedType(_, _) =>
+        case Type.NamedType(_, _)     =>
           builder.append(convertToScalaType(gqlTypeName, fullyQualified))
           Directives.getClientType(fieldDefinitionDirectives).foreach { typeArg =>
             builder.append('[')
