@@ -2,7 +2,7 @@ package com.goodcover.relay.build.codegen
 
 import java.io.Writer
 
-abstract class DefinitionWriter(writer: Writer) {
+abstract class DefinitionWriter(writer: Writer, nativeUnionTypes: Boolean) {
 
   protected val scalaWriter = new ScalaWriter(writer)
 
@@ -25,4 +25,15 @@ abstract class DefinitionWriter(writer: Writer) {
   protected def writeImports(): Unit
 
   protected def writeDefinitionText(): Unit
+
+  protected def writeScalaJsImports(importJSImport: Boolean): Unit = {
+    writer.write("import _root_.scala.scalajs.js\n")
+    if (!nativeUnionTypes) {
+      writer.write("import _root_.scala.scalajs.js.|\n")
+    }
+    if (importJSImport) {
+      writer.write("import _root_.scala.scalajs.js.annotation.JSImport\n")
+    }
+    writer.write('\n')
+  }
 }

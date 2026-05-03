@@ -182,13 +182,14 @@ object ScalaRelayBasePlugin extends AutoPlugin {
     val schemaFile   = relaySchema.value
     val outputDir    = relayConvertDirectory.value
     val typeMappings = relayConvertTypeMappings.value
+    val nativeUnions = CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
     val graphqlFiles = relayGraphQLFiles.value
     val dependencies = relayGraphQLDependencies.value
     val s            = streams.value
     // We also output Scala.js facades for the final JavaScript/TypeScript that the relay-compiler will generate.
     val cacheStoreFactory = s.cacheStoreFactory / "relay" / "convert"
     if (force) GraphQLConverter.clean(cacheStoreFactory)
-    val extractOptions = GraphQLConverter.Options(outputDir, typeMappings)
+    val extractOptions = GraphQLConverter.Options(outputDir, typeMappings, nativeUnions)
     GraphQLConverter.convert(cacheStoreFactory, graphqlFiles, schemaFile, dependencies, extractOptions, s.log)
   }
 

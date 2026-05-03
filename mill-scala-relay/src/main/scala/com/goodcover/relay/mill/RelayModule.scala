@@ -180,7 +180,7 @@ trait RelayModule extends ScalaModule {
       }
 
       val schema  = GraphQLSchema(schemaFile, Set.empty)
-      val options = GraphQLConverter.Options(outputDir, relayTypeMappings())
+      val options = GraphQLConverter.Options(outputDir, relayTypeMappings(), nativeUnionTypes = scalaVersion().startsWith("3."))
       val results = GraphQLConverter.convertFiles( //
         graphqlFiles,
         schema,

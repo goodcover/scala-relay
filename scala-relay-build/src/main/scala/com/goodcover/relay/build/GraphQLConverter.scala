@@ -11,21 +11,23 @@ import java.io.File
 object GraphQLConverter {
   import FileOps._
 
-  final case class Options(outputDir: File, typeMappings: Map[String, String])
+  final case class Options(outputDir: File, typeMappings: Map[String, String], nativeUnionTypes: Boolean = false)
 
   type Conversions = Map[File, Set[File]]
 
   // TODO: Add parallelism.
   def convertFiles(files: Iterable[File], schema: GraphQLSchema, options: Options, logger: BuildLogger): Conversions = {
     logger.debug(s"Converting schema: ${schema.file}")
-    val converter          = new DocumentConverter(options.outputDir, schema, options.typeMappings, Set.empty[File])
+    val converter          =
+      new DocumentConverter(options.outputDir, schema, options.typeMappings, options.nativeUnionTypes, Set.empty[File])
     val outputs            = converter.convertSchema()
     val initialConversions = Map(schema.file -> outputs)
     val (conversions, _) = files.foldLeft((initialConversions, outputs)) {
       case ((conversions, outputs), file) =>
         logger.debug(s"Converting file: $file")
         // This is kind of silly since only the outputs change but oh well, it saves passing them around everywhere.
-        val converter       = new DocumentConverter(options.outputDir, schema, options.typeMappings, outputs)
+        val converter       =
+          new DocumentConverter(options.outputDir, schema, options.typeMappings, options.nativeUnionTypes, outputs)
         val newOutputs      = converter.convert(file)
         val nextConversions = conversions + (file -> newOutputs)
         val nextOutputs     = outputs ++ newOutputs

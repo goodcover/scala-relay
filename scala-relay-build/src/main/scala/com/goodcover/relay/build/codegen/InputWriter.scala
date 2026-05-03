@@ -8,8 +8,13 @@ import com.goodcover.relay.build.codegen.ScalaWriter.Parameter
 import java.io.Writer
 import scala.meta.Term
 
-class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Document, typeConverter: TypeConverter)
-    extends DefinitionWriter(writer) {
+class InputWriter(
+  writer: Writer,
+  input: InputObjectTypeDefinition,
+  document: Document,
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
+) extends DefinitionWriter(writer, nativeUnionTypes) {
 
   // TODO: Deduplicate.
   private val parameters = input.fields.map { field =>
@@ -24,8 +29,7 @@ class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Do
   override protected def definitionName: String = input.name
 
   override protected def writeImports(): Unit = {
-    writer.write("import _root_.scala.scalajs.js\n")
-    writer.write("import _root_.scala.scalajs.js.|\n\n")
+    writeScalaJsImports(importJSImport = false)
   }
 
   override protected def writeDefinitionText(): Unit = {

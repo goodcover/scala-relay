@@ -17,7 +17,8 @@ class OperationInputWriter(
   writer: Writer,
   operation: OperationDefinition,
   document: Document,
-  typeConverter: TypeConverter
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
 ) {
 
   private val scalaWriter: ScalaWriter = new ScalaWriter(writer)
@@ -41,7 +42,7 @@ class OperationInputWriter(
       InputValueDefinition(None, variable.name, variable.variableType, variable.defaultValue, variable.directives)
     }
     val input = InputObjectTypeDefinition(None, operationInputName, operation.directives, fields)
-    new InputWriter(writer, input, document, typeConverter).writeInputType()
+    new InputWriter(writer, input, document, typeConverter, nativeUnionTypes).writeInputType()
   }
 
   def writeNewInputMethod(): Unit = {

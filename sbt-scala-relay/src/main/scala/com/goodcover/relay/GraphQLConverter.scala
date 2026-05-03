@@ -15,16 +15,17 @@ object GraphQLConverter {
   val Options = build.GraphQLConverter.Options
 
   // Increment when the code changes to bust the cache.
-  private val Version = 3
+  private val Version = 4
 
 
   //noinspection TypeAnnotation
-  implicit val isoOptions = LList.iso[Options, File :*: Map[String, String] :*: LNil]( //
+  implicit val isoOptions = LList.iso[Options, File :*: Map[String, String] :*: Option[Boolean] :*: LNil]( //
     { o: Options => //
-      ("outputDir" -> o.outputDir) :*: ("typeMappings" -> o.typeMappings) :*: LNil
+      val nativeUnionTypes: Option[Boolean] = Some(o.nativeUnionTypes)
+      ("outputDir" -> o.outputDir) :*: ("typeMappings" -> o.typeMappings) :*: ("nativeUnionTypes" -> nativeUnionTypes) :*: LNil
     }, {
-      case (_, outputDir) :*: (_, typeMappings) :*: LNil => //
-        Options(outputDir, typeMappings)
+      case (_, outputDir) :*: (_, typeMappings) :*: (_, nativeUnionTypes) :*: LNil => //
+        Options(outputDir, typeMappings, nativeUnionTypes.getOrElse(false))
     }
   )
 

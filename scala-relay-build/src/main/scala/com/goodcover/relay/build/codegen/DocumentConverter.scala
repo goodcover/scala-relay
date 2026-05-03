@@ -16,7 +16,13 @@ import java.io.{File, Writer}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Map[String, String], outputs: Set[File]) {
+class DocumentConverter(
+  outputDir: File,
+  schema: GraphQLSchema,
+  typeMappings: Map[String, String],
+  nativeUnionTypes: Boolean,
+  outputs: Set[File]
+) {
 
   private val typeConverter = new TypeConverter(schema, typeMappings)
 
@@ -44,22 +50,24 @@ class DocumentConverter(outputDir: File, schema: GraphQLSchema, typeMappings: Ma
   }
 
   private def writeInput(input: InputObjectTypeDefinition, document: Document): File =
-    writeDefinition(inputFile(input))(new InputWriter(_, input, document, typeConverter))
+    writeDefinition(inputFile(input))(new InputWriter(_, input, document, typeConverter, nativeUnionTypes))
 
   private def writeOperation(operation: OperationDefinition, documentText: String, document: Document): File =
     writeDefinition(operationFile(operation)) { writer =>
       operation.operationType match {
         case OperationType.Query =>
-          new QueryWriter(writer, operation, documentText, document, schema, typeConverter)
+          new QueryWriter(writer, operation, documentText, document, schema, typeConverter, nativeUnionTypes)
         case OperationType.Mutation =>
-          new MutationWriter(writer, operation, documentText, document, schema, typeConverter)
+          new MutationWriter(writer, operation, documentText, document, schema, typeConverter, nativeUnionTypes)
         case OperationType.Subscription =>
-          new SubscriptionWriter(writer, operation, documentText, document, schema, typeConverter)
+          new SubscriptionWriter(writer, operation, documentText, document, schema, typeConverter, nativeUnionTypes)
       }
     }
 
   private def writeFragment(fragment: FragmentDefinition, documentText: String): File =
-    writeDefinition(fragmentFile(fragment))(new FragmentWriter(_, fragment, documentText, schema, typeConverter))
+    writeDefinition(fragmentFile(fragment))(
+      new FragmentWriter(_, fragment, documentText, schema, typeConverter, nativeUnionTypes)
+    )
 
   private def writeRefetchableFragment(
     fragment: FragmentDefinition,

@@ -19,15 +19,14 @@ abstract class ExecutableDefinitionWriter(
   // TODO: GC-3158 - Remove this.
   documentText: String,
   schema: GraphQLSchema,
-  typeConverter: TypeConverter
-) extends DefinitionWriter(writer) {
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
+) extends DefinitionWriter(writer, nativeUnionTypes) {
 
   def write(): Unit
 
   override protected def writeImports(): Unit = {
-    writer.write("import _root_.scala.scalajs.js\n")
-    writer.write("import _root_.scala.scalajs.js.|\n")
-    writer.write("import _root_.scala.scalajs.js.annotation.JSImport\n\n")
+    writeScalaJsImports(importJSImport = true)
   }
 
   // TODO: GC-3158 - Use DocumentRenderer instead.
