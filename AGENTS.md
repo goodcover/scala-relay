@@ -10,6 +10,7 @@ This is an sbt multi-module Scala project for Relay tooling. Core runtime and ma
 - `sbt "scala-relay-core/test"` runs tests for a single module.
 - `sbt "+ publishLocal; ++2.12.21 scriptedAll"` publishes local artifacts and runs all sbt scripted tests, matching CI for Scala 2.12.
 - `sbt scalafmtAll scalafmtSbt` formats Scala and sbt files using `.scalafmt.conf`.
+- `sbt scalafixAll` applies `.scalafix.conf` rules, currently `RemoveUnused`; use `sbt "scalafixAll --check"` after cleanup to verify no rewrites remain.
 - `sbt publishLocalAll` publishes all locally useful artifacts via the project alias.
 - `sbt scala-relay-ijext/updateIntellij` updates IntelliJ plugin support files before release-related work.
 
@@ -17,7 +18,7 @@ Use JDK 17. CI also uses Node 22 for Relay compiler fixture coverage.
 
 ## Coding Style & Naming Conventions
 
-Follow Scalafmt 3.9.9 with `runner.dialect = scala213source3`, `maxColumn = 130`, sorted imports, and Scala 3 overrides for `scala-3` paths. Prefer existing package structure under `com.goodcover.relay`. Keep generated Relay types and fixture expectations aligned with current naming patterns, for example `TestQuery.expected.scala`, `Test_fragment.scala`, and GraphQL files in `src/main/resources/graphql/`.
+Follow Scalafmt 3.9.9 with `runner.dialect = scala213source3`, `maxColumn = 130`, sorted imports, and Scala 3 overrides for `scala-3` paths. Scalafix uses SemanticDB and `RemoveUnused`; run Scalafmt after Scalafix because rewrites may disturb formatting. Prefer existing package structure under `com.goodcover.relay`. Keep generated Relay types and fixture expectations aligned with current naming patterns, for example `TestQuery.expected.scala`, `Test_fragment.scala`, and GraphQL files in `src/main/resources/graphql/`.
 
 ## Testing Guidelines
 

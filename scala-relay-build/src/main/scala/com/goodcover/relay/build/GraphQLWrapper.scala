@@ -5,7 +5,7 @@ import caliban.parsing.Parser
 import caliban.parsing.adt.{ Definition, Document }
 import caliban.rendering.DocumentRenderer
 
-import java.io.{ BufferedWriter, File, FileWriter }
+import java.io.{ BufferedWriter, File }
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import scala.collection.Seq
@@ -74,14 +74,6 @@ object GraphQLWrapper {
   /**
    * Get the name of a GraphQL definition for use as a JavaScript variable name.
    */
-  private def getDefinitionName(definition: Definition): String =
-    definition match {
-      case Definition.ExecutableDefinition.OperationDefinition(opType, name, _, _, _) =>
-        name.getOrElse(s"Anonymous${opType.toString.capitalize}")
-      case Definition.ExecutableDefinition.FragmentDefinition(name, _, _, _)          =>
-        name
-      case _                                                                          => ""
-    }
 
   /**
    * Render a GraphQL definition to string format.

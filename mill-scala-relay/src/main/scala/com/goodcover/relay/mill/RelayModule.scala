@@ -1,7 +1,6 @@
 package com.goodcover.relay.mill
 
 import com.goodcover.relay.build.*
-import com.goodcover.relay.build.codegen.DocumentConverter
 import mill.*
 import mill.api._
 import mill.scalalib.ScalaModule
@@ -123,7 +122,7 @@ trait RelayModule extends ScalaModule {
 
     val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
 
-    val results = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
+    GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
     PathRef(os.Path(outputDir))
   }
@@ -153,8 +152,8 @@ trait RelayModule extends ScalaModule {
 
     val options = GraphQLWrapper.Options(outputDir, typeScript)
 
-    val files   = GraphQLWrapper.resourceOutputs(graphqlFiles.toSeq, options)
-    val results = GraphQLWrapper.wrapFiles(files, logger)
+    val files = GraphQLWrapper.resourceOutputs(graphqlFiles.toSeq, options)
+    GraphQLWrapper.wrapFiles(files, logger)
 
     PathRef(os.Path(outputDir))
   }
@@ -181,7 +180,7 @@ trait RelayModule extends ScalaModule {
 
       val schema  = GraphQLSchema(schemaFile, Set.empty)
       val options = GraphQLConverter.Options(outputDir, relayTypeMappings(), nativeUnionTypes = scalaVersion().startsWith("3."))
-      val results = GraphQLConverter.convertFiles( //
+      GraphQLConverter.convertFiles( //
         graphqlFiles,
         schema,
         options,
@@ -226,7 +225,7 @@ trait RelayModule extends ScalaModule {
         typeScript = relayTypeScript()
       )
 
-      val results = RelayCompiler.compileSimple(options, logger, processRunner)
+      RelayCompiler.compileSimple(options, logger, processRunner)
 
       PathRef(os.Path(outputDir))
     }

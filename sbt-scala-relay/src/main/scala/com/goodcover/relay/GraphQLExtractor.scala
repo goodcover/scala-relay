@@ -1,16 +1,12 @@
 package com.goodcover.relay
 
 import sbt._
-import sbt.io.Using.fileWriter
 import sbt.util.CacheImplicits._
 import sbt.util.{ CacheStore, CacheStoreFactory }
 import com.goodcover.relay.build.GraphQLExtractor as SharedQLExtractor
 import sjsonnew._
 
-import java.nio.charset.StandardCharsets
 import scala.meta._
-import scala.meta.inputs.Input
-import scala.util.Try
 
 /**
  * Extracts the GraphQL definitions from @graphql annotations and graphqlGen

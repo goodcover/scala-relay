@@ -5,10 +5,7 @@ import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.{ Fiel
 import caliban.rendering.DocumentRenderer
 import com.goodcover.relay.build.GraphQLSchema.FieldTypeDefinition
 
-import java.io.{ ByteArrayInputStream, ObjectInputStream }
-import java.util.Base64
 import scala.collection.Seq
-import scala.util.Using
 
 package object codegen {
 

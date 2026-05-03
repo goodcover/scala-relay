@@ -189,7 +189,7 @@ object RelayIntegrationTest extends TestSuite {
         val logger      = TestBuildLogger()
 
         val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
-        val results     = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
+        GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
         // Should still extract valid GraphQL despite errors
         val extractedFiles = os.list(extractDir).filter(_.ext == "graphql")
@@ -322,16 +322,15 @@ object RelayIntegrationTest extends TestSuite {
     test("Simple npm availability check") {
       withTempWorkspace { workspace =>
         // Check if npm is available
-        val npmCheck =
-          try {
-            val result = os.proc("npm", "--version").call(cwd = workspace)
-            println(s"npm version: ${result.out.text()}")
-            result.exitCode == 0
-          } catch {
-            case e: Exception =>
-              println(s"npm not available: ${e.getMessage}")
-              false
-          }
+        try {
+          val result = os.proc("npm", "--version").call(cwd = workspace)
+          println(s"npm version: ${result.out.text()}")
+          result.exitCode == 0
+        } catch {
+          case e: Exception =>
+            println(s"npm not available: ${e.getMessage}")
+            false
+        }
 
         // npm availability check completed
 

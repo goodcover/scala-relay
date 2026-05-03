@@ -9,7 +9,6 @@ import java.io.File
  * version that can be used by both SBT and Mill.
  */
 object GraphQLConverter {
-  import FileOps._
 
   final case class Options(outputDir: File, typeMappings: Map[String, String], nativeUnionTypes: Boolean = false)
 

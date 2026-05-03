@@ -3,7 +3,7 @@ package com.goodcover.relay.build
 import com.goodcover.relay.build.FileOps._
 
 import java.io._
-import java.nio.charset.{ Charset, StandardCharsets }
+import java.nio.charset.StandardCharsets
 import scala.meta._
 import scala.meta.inputs.Input
 import scala.util.Try
@@ -16,7 +16,6 @@ import scala.util.Try
 object GraphQLExtractor {
 
   // Increment when the code changes to bust the cache.
-  private val Version = 1
 
   final case class Options(outputDir: File, dialect: Dialect) {
     override def equals(obj: Any): Boolean = obj match {

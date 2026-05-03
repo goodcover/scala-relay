@@ -7,10 +7,8 @@ import java.io.{ File, InputStream }
  * build-tool agnostic version that can be used by both SBT and Mill.
  */
 object RelayCompiler {
-  import FileOps._
 
   // Increment when the code changes to bust the cache.
-  private val Version = 1
 
   private implicit class QuoteStr(val s: String) extends AnyVal {
     def quote: String = {
@@ -54,7 +52,7 @@ object RelayCompiler {
     options.outputPath.mkdirs()
 
     // Find existing output files before compilation
-    val existingFiles = findOutputFiles(options.outputPath)
+    findOutputFiles(options.outputPath)
 
     // Run the relay compiler
     runRelayCompiler(options, logger, processRunner)
@@ -112,7 +110,7 @@ object RelayCompiler {
       typeScript
     ) = options
 
-    val language = options.language
+    options.language
 
     // Build the command
     val shell = if (System.getProperty("os.name").toLowerCase().contains("win")) {

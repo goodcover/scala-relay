@@ -10,6 +10,8 @@ ThisBuild / intellijPluginName := "scala-relay-ijext"
 // See https://www.jetbrains.com/intellij-repository/releases
 // search for com.jetbrains.intellij.idea
 ThisBuild / intellijBuild      := "252"
+ThisBuild / semanticdbEnabled  := true
+ThisBuild / semanticdbVersion  := scalafixSemanticdb.revision
 
 //  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
 //  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
@@ -230,7 +232,13 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
       "-Ywarn-numeric-widen",
       "-Ywarn-value-discard",
       "-language:_",
-    )
+    ) ++ {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 12)) => Seq("-Ywarn-unused")
+        case Some((2, 13)) => Seq("-Wunused")
+        case _             => Seq.empty
+      }
+    }
 
     val scala3Options = Seq(
       "-Wunused:all",

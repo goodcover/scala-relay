@@ -2,7 +2,6 @@ package com.goodcover.relay.build
 
 import caliban.parsing.Parser
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition
-import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
 import caliban.parsing.adt.Definition.{ ExecutableDefinition, TypeSystemDefinition }
 import caliban.parsing.adt.Type.NamedType
 import caliban.parsing.adt.{ Directive, Document, Type }
@@ -135,8 +134,6 @@ class GraphQLSchema(val file: File, val document: Document, additional: Seq[Docu
       .orElse(unionTypes.get(name).map(GraphQLSchema.FieldTypeDefinition(_)))
       .getOrElse(throw invalidSchema(s"Missing type, interface, or union $name."))
 
-  private def unsupportedOperation(message: String): GraphQLSchema.UnsupportedOperation =
-    GraphQLSchema.UnsupportedOperation(file, message)
 }
 
 object GraphQLSchema {

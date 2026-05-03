@@ -3,8 +3,6 @@ package com.goodcover.relay.mill
 import com.goodcover.relay.build.{ BuildCache, BuildCacheFactory }
 import mill.javalib.api.JvmWorkerApi.Ctx
 
-import java.io.File
-
 /**
  * Mill implementation of BuildCache using Mill's caching system
  */
