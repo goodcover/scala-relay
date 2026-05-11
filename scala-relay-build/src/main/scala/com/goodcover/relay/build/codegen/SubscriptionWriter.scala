@@ -14,8 +14,9 @@ class SubscriptionWriter(
   documentText: String,
   document: Document,
   schema: GraphQLSchema,
-  typeConverter: TypeConverter
-) extends OperationWriter(writer, subscription, documentText, document, schema, typeConverter) {
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
+) extends OperationWriter(writer, subscription, documentText, document, schema, typeConverter, nativeUnionTypes) {
 
   override def write(): Unit = {
     writePreamble()

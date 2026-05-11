@@ -130,7 +130,7 @@ object SharedFunctionalityTest extends TestSuite {
             |  }
             |}
             |""".stripMargin
-        val graphqlFile = new File(graphqlDir, "GetUser.graphql")
+        val graphqlFile    = new File(graphqlDir, "GetUser.graphql")
         java.nio.file.Files.write(graphqlFile.toPath, graphqlContent.getBytes)
 
         val graphqlFiles = Set(graphqlFile)
@@ -142,6 +142,40 @@ object SharedFunctionalityTest extends TestSuite {
 
         // Should generate Scala files (even if placeholder)
         assert(results.nonEmpty)
+        val generated = new String(java.nio.file.Files.readAllBytes(new File(outputDir, "GetUser.scala").toPath))
+        assert(generated.contains("import _root_.scala.scalajs.js.|"))
+      }
+    }
+
+    test("GraphQLConverter can emit Scala 3 native union types") {
+      withTempDir { tempDir =>
+        val schemaDir  = new File(tempDir, "schema")
+        val graphqlDir = new File(tempDir, "graphql")
+        val outputDir  = new File(tempDir, "converted")
+        schemaDir.mkdirs()
+        graphqlDir.mkdirs()
+        outputDir.mkdirs()
+
+        val schemaFile     = createTestSchema(schemaDir)
+        val graphqlContent =
+          """query GetUser($id: ID!) {
+            |  user(id: $id) {
+            |    email
+            |  }
+            |}
+            |""".stripMargin
+        val graphqlFile    = new File(graphqlDir, "GetUser.graphql")
+        java.nio.file.Files.write(graphqlFile.toPath, graphqlContent.getBytes)
+
+        val options = GraphQLConverter.Options(outputDir, Map.empty[String, String], nativeUnionTypes = true)
+        val logger  = TestBuildLogger()
+        val schema  = GraphQLSchema(schemaFile, Set.empty)
+
+        GraphQLConverter.convertFiles(Set(graphqlFile), schema, options, logger)
+
+        val generated = new String(java.nio.file.Files.readAllBytes(new File(outputDir, "GetUser.scala").toPath))
+        assert(!generated.contains("import _root_.scala.scalajs.js.|"))
+        assert(generated.contains("val email: String | Null"))
       }
     }
 

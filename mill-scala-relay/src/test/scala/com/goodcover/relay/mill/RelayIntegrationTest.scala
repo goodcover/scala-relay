@@ -189,7 +189,7 @@ object RelayIntegrationTest extends TestSuite {
         val logger      = TestBuildLogger()
 
         val sourcePairs = GraphQLExtractor.sourceOutputs(sourceFiles.toSeq, options)
-        val results     = GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
+        GraphQLExtractor.extractFiles(sourcePairs, options.dialect, logger)
 
         // Should still extract valid GraphQL despite errors
         val extractedFiles = os.list(extractDir).filter(_.ext == "graphql")
@@ -322,7 +322,7 @@ object RelayIntegrationTest extends TestSuite {
     test("Simple npm availability check") {
       withTempWorkspace { workspace =>
         // Check if npm is available
-        val npmCheck = try {
+        try {
           val result = os.proc("npm", "--version").call(cwd = workspace)
           println(s"npm version: ${result.out.text()}")
           result.exitCode == 0
@@ -342,12 +342,13 @@ object RelayIntegrationTest extends TestSuite {
     test("Check relay-compiler help") {
       withTempWorkspace { workspace =>
         // Check if npm is available
-        val npmCheck = try {
-          val result = os.proc("npm", "--version").call(cwd = workspace)
-          result.exitCode == 0
-        } catch {
-          case _: Exception => false
-        }
+        val npmCheck =
+          try {
+            val result = os.proc("npm", "--version").call(cwd = workspace)
+            result.exitCode == 0
+          } catch {
+            case _: Exception => false
+          }
 
         if (!npmCheck) {
           println("Skipping relay-compiler help test: npm not available")
@@ -369,9 +370,9 @@ object RelayIntegrationTest extends TestSuite {
           assert(installResult.exitCode == 0)
 
           // Check relay-compiler help (for debugging if needed)
-          try {
+          try
             os.proc("npx", "relay-compiler", "--help").call(cwd = workspace)
-          } catch {
+          catch {
             case _: Exception => // Ignore help errors
           }
 
@@ -384,12 +385,13 @@ object RelayIntegrationTest extends TestSuite {
     test("Real relay-compiler integration with npm install") {
       withTempWorkspace { workspace =>
         // Check if npm is available
-        val npmCheck = try {
-          val result = os.proc("npm", "--version").call(cwd = workspace)
-          result.exitCode == 0
-        } catch {
-          case _: Exception => false
-        }
+        val npmCheck =
+          try {
+            val result = os.proc("npm", "--version").call(cwd = workspace)
+            result.exitCode == 0
+          } catch {
+            case _: Exception => false
+          }
 
         if (!npmCheck) {
           assert(true) // Skip test if npm not available
@@ -398,13 +400,13 @@ object RelayIntegrationTest extends TestSuite {
           // Step 1: Initialize npm project and install relay-compiler
           val packageJson =
             """{
-            |  "name": "relay-test",
-            |  "version": "1.0.0",
-            |  "private": true,
-            |  "devDependencies": {
-            |    "relay-compiler": "^17.0.0"
-            |  }
-            |}""".stripMargin
+              |  "name": "relay-test",
+              |  "version": "1.0.0",
+              |  "private": true,
+              |  "devDependencies": {
+              |    "relay-compiler": "^17.0.0"
+              |  }
+              |}""".stripMargin
 
           os.write(workspace / "package.json", packageJson)
 
@@ -472,11 +474,11 @@ object RelayIntegrationTest extends TestSuite {
             sourceDirectory = wrapDir.toIO,         // Use wrapped directory
             outputPath = compileDir.toIO,
             verbose = true,
-            includes = Seq.empty, // Not supported in v17.0.0+
+            includes = Seq.empty,                   // Not supported in v17.0.0+
             excludes = Seq.empty,
-            extensions = Seq.empty, // Not supported in v17.0.0+
+            extensions = Seq.empty,                 // Not supported in v17.0.0+
             persisted = None,
-            customScalars = Map.empty, // Not supported via CLI in v17.0.0+
+            customScalars = Map.empty,              // Not supported via CLI in v17.0.0+
             displayOnFailure = true,
             typeScript = false
           )
@@ -494,18 +496,19 @@ object RelayIntegrationTest extends TestSuite {
 
           os.write(workspace / "relay.config.js", relayConfig)
 
-          val compileResults = try {
-            RelayCompiler.compileSimple(compileOptions, logger, processRunner)
-          } catch {
-            case e: Exception =>
-              // Log detailed error information for debugging
-              println(s"Relay compiler failed: ${e.getMessage}")
-              if (logger.errors.nonEmpty) {
-                println("Relay compiler errors:")
-                logger.errors.foreach(err => println(s"  $err"))
-              }
-              throw e
-          }
+          val compileResults =
+            try
+              RelayCompiler.compileSimple(compileOptions, logger, processRunner)
+            catch {
+              case e: Exception =>
+                // Log detailed error information for debugging
+                println(s"Relay compiler failed: ${e.getMessage}")
+                if (logger.errors.nonEmpty) {
+                  println("Relay compiler errors:")
+                  logger.errors.foreach(err => println(s"  $err"))
+                }
+                throw e
+            }
 
           // Verify results
           assert(compileResults.nonEmpty)
@@ -568,11 +571,11 @@ class TestProcessRunner extends ProcessRunner {
 
     // Mock different behaviors based on command
     command.headOption match {
-      case Some("relay-compiler") =>
+      case Some("relay-compiler")                   =>
         Right(())
       case Some(cmd) if cmd.contains("nonexistent") =>
         Left(s"Command not found: $cmd")
-      case _ =>
+      case _                                        =>
         Right(())
     }
   }

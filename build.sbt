@@ -10,6 +10,8 @@ ThisBuild / intellijPluginName := "scala-relay-ijext"
 // See https://www.jetbrains.com/intellij-repository/releases
 // search for com.jetbrains.intellij.idea
 ThisBuild / intellijBuild      := "252"
+ThisBuild / semanticdbEnabled  := true
+ThisBuild / semanticdbVersion  := scalafixSemanticdb.revision
 
 //  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
 //  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
@@ -38,16 +40,29 @@ lazy val root = project
 
 lazy val `scala-relay-build` = project
   .settings(commonSettings)
+  .settings(scalaRelayBuildSettings)
   .settings(
-    libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta),
     scalaVersion       := Versions.Scala212,
-    crossScalaVersions := Seq(Versions.Scala212, Versions.Scala3)
+    crossScalaVersions := Seq(Versions.Scala212)
+  )
+
+lazy val `scala-relay-build-mill` = project
+  .in(file("scala-relay-build"))
+  .settings(commonSettings)
+  .settings(scalaRelayBuildSettings)
+  .settings(
+    name                := "scala-relay-build",
+    target              := baseDirectory.value / "target-mill",
+    scalaVersion        := Versions.Scala38,
+    crossScalaVersions  := Seq(Versions.Scala38),
+    publish / skip      := true,
+    publishLocal / skip := true
   )
 
 lazy val `mill-scala-relay` = project
   .settings(commonSettings)
-  .dependsOn(`scala-relay-build`)
-  .aggregate(`scala-relay-build`)
+  .dependsOn(`scala-relay-build-mill`)
+  .aggregate(`scala-relay-build-mill`)
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi"           %% "mill-libs-scalalib" % Versions.Mill,
@@ -189,6 +204,10 @@ lazy val macroAnnotationSettings = Seq(
   }
 )
 
+lazy val scalaRelayBuildSettings: Seq[Setting[_]] = Seq(
+  libraryDependencies ++= Seq(Dependencies.Caliban, Dependencies.ScalaMeta)
+)
+
 lazy val commonSettings: Seq[Setting[_]] = Seq(
   scalaVersion         := Versions.Scala213,
   crossScalaVersions   := Seq(Versions.Scala213),
@@ -213,7 +232,13 @@ lazy val commonSettings: Seq[Setting[_]] = Seq(
       "-Ywarn-numeric-widen",
       "-Ywarn-value-discard",
       "-language:_",
-    )
+    ) ++ {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 12)) => Seq("-Ywarn-unused")
+        case Some((2, 13)) => Seq("-Wunused")
+        case _             => Seq.empty
+      }
+    }
 
     val scala3Options = Seq(
       "-Wunused:all",

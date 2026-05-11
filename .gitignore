@@ -3,6 +3,7 @@ __generated__
 *.log
 out/
 target/
+target-mill/
 .ensime
 .ensime_cache/
 .idea/

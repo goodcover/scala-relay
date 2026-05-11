@@ -37,9 +37,9 @@ object TestNoVariablesMutation extends _root_.com.goodcover.relay.MutationTagged
 
   @js.native
   @JSImport("__generated__/TestNoVariablesMutation.graphql", JSImport.Default)
-  private object node extends js.Object
+  private object __relayGeneratedNode extends js.Object
 
-  lazy val query: Query = node.asInstanceOf[Query]
+  lazy val query: Query = __relayGeneratedNode.asInstanceOf[Query]
 
-  lazy val sourceHash: String = node.asInstanceOf[js.Dynamic].hash.asInstanceOf[String]
+  lazy val sourceHash: String = __relayGeneratedNode.asInstanceOf[js.Dynamic].hash.asInstanceOf[String]
 }

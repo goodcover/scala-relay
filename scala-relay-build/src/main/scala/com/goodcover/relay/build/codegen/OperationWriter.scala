@@ -15,12 +15,14 @@ abstract class OperationWriter(
   documentText: String,
   document: Document,
   schema: GraphQLSchema,
-  typeConverter: TypeConverter
-) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter) {
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
+) extends ExecutableDefinitionWriter(writer, documentText, schema, typeConverter, nativeUnionTypes) {
 
   override protected def definitionName: String = DocumentConverter.getOperationName(operation)
 
-  protected val operationInputWriter = new OperationInputWriter(writer, operation, document, typeConverter)
+  protected val operationInputWriter =
+    new OperationInputWriter(writer, operation, document, typeConverter, nativeUnionTypes)
 
   override protected def containsStartOfDefinition(line: String): Boolean =
     startOfOperation(line, operation)

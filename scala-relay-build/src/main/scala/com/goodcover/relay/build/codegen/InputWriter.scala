@@ -2,20 +2,25 @@ package com.goodcover.relay.build.codegen
 
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition.InputObjectTypeDefinition
 import caliban.parsing.adt.Type.innerType
-import caliban.parsing.adt.{Directive, Document, Type}
+import caliban.parsing.adt.{ Directive, Document, Type }
 import com.goodcover.relay.build.codegen.ScalaWriter.Parameter
 
 import java.io.Writer
 import scala.meta.Term
 
-class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Document, typeConverter: TypeConverter)
-    extends DefinitionWriter(writer) {
+class InputWriter(
+  writer: Writer,
+  input: InputObjectTypeDefinition,
+  document: Document,
+  typeConverter: TypeConverter,
+  nativeUnionTypes: Boolean
+) extends DefinitionWriter(writer, nativeUnionTypes) {
 
   // TODO: Deduplicate.
   private val parameters = input.fields.map { field =>
-    val tpe       = field.ofType
-    val typeName  = innerType(tpe)
-    val scalaType = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
+    val tpe         = field.ofType
+    val typeName    = innerType(tpe)
+    val scalaType   = typeConverter.convertToScalaType(tpe, typeName, field.directives, fullyQualified = false)
     // TODO: Default value.
     val initializer = if (tpe.nonNull) None else Some("null")
     Parameter(Term.Name(field.name), scalaType, initializer)
@@ -23,10 +28,8 @@ class InputWriter(writer: Writer, input: InputObjectTypeDefinition, document: Do
 
   override protected def definitionName: String = input.name
 
-  override protected def writeImports(): Unit = {
-    writer.write("import _root_.scala.scalajs.js\n")
-    writer.write("import _root_.scala.scalajs.js.|\n\n")
-  }
+  override protected def writeImports(): Unit =
+    writeScalaJsImports(importJSImport = false)
 
   override protected def writeDefinitionText(): Unit = {
     writer.write(renderDefinition(input, document))
