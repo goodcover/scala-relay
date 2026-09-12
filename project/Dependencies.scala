@@ -5,7 +5,7 @@ object Versions {
   // Update the .github/workflows/scala.yml with matching Scala versions
   final val Scala212 = "2.12.21"
   // Update the .github/workflows/scala.yml with matching Scala versions
-  final val Scala213 = "2.13.18"
+  final val Scala213 = "3.9.0"
   final val Scala3   = "3.3.7"
   // Update the .github/workflows/scala.yml with matching Scala versions
   final val Scala38  = "3.8.3"
