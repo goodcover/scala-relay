@@ -10,12 +10,12 @@ object Versions {
   // Update the .github/workflows/scala.yml with matching Scala versions
   final val Scala38  = "3.8.3"
 
-  final val Mill = "1.1.9"
+  final val Mill = "1.1.10"
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
-  final val Caliban   = "3.1.5"
-  final val ScalaMeta = "4.15.2"
+  final val Caliban   = "3.2.0"
+  final val ScalaMeta = "4.17.4"
   final val UTest     = "0.9.5"
 }
 
