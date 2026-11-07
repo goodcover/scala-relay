@@ -14,7 +14,7 @@ object Versions {
 
   final val Scalajs = org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.scalaJSVersion
 
-  final val Caliban   = "3.2.0"
+  final val Caliban   = "3.2.1"
   final val ScalaMeta = "4.17.4"
   final val UTest     = "0.9.5"
 }
